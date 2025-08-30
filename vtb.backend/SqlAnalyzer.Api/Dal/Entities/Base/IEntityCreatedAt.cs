@@ -1,7 +1,6 @@
 namespace SqlAnalyzer.Api.Dal.Entities.Base;
 
-public interface IEntityTimestamp
+public interface IEntityCreatedAt
 {
     DateTime CreateAt { get; }
-    DateTime UpdateAt { get; }
 }

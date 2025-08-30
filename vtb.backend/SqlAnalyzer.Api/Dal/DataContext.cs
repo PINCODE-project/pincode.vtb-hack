@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SqlAnalyzer.Api.Dal.Entities.Base;
+using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
 
 namespace SqlAnalyzer.Api.Dal;
 
@@ -9,6 +10,7 @@ using Entities.DbConnection;
 public class DataContext: DbContext
 {
     public DbSet<DbConnection> DbConnections { get; set; }
+    public DbSet<QueryAnalysis> QueryAnalyzers { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
@@ -30,17 +32,17 @@ public class DataContext: DbContext
 
         switch (entry.State)
         {
-            case EntityState.Modified when entity is IEntityTimestamp:
+            case EntityState.Modified when entity is IEntityCreatedAt:
             {
-                var now = DateTime.UtcNow;
-                entry.Property(nameof(IEntityTimestamp.UpdateAt)).CurrentValue = now;
+                // var now = DateTime.UtcNow;
+                // entry.Property(nameof(IEntityCreatedAt.UpdateAt)).CurrentValue = now;
                 break;
             }
-            case EntityState.Added when entity is IEntityTimestamp:
+            case EntityState.Added when entity is IEntityCreatedAt:
             {
                 var now = DateTime.UtcNow;
-                entry.Property(nameof(IEntityTimestamp.CreateAt)).CurrentValue = now;
-                entry.Property(nameof(IEntityTimestamp.UpdateAt)).CurrentValue = now;
+                entry.Property(nameof(IEntityCreatedAt.CreateAt)).CurrentValue = now;
+                //entry.Property(nameof(IEntityCreatedAt.UpdateAt)).CurrentValue = now;
 
                 break;
             }
