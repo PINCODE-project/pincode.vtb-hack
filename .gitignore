@@ -1,0 +1,58 @@
+# --- .NET / C# ---
+bin/
+obj/
+out/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+*.exe
+*.dll
+*.app
+*.log
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+# Rider / JetBrains IDE
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# MacOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.lock
+
+# ReSharper / Rider caches
+_ReSharper*/
+*.DotSettings.user
+*.ReSharper
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+
+# Other
+*.config.user
