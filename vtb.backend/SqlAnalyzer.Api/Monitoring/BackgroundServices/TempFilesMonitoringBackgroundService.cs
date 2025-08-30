@@ -12,11 +12,11 @@ public class TempFilesMonitoringBackgroundService : BackgroundService
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5); // Оптимальный интервал
 
     public TempFilesMonitoringBackgroundService(
-        ILogger<TempFilesMonitoringBackgroundService> logger,
-        IMonitoringService monitoringService)
+        ILogger<TempFilesMonitoringBackgroundService> logger//,
+        /*IMonitoringService monitoringService*/)
     {
         _logger = logger;
-        _monitoringService = monitoringService;
+        //_monitoringService = monitoringService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
