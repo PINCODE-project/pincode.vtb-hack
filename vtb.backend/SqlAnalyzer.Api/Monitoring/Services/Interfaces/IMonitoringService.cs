@@ -5,5 +5,15 @@
 /// </summary>
 public interface IMonitoringService
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     Task<bool> SaveTempFilesMetricsAsync();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    Task<bool> SaveCacheHitMetricsAsync();
 }

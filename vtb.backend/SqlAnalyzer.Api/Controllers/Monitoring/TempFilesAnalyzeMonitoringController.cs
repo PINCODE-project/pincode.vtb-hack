@@ -7,18 +7,19 @@ namespace SqlAnalyzer.Api.Controllers.Monitoring;
 /// <summary>
 /// контроллер для получения результатов анализа метрик бд
 /// </summary>
-public class AnalyzeMonitoringController : ControllerBase
+[Route("temp-file")]
+public class TempFilesAnalyzeMonitoringController : ControllerBase
 {
-    private readonly IAnalyzeService _analysisService;
-    private readonly ILogger<IAnalyzeService> _logger;
+    private readonly ITempFilesAnalyzeService _analysisService;
+    private readonly ILogger<ITempFilesAnalyzeService> _logger;
 
-    public AnalyzeMonitoringController(IAnalyzeService analysisService, ILogger<IAnalyzeService> logger)
+    public TempFilesAnalyzeMonitoringController(ITempFilesAnalyzeService analysisService, ILogger<ITempFilesAnalyzeService> logger)
     {
         _analysisService = analysisService;
         _logger = logger;
     }
 
-    [HttpGet("temp-file/last-hour")]
+    [HttpGet("last-hour")]
     public async Task<ActionResult<RecommendationResponse>> AnalyzeLastHour()
     {
         try
@@ -34,7 +35,7 @@ public class AnalyzeMonitoringController : ControllerBase
         }
     }
 
-    [HttpGet("temp-file/custom-period")]
+    [HttpGet("custom-period")]
     public async Task<ActionResult<RecommendationResponse>> AnalyzeCustomPeriod(
         [FromQuery] DateTime start, 
         [FromQuery] DateTime end)
