@@ -51,7 +51,7 @@ public class QueryAnalysisService : IQueryAnalysisService
             AnalyzeResult = analyzeResult
         };
 
-        _db.QueryAnalyzers.Add(analysis);
+        _db.QueryAnalysis.Add(analysis);
         await _db.SaveChangesAsync();
 
         return new QueryAnalysisResultDto(

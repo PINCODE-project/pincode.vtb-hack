@@ -29,7 +29,7 @@ public class DbConnectionController : ControllerBase
     /// <summary>
     /// Проверяет доступность подключения.
     /// </summary>
-    [HttpPost("{dbConnectionId:guid}/check")]
+    [HttpGet("{dbConnectionId:guid}/check")]
     public async Task<ActionResult<DbConnectionCheckDto>> CheckConnection([FromRoute] Guid dbConnectionId)
     {
         var result = await _service.CheckAsync(dbConnectionId);

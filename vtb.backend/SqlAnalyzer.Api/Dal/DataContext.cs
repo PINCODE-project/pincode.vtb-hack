@@ -10,7 +10,7 @@ using Entities.DbConnection;
 public class DataContext: DbContext
 {
     public DbSet<DbConnection> DbConnections { get; set; }
-    public DbSet<QueryAnalysis> QueryAnalyzers { get; set; }
+    public DbSet<QueryAnalysis> QueryAnalysis { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
