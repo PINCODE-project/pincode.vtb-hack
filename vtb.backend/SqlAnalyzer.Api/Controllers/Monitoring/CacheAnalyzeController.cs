@@ -4,6 +4,9 @@ using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.Monitoring;
 
+/// <summary>
+/// контроллер для отслеживания состояния кеша 
+/// </summary>
 [ApiController]
 [Route("api/cache")]
 public class CacheAnalysisController : ControllerBase
@@ -17,6 +20,10 @@ public class CacheAnalysisController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Анализ изменения состояния кеша за последний час
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("analysis/last-hour")]
     public async Task<ActionResult<CacheAnalysisResponse>> GetCacheAnalysis()
     {
@@ -32,7 +39,11 @@ public class CacheAnalysisController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
+    
+    /// <summary>
+    /// Проверка здоровья кеша. Можно использовать рест для алертов 
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("health")]
     public async Task<ActionResult<CacheHealthStatus>> GetCacheHealth()
     {
@@ -49,6 +60,10 @@ public class CacheAnalysisController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Сводные метрики
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("metrics/summary")]
     public async Task<ActionResult<CacheMetricsSummary>> GetCacheMetricsSummary()
     {
@@ -61,22 +76,6 @@ public class CacheAnalysisController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при получении сводки метрик кэша");
-            return StatusCode(500, new { error = ex.Message });
-        }
-    }
-
-    [HttpGet("recommendations")]
-    public async Task<ActionResult<List<CacheRecommendation>>> GetCacheRecommendations()
-    {
-        try
-        {
-            _logger.LogInformation("Запрос рекомендаций по кэшу");
-            var analysis = await _cacheAnalysisService.AnalyzeCacheLastHourAsync();
-            return Ok(analysis.Recommendations);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Ошибка при получении рекомендаций по кэшу");
             return StatusCode(500, new { error = ex.Message });
         }
     }
