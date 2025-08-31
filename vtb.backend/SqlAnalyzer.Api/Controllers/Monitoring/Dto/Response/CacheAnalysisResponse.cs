@@ -46,15 +46,6 @@ public class CacheMetricsSummary
     public TimeSpan AnalysisDuration { get; set; }
 }
 
-// Модель для хранения сырых данных из БД
-public class CacheStatsData
-{
-    public DateTime MeasurementTime { get; set; }
-    public long BlksHit { get; set; }
-    public long BlksRead { get; set; }
-    public decimal CacheHitRatio { get; set; }
-}
-
 // Модель для здоровья кэша
 public class CacheHealthStatus
 {

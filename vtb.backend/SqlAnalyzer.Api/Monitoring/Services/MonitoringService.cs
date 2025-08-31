@@ -1,4 +1,6 @@
 ﻿using Npgsql;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Monitoring.Services;
@@ -7,26 +9,26 @@ namespace SqlAnalyzer.Api.Monitoring.Services;
 internal class MonitoringService : IMonitoringService
 {
     private readonly ILogger<MonitoringService> _logger;
+    private readonly string _monitoringConnectionString;
+    private readonly string _targetConnectionString;
+    private readonly DataContext _db;
 
     // Конструктор для получения конфигурации и логгера
-    public MonitoringService(ILogger<MonitoringService> logger)
+    public MonitoringService(ILogger<MonitoringService> logger, IConfiguration configuration, DataContext db)
     {
         _logger = logger;
+        _db = db;
+        _monitoringConnectionString = configuration.GetConnectionString("DefaultConnection");
+        _targetConnectionString = configuration.GetConnectionString("TargetConnection");
     }
 
     /// <inheritdoc />
     public async Task<bool> SaveTempFilesMetricsAsync()
     {
-        // TODO перенести в конфиг
-        // Строка подключения к мониторинговой БД
-        var monitoringConnectionString = "Host=localhost;Username=postgres;Password=1;Database=monitoring";
-        // Строка подключения к целевой БД
-        var targetConnectionString = "Host=localhost;Username=postgres;Password=1;Database=tenant";
-
         try
         {
-            await using var targetConn = new NpgsqlConnection(targetConnectionString);
-            await using var monitoringConn = new NpgsqlConnection(monitoringConnectionString);
+            await using var targetConn = new NpgsqlConnection(_targetConnectionString);
+            await using var monitoringConn = new NpgsqlConnection(_monitoringConnectionString);
             await targetConn.OpenAsync();
             await monitoringConn.OpenAsync();
 
@@ -48,24 +50,16 @@ internal class MonitoringService : IMonitoringService
     /// <inheritdoc />
     public async Task<bool> SaveCacheHitMetricsAsync()
     {
-        // TODO перенести в конфиг
-        // Строка подключения к мониторинговой БД
-        var monitoringConnectionString = "Host=localhost;Username=postgres;Password=1;Database=monitoring";
-        // Строка подключения к целевой БД
-        var targetConnectionString = "Host=localhost;Username=postgres;Password=1;Database=tenant";
-
         try
         {
-            await using var targetConn = new NpgsqlConnection(targetConnectionString);
-            await using var monitoringConn = new NpgsqlConnection(monitoringConnectionString);
+            await using var targetConn = new NpgsqlConnection(_targetConnectionString);
             await targetConn.OpenAsync();
-            await monitoringConn.OpenAsync();
 
             // Получаем текущие значения кэша
-            var cacheStats = await GetCacheStats(targetConn);
+            var cacheHitStats = await GetCacheHitStats(targetConn);
 
             // Сохраняем в мониторинговую БД
-            await SaveCacheStatsToMonitoringDb(monitoringConn, cacheStats);
+            await SaveCacheHitStatsToMonitoringDb(cacheHitStats);
 
             return true;
         }
@@ -76,7 +70,7 @@ internal class MonitoringService : IMonitoringService
         }
     }
 
-    private async Task<CacheStats> GetCacheStats(NpgsqlConnection connection)
+    private async Task<CacheHitStats> GetCacheHitStats(NpgsqlConnection connection)
     {
         var query = @"
                 SELECT 
@@ -93,46 +87,22 @@ internal class MonitoringService : IMonitoringService
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return new CacheStats
+            return new CacheHitStats
             {
+                Id = Guid.NewGuid(),
                 BlksHit = reader.GetInt64(0),
                 BlksRead = reader.GetInt64(1),
-                CacheHitRatio = reader.GetDecimal(2)
+                CacheHitRatio = reader.GetDecimal(2),
             };
         }
 
-        return new CacheStats();
+        return new CacheHitStats();
     }
 
-    private async Task SaveCacheStatsToMonitoringDb(NpgsqlConnection connection, CacheStats stats)
+    private async Task SaveCacheHitStatsToMonitoringDb(CacheHitStats stats)
     {
-        var query = @"
-                INSERT INTO cache_hit_stats (
-                    measurement_time, 
-                    blks_hit, 
-                    blks_read,
-                    cache_hit_ratio
-                ) VALUES (
-                    @measurement_time, 
-                    @blks_hit, 
-                    @blks_read,
-                    @cache_hit_ratio
-                )";
-
-        await using var cmd = new NpgsqlCommand(query, connection);
-        cmd.Parameters.AddWithValue("measurement_time", DateTime.UtcNow);
-        cmd.Parameters.AddWithValue("blks_hit", stats.BlksHit);
-        cmd.Parameters.AddWithValue("blks_read", stats.BlksRead);
-        cmd.Parameters.AddWithValue("cache_hit_ratio", stats.CacheHitRatio);
-
-        await cmd.ExecuteNonQueryAsync();
-    }
-
-    public class CacheStats
-    {
-        public long BlksHit { get; set; }
-        public long BlksRead { get; set; }
-        public decimal CacheHitRatio { get; set; }
+        _db.CacheHitStats.Add(stats);
+        await _db.SaveChangesAsync();
     }
 
     /// <summary>

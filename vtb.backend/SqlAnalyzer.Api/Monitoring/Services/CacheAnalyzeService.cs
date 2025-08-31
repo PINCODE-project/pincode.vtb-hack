@@ -1,5 +1,8 @@
-﻿using Npgsql;
+﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SqlAnalyzer.Api.Controllers.Monitoring.Dto.Response;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Monitoring.Services;
@@ -7,12 +10,13 @@ namespace SqlAnalyzer.Api.Monitoring.Services;
 internal class CacheAnalyzeService : ICacheAnalyzeService
 {
     private readonly ILogger<CacheAnalyzeService> _logger;
-    private readonly string _monitoringConnectionString;
+    private readonly DataContext _db;
 
-    public CacheAnalyzeService(ILogger<CacheAnalyzeService> logger, IConfiguration configuration)
+    public CacheAnalyzeService(ILogger<CacheAnalyzeService> logger,
+        DataContext db)
     {
         _logger = logger;
-        _monitoringConnectionString = configuration.GetConnectionString("DefaultConnection");
+        _db = db;
     }
 
     public async Task<CacheAnalysisResponse> AnalyzeCacheLastHourAsync()
@@ -25,10 +29,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
 
         try
         {
-            await using var connection = new NpgsqlConnection(_monitoringConnectionString);
-            await connection.OpenAsync();
-                    
-            var stats = await GetCacheStatsForPeriodAsync(connection, response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
+            var stats = await GetCacheStatsForPeriodAsync(response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
                     
             if (stats.Count < 2)
             {
@@ -70,12 +71,9 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
     {
         try
         {
-            await using var connection = new NpgsqlConnection(_monitoringConnectionString);
-            await connection.OpenAsync();
-                    
             var endTime = DateTime.UtcNow;
             var startTime = endTime.AddHours(-1);
-            var stats = await GetCacheStatsForPeriodAsync(connection, startTime, endTime);
+            var stats = await GetCacheStatsForPeriodAsync(startTime, endTime);
 
             if (stats.Count == 0)
             {
@@ -113,35 +111,13 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         }
     }
 
-    private async Task<List<CacheStatsData>> GetCacheStatsForPeriodAsync(NpgsqlConnection connection, DateTime start, DateTime end)
+    private async Task<List<CacheHitStats>> GetCacheStatsForPeriodAsync(DateTime start, DateTime end)
     {
-        var stats = new List<CacheStatsData>();
-        var query = @"
-                SELECT measurement_time, blks_hit, blks_read, cache_hit_ratio 
-                FROM cache_hit_stats 
-                WHERE measurement_time BETWEEN @start AND @end
-                ORDER BY measurement_time";
-
-        await using var cmd = new NpgsqlCommand(query, connection);
-        cmd.Parameters.AddWithValue("start", start);
-        cmd.Parameters.AddWithValue("end", end);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            stats.Add(new CacheStatsData
-            {
-                MeasurementTime = reader.GetDateTime(0),
-                BlksHit = reader.GetInt64(1),
-                BlksRead = reader.GetInt64(2),
-                CacheHitRatio = reader.GetDecimal(3)
-            });
-        }
-
-        return stats;
+        var cacheStatsList = await _db.CacheHitStats.Where(x => x.CreateAt >= start && x.CreateAt <= end).ToListAsync();
+        return cacheStatsList;
     }
 
-    private CacheMetricsSummary CalculateCacheMetricsSummary(List<CacheStatsData> stats)
+    private CacheMetricsSummary CalculateCacheMetricsSummary(List<CacheHitStats> stats)
     {
         var summary = new CacheMetricsSummary
         {
@@ -155,7 +131,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         {
             var first = stats.First();
             var last = stats.Last();
-            var duration = last.MeasurementTime - first.MeasurementTime;
+            var duration = last.CreateAt - first.CreateAt;
 
             summary.TotalBlksHit = last.BlksHit - first.BlksHit;
             summary.TotalBlksRead = last.BlksRead - first.BlksRead;

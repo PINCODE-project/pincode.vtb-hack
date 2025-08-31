@@ -8,15 +8,15 @@ namespace SqlAnalyzer.Api.Monitoring.BackgroundServices;
 public class CacheHitMonitoringBackgroundService : BackgroundService
 {
     private readonly ILogger<CacheHitMonitoringBackgroundService> _logger;
-    private readonly IMonitoringService _monitoringService;
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(5); // Такой же интервал
+    private readonly IServiceProvider _serviceProvider;
+    private readonly TimeSpan _interval = TimeSpan.FromSeconds(5); 
 
     public CacheHitMonitoringBackgroundService(
         ILogger<CacheHitMonitoringBackgroundService> logger,
-        IMonitoringService monitoringService)
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _monitoringService = monitoringService;
+        _serviceProvider = serviceProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,8 +26,10 @@ public class CacheHitMonitoringBackgroundService : BackgroundService
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
                 _logger.LogInformation("Сбор метрик cache hit ratio...");
-                bool success = await _monitoringService.SaveCacheHitMetricsAsync();
+                var success = await monitoringService.SaveCacheHitMetricsAsync();
                     
                 if (success)
                 {

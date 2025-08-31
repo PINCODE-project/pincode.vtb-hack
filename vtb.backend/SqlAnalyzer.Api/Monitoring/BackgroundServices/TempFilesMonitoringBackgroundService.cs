@@ -8,15 +8,15 @@ namespace SqlAnalyzer.Api.Monitoring.BackgroundServices;
 public class TempFilesMonitoringBackgroundService : BackgroundService
 {
     private readonly ILogger<TempFilesMonitoringBackgroundService> _logger;
-    private readonly IMonitoringService _monitoringService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(5); // Оптимальный интервал
 
     public TempFilesMonitoringBackgroundService(
         ILogger<TempFilesMonitoringBackgroundService> logger,
-        IMonitoringService monitoringService)
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _monitoringService = monitoringService;
+        _serviceProvider = serviceProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,8 +27,10 @@ public class TempFilesMonitoringBackgroundService : BackgroundService
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
                 _logger.LogInformation("Сбор метрик временных файлов...");
-                bool success = await _monitoringService.SaveTempFilesMetricsAsync();
+                var success = await monitoringService.SaveTempFilesMetricsAsync();
                     
                 if (success)
                 {

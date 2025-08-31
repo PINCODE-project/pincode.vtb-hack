@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SqlAnalyzer.Api.Dal.Entities.Base;
+using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
 
 namespace SqlAnalyzer.Api.Dal;
@@ -11,6 +12,7 @@ public class DataContext: DbContext
 {
     public DbSet<DbConnection> DbConnections { get; set; }
     public DbSet<QueryAnalysis> QueryAnalysis { get; set; }
+    public DbSet<CacheHitStats> CacheHitStats { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)

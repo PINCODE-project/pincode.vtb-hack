@@ -27,7 +27,7 @@ builder.Services.AddHttpClient<ILlmClient, LlmClient>(client =>
 
 builder.Services.AddHostedService<TempFilesMonitoringBackgroundService>();
 builder.Services.AddHostedService<CacheHitMonitoringBackgroundService>();
-builder.Services.AddSingleton<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<ITempFilesAnalyzeService, TempFilesTempFilesAnalyzeService>();
 builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
