@@ -18,8 +18,10 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 
 builder.Services.AddHostedService<TempFilesMonitoringBackgroundService>();
-builder.Services.AddScoped<IMonitoringService, MonitoringService>();
-builder.Services.AddScoped<IAnalyzeService, AnalyzeService>();
+builder.Services.AddHostedService<CacheHitMonitoringBackgroundService>();
+builder.Services.AddSingleton<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<ITempFilesAnalyzeService, TempFilesTempFilesAnalyzeService>();
+builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
 
 builder.Logging.AddConsole();

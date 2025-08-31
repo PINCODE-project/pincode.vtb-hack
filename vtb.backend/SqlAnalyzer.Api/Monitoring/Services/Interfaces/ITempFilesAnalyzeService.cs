@@ -5,7 +5,7 @@ namespace SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 /// <summary>
 /// Сервис для анализа метрик бд
 /// </summary>
-public interface IAnalyzeService
+public interface ITempFilesAnalyzeService
 {
     /// <summary>
     /// Анализ состояния бд

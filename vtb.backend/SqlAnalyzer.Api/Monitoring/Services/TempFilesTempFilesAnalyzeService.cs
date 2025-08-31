@@ -5,15 +5,15 @@ using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 namespace SqlAnalyzer.Api.Monitoring.Services;
 
 /// <inheritdoc />
-internal class AnalyzeService : IAnalyzeService
+internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
 {
-    private readonly ILogger<AnalyzeService> _logger;
+    private readonly ILogger<TempFilesTempFilesAnalyzeService> _logger;
     private readonly string _monitoringConnectionString;
 
-    public AnalyzeService(ILogger<AnalyzeService> logger, IConfiguration configuration)
+    public TempFilesTempFilesAnalyzeService(ILogger<TempFilesTempFilesAnalyzeService> logger, IConfiguration configuration)
     {
         _logger = logger;
-        _monitoringConnectionString = configuration.GetConnectionString("MonitoringDatabase");
+        _monitoringConnectionString = configuration.GetConnectionString("DefaultConnection");
     }
 
     public async Task<RecommendationResponse> AnalyzeTempFilesLastHourAsync()
