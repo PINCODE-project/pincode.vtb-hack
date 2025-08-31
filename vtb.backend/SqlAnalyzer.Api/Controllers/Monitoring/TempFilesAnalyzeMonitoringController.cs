@@ -19,6 +19,10 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Получить результаты анализа временных файлов за последний час
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("last-hour")]
     public async Task<ActionResult<RecommendationResponse>> AnalyzeLastHour()
     {
@@ -35,6 +39,13 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Получить анализ временных файлов за кастомный период
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    /// <remarks>Пока что рест костыльно отдает последний час</remarks>
     [HttpGet("custom-period")]
     public async Task<ActionResult<RecommendationResponse>> AnalyzeCustomPeriod(
         [FromQuery] DateTime start, 

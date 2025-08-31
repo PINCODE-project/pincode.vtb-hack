@@ -1,5 +1,7 @@
-﻿using Npgsql;
+﻿using Microsoft.EntityFrameworkCore;
 using SqlAnalyzer.Api.Controllers.Monitoring.Dto.Response;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Monitoring.Services;
@@ -8,12 +10,13 @@ namespace SqlAnalyzer.Api.Monitoring.Services;
 internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
 {
     private readonly ILogger<TempFilesTempFilesAnalyzeService> _logger;
-    private readonly string _monitoringConnectionString;
+    private readonly DataContext _db;
 
-    public TempFilesTempFilesAnalyzeService(ILogger<TempFilesTempFilesAnalyzeService> logger, IConfiguration configuration)
+    public TempFilesTempFilesAnalyzeService(ILogger<TempFilesTempFilesAnalyzeService> logger,
+        DataContext db)
     {
         _logger = logger;
-        _monitoringConnectionString = configuration.GetConnectionString("DefaultConnection");
+        _db = db;
     }
 
     public async Task<RecommendationResponse> AnalyzeTempFilesLastHourAsync()
@@ -26,11 +29,8 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
 
         try
         {
-            await using var connection = new NpgsqlConnection(_monitoringConnectionString);
-            await connection.OpenAsync();
-                    
             // Получаем статистику за последний час
-            var stats = await GetStatsForPeriodAsync(connection, response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
+            var stats = await GetStatsForPeriodAsync(response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
                     
             if (stats.Count < 2)
             {
@@ -65,42 +65,27 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         return response;
     }
 
-    private async Task<List<TempFilesStats>> GetStatsForPeriodAsync(NpgsqlConnection connection, DateTime start, DateTime end)
+    private async Task<List<TempFilesStatsDal>> GetStatsForPeriodAsync(DateTime start, DateTime end)
     {
-        var stats = new List<TempFilesStats>();
-        var query = @"
-                SELECT measurement_time, temp_files, temp_bytes 
-                FROM temp_files_stats 
-                WHERE measurement_time BETWEEN @start AND @end
-                ORDER BY measurement_time";
-
-        await using var cmd = new NpgsqlCommand(query, connection);
-        cmd.Parameters.AddWithValue("start", start);
-        cmd.Parameters.AddWithValue("end", end);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            stats.Add(new TempFilesStats
-            {
-                MeasurementTime = reader.GetDateTime(0),
-                TempFiles = reader.GetInt64(1),
-                TempBytes = reader.GetInt64(2)
-            });
-        }
-
-        return stats;
+        var tempFilesStatList = await _db.TempFilesStats.Where(x => x.CreateAt >= start && x.CreateAt <= end).ToListAsync();
+        return tempFilesStatList;
     }
 
-    private static MetricsSummary CalculateMetricsSummary(List<TempFilesStats> stats)
+    private static MetricsSummary CalculateMetricsSummary(List<TempFilesStatsDal> stats)
     {
-        if (stats.Count < 2) return new MetricsSummary();
+        if (stats.Count < 2)
+        {
+            return new MetricsSummary();
+        }
 
         var first = stats.First();
         var last = stats.Last();
 
-        var minutesInPeriod = (last.MeasurementTime - first.MeasurementTime).TotalMinutes;
-        if (minutesInPeriod == 0) minutesInPeriod = 1;
+        var minutesInPeriod = (last.CreateAt - first.CreateAt).TotalMinutes;
+        if (minutesInPeriod == 0)
+        {
+            minutesInPeriod = 1;
+        }
 
         var tempFilesGrowth = last.TempFiles - first.TempFiles;
         var tempBytesGrowth = last.TempBytes - first.TempBytes;
@@ -162,12 +147,4 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
 
         return recommendations;
     }
-}
-
-// TODO комменты потом
-public class TempFilesStats
-{
-    public DateTime MeasurementTime { get; set; }
-    public long TempFiles { get; set; }
-    public long TempBytes { get; set; }
 }
