@@ -12,8 +12,8 @@ using SqlAnalyzer.Api.Dal;
 namespace SqlAnalyzer.Api.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250831053324_AddQueryAnalysis")]
-    partial class AddQueryAnalysis
+    [Migration("20250831071312_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

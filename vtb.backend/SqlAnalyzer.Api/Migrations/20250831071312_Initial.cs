@@ -29,7 +29,7 @@ namespace SqlAnalyzer.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "QueryAnalyzers",
+                name: "QueryAnalysis",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -40,7 +40,7 @@ namespace SqlAnalyzer.Api.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QueryAnalyzers", x => x.Id);
+                    table.PrimaryKey("PK_QueryAnalysis", x => x.Id);
                 });
         }
 
@@ -51,7 +51,7 @@ namespace SqlAnalyzer.Api.Migrations
                 name: "DbConnections");
 
             migrationBuilder.DropTable(
-                name: "QueryAnalyzers");
+                name: "QueryAnalysis");
         }
     }
 }

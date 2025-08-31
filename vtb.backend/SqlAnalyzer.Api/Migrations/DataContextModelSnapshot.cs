@@ -76,7 +76,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("QueryAnalyzers");
+                    b.ToTable("QueryAnalysis");
                 });
 #pragma warning restore 612, 618
         }
