@@ -176,7 +176,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         var recommendations = new List<CacheRecommendation>();
 
         // Рекомендации по cache hit ratio
-        if (metrics.AvgCacheHitRatio < 99.0)
+        if (metrics.AvgCacheHitRatio < 90.0)
         {
             recommendations.Add(new CacheRecommendation
             {
@@ -184,7 +184,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
                 Severity = metrics.AvgCacheHitRatio < 90.0 ? "high" : "medium",
                 Message = $"Cache hit ratio ниже оптимального: {metrics.AvgCacheHitRatio:F2}%",
                 CurrentValue = metrics.AvgCacheHitRatio,
-                RecommendedValue = 99.0,
+                RecommendedValue = 90.0,
                 Threshold = 95.0
             });
         }
@@ -204,7 +204,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         }
 
         // Рекомендация по увеличению shared_buffers
-        if (metrics.AvgCacheHitRatio < 95.0 && metrics.BlksReadPerMinute > 2000)
+        if (metrics.AvgCacheHitRatio < 85.0 && metrics.BlksReadPerMinute > 2000)
         {
             recommendations.Add(new CacheRecommendation
             {
@@ -212,13 +212,13 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
                 Severity = "high",
                 Message = "Критическая нехватка памяти. Рекомендуется увеличить shared_buffers",
                 CurrentValue = metrics.AvgCacheHitRatio,
-                RecommendedValue = 99.0,
+                RecommendedValue = 90.0,
                 Threshold = 95.0
             });
         }
 
         // Если все хорошо
-        if (metrics.AvgCacheHitRatio >= 99.5 && metrics.BlksReadPerMinute < 100)
+        if (metrics.AvgCacheHitRatio >= 90.0 && metrics.BlksReadPerMinute < 100)
         {
             recommendations.Add(new CacheRecommendation
             {
@@ -226,7 +226,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
                 Severity = "low",
                 Message = "Отличная производительность кэша!",
                 CurrentValue = metrics.AvgCacheHitRatio,
-                RecommendedValue = 99.5,
+                RecommendedValue = 90.0,
                 Threshold = 99.0
             });
         }
@@ -238,8 +238,8 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
     {
         return cacheHitRatio switch
         {
-            >= 99.0 => "healthy",
-            >= 95.0 => "warning",
+            >= 90.0 => "healthy",
+            >= 85.0 => "warning",
             _ => "critical"
         };
     }

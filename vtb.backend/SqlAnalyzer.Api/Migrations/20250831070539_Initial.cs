@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SqlAnalyzer.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDbConnections : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,11 +21,26 @@ namespace SqlAnalyzer.Api.Migrations
                     Database = table.Column<string>(type: "text", nullable: false),
                     Username = table.Column<string>(type: "text", nullable: false),
                     Password = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DbConnections", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QueryAnalyzers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    DbConnectionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Query = table.Column<string>(type: "text", nullable: false),
+                    AnalyzeResult = table.Column<string>(type: "text", nullable: true),
+                    CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QueryAnalyzers", x => x.Id);
                 });
         }
 
@@ -34,6 +49,9 @@ namespace SqlAnalyzer.Api.Migrations
         {
             migrationBuilder.DropTable(
                 name: "DbConnections");
+
+            migrationBuilder.DropTable(
+                name: "QueryAnalyzers");
         }
     }
 }

@@ -28,7 +28,7 @@ namespace SqlAnalyzer.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Database")
@@ -53,6 +53,30 @@ namespace SqlAnalyzer.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DbConnections");
+                });
+
+            modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.QueryAnalysis.QueryAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AnalyzeResult")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("QueryAnalyzers");
                 });
 #pragma warning restore 612, 618
         }
