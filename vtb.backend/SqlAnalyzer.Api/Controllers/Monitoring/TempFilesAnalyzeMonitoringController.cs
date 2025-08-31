@@ -24,7 +24,7 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("last-hour")]
-    public async Task<ActionResult<RecommendationResponse>> AnalyzeLastHour()
+    public async Task<ActionResult<TempFilesRecommendationResponse>> AnalyzeLastHour()
     {
         try
         {
@@ -47,7 +47,7 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
     /// <returns></returns>
     /// <remarks>Пока что рест костыльно отдает последний час</remarks>
     [HttpGet("custom-period")]
-    public async Task<ActionResult<RecommendationResponse>> AnalyzeCustomPeriod(
+    public async Task<ActionResult<TempFilesRecommendationResponse>> AnalyzeCustomPeriod(
         [FromQuery] DateTime start, 
         [FromQuery] DateTime end)
     {

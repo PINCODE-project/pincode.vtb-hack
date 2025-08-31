@@ -1,15 +1,15 @@
 ﻿namespace SqlAnalyzer.Api.Controllers.Monitoring.Dto.Response;
 
 // TODO комменты потом
-public class RecommendationResponse
+public class TempFilesRecommendationResponse
 {
     public DateTime AnalysisPeriodStart { get; set; }
     public DateTime AnalysisPeriodEnd { get; set; }
-    public List<Recommendation> Recommendations { get; set; } = new();
-    public MetricsSummary MetricsSummary { get; set; } = new();
+    public List<TempFilesRecommendation> Recommendations { get; set; } = new();
+    public TempFilesMetricsSummary MetricsSummary { get; set; } = new();
 }
 
-public class Recommendation
+public class TempFilesRecommendation
 {
     public string Type { get; set; } = string.Empty;
     // TODO энам наверное но в целом пофиг
@@ -19,7 +19,7 @@ public class Recommendation
     public double Threshold { get; set; }
 }
 
-public class MetricsSummary
+public class TempFilesMetricsSummary
 {
     public long TotalTempFiles { get; set; }
     public long TotalTempBytes { get; set; }

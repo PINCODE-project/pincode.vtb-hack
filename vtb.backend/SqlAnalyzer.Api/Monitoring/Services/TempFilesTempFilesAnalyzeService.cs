@@ -19,9 +19,9 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         _db = db;
     }
 
-    public async Task<RecommendationResponse> AnalyzeTempFilesLastHourAsync()
+    public async Task<TempFilesRecommendationResponse> AnalyzeTempFilesLastHourAsync()
     {
-        var response = new RecommendationResponse
+        var response = new TempFilesRecommendationResponse
         {
             AnalysisPeriodEnd = DateTime.UtcNow,
             AnalysisPeriodStart = DateTime.UtcNow.AddHours(-1)
@@ -34,7 +34,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
                     
             if (stats.Count < 2)
             {
-                response.Recommendations.Add(new Recommendation
+                response.Recommendations.Add(new TempFilesRecommendation
                 {
                     Type = "data",
                     Severity = "low",
@@ -52,7 +52,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при анализе данных");
-            response.Recommendations.Add(new Recommendation
+            response.Recommendations.Add(new TempFilesRecommendation
             {
                 Type = "system",
                 Severity = "high",
@@ -71,11 +71,11 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         return tempFilesStatList;
     }
 
-    private static MetricsSummary CalculateMetricsSummary(List<TempFilesStatsDal> stats)
+    private static TempFilesMetricsSummary CalculateMetricsSummary(List<TempFilesStatsDal> stats)
     {
         if (stats.Count < 2)
         {
-            return new MetricsSummary();
+            return new TempFilesMetricsSummary();
         }
 
         var first = stats.First();
@@ -90,7 +90,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         var tempFilesGrowth = last.TempFiles - first.TempFiles;
         var tempBytesGrowth = last.TempBytes - first.TempBytes;
 
-        return new MetricsSummary
+        return new TempFilesMetricsSummary
         {
             TotalTempFiles = tempFilesGrowth,
             TotalTempBytes = tempBytesGrowth,
@@ -100,15 +100,15 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         };
     }
 
-    private static List<Recommendation> GenerateRecommendations( 
-        MetricsSummary summary)
+    private static List<TempFilesRecommendation> GenerateRecommendations( 
+        TempFilesMetricsSummary summary)
     {
-        var recommendations = new List<Recommendation>();
+        var recommendations = new List<TempFilesRecommendation>();
 
         // Анализ временных файлов
         if (summary.TempFilesPerMinute > 2) // > 2 файлов в минуту
         {
-            recommendations.Add(new Recommendation
+            recommendations.Add(new TempFilesRecommendation
             {
                 Type = "work_mem",
                 Severity = summary.TempFilesPerMinute > 10 ? "high" : "medium",
@@ -121,7 +121,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
 
         if (summary.TempBytesPerSecond > 1024 * 1024) // > 1 MB/s
         {
-            recommendations.Add(new Recommendation
+            recommendations.Add(new TempFilesRecommendation
             {
                 Type = "work_mem_critical",
                 Severity = "high",
@@ -135,7 +135,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         // Если проблем не обнаружено
         if (recommendations.All(r => r.Severity != "high"))
         {
-            recommendations.Add(new Recommendation
+            recommendations.Add(new TempFilesRecommendation
             {
                 Type = "health",
                 Severity = "low",

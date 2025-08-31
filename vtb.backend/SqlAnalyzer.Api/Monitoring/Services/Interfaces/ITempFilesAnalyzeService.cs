@@ -11,5 +11,5 @@ public interface ITempFilesAnalyzeService
     /// Анализ состояния бд
     /// </summary>
     /// <returns>Рекомендации по оптимизации бд</returns>
-    Task<RecommendationResponse> AnalyzeTempFilesLastHourAsync();
+    Task<TempFilesRecommendationResponse> AnalyzeTempFilesLastHourAsync();
 }
