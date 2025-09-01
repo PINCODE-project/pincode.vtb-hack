@@ -1,4 +1,6 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Monitoring.BackgroundServices;
 using SqlAnalyzer.Api.Monitoring.Services;
@@ -12,7 +14,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var basePath = AppContext.BaseDirectory;
+
+    var xmlPath = Path.Combine(basePath, "SqlAnalyzer.Api.xml");
+    options.IncludeXmlComments(xmlPath, true);
+
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Postgresql analyzer API",
+        Description = "Сервис для анализа метрик бд и sql запросов"
+    });
+    options.UseInlineDefinitionsForEnums();
+});
 
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))); 
