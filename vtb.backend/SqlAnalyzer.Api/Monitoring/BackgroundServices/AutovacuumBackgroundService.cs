@@ -1,4 +1,7 @@
-﻿using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzer.Api.Services.DbConnection;
 
 namespace SqlAnalyzer.Api.Monitoring.BackgroundServices;
 
@@ -26,15 +29,21 @@ public class AutovacuumBackgroundService : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var monitoringService = scope.ServiceProvider.GetRequiredService<IAutovacuumMonitoringService>();
                 _logger.LogInformation("Старт сбора метрик autovacuum...");
-                var success = await monitoringService.SaveAutovacuumMetricsAsync();
-                    
-                if (success)
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
+                foreach (var connection in connectionStringList)
                 {
-                    _logger.LogInformation("Метрики autovacuum успешно сохранены");
-                }
-                else
-                {
-                    _logger.LogWarning("Не удалось сохранить метрики autovacuum");
+                    var connectionString = DbConnectionService.GetConnectionString(connection);
+                    var success = await monitoringService.SaveAutovacuumMetricsAsync(connectionString);
+
+                    if (success)
+                    {
+                        _logger.LogInformation("Метрики autovacuum успешно сохранены, connectionString={connectionString}", connectionString);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Не удалось сохранить метрики autovacuum, connectionString={connectionString}", connectionString);
+                    }
                 }
             }
             catch (Exception ex)

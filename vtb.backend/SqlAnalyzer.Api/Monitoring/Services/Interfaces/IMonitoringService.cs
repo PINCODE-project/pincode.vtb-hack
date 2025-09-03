@@ -9,11 +9,11 @@ public interface IMonitoringService
     /// 
     /// </summary>
     /// <returns></returns>
-    Task<bool> SaveTempFilesMetricsAsync();
+    Task<bool> SaveTempFilesMetricsAsync(string monitoringConnectionString);
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    Task<bool> SaveCacheHitMetricsAsync();
+    Task<bool> SaveCacheHitMetricsAsync(string monitoringConnectionString);
 }

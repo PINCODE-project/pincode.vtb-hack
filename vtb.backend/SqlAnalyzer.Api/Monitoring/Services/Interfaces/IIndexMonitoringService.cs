@@ -2,5 +2,5 @@
 
 public interface IIndexMonitoringService
 {
-    Task CollectIndexStatisticsAsync();
+    Task CollectIndexStatisticsAsync(string connectionString);
 }

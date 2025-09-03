@@ -145,31 +145,6 @@ public class AutovacuumAnalysisController : ControllerBase
     }
 
     /// <summary>
-    /// Принудительный сбор метрик
-    /// </summary>
-    [HttpPost("collect-metrics")]
-    public async Task<ActionResult> CollectMetricsNow()
-    {
-        try
-        {
-            _logger.LogInformation("Принудительный сбор метрик autovacuum");
-            var success = await _monitoringService.SaveAutovacuumMetricsAsync();
-                
-            return Ok(new
-            {
-                Success = success,
-                Message = success ? "Метрики успешно собраны" : "Ошибка при сборе метрик",
-                Timestamp = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Ошибка при принудительном сборе метрик");
-            return StatusCode(500, new { error = "Internal server error", details = ex.Message });
-        }
-    }
-
-    /// <summary>
     /// История рекомендаций
     /// </summary>
     /// <remarks>Пока не сделано</remarks>

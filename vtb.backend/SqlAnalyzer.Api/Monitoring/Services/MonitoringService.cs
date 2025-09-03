@@ -9,23 +9,21 @@ namespace SqlAnalyzer.Api.Monitoring.Services;
 internal class MonitoringService : IMonitoringService
 {
     private readonly ILogger<MonitoringService> _logger;
-    private readonly string _targetConnectionString;
     private readonly DataContext _db;
 
     // Конструктор для получения конфигурации и логгера
-    public MonitoringService(ILogger<MonitoringService> logger, IConfiguration configuration, DataContext db)
+    public MonitoringService(ILogger<MonitoringService> logger, DataContext db)
     {
         _logger = logger;
         _db = db;
-        _targetConnectionString = configuration.GetConnectionString("TargetConnection");
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveTempFilesMetricsAsync()
+    public async Task<bool> SaveTempFilesMetricsAsync(string monitoringConnectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(_targetConnectionString);
+            await using var targetConn = new NpgsqlConnection(monitoringConnectionString);
             await targetConn.OpenAsync();
 
             // Получаем текущие значения из целевой БД
@@ -50,11 +48,11 @@ internal class MonitoringService : IMonitoringService
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveCacheHitMetricsAsync()
+    public async Task<bool> SaveCacheHitMetricsAsync(string monitoringConnectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(_targetConnectionString);
+            await using var targetConn = new NpgsqlConnection(monitoringConnectionString);
             await targetConn.OpenAsync();
 
             // Получаем текущие значения кэша

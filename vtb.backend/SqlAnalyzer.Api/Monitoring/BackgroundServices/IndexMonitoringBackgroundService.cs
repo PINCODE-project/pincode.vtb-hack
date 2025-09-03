@@ -1,4 +1,7 @@
-﻿using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzer.Api.Services.DbConnection;
 
 namespace SqlAnalyzer.Api.Monitoring.BackgroundServices;
 
@@ -30,8 +33,14 @@ public class IndexMonitoringBackgroundService : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var monitoringService = scope.ServiceProvider.GetRequiredService<IIndexMonitoringService>();
                 _logger.LogInformation("Сбор метрик индексов...");
-                await monitoringService.CollectIndexStatisticsAsync();
-                _logger.LogInformation("Метрики индексов успешно сохранены");
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
+                foreach (var connection in connectionStringList)
+                {
+                    var connectionString = DbConnectionService.GetConnectionString(connection);
+                    await monitoringService.CollectIndexStatisticsAsync(connectionString);
+                    _logger.LogInformation("Метрики индексов успешно сохранены, connectionString={connectionString}", connectionString);
+                }
             }
             catch (Exception ex)
             {

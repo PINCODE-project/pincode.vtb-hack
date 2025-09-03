@@ -55,4 +55,9 @@ public class DbConnectionService : IDbConnectionService
             return new DbConnectionCheckDto(false, ex.Message);
         }
     }
+
+    public static string GetConnectionString(DbConnection connection)
+    {
+        return $"Host={connection.Host};Port={connection.Port};Database={connection.Database};Username={connection.Username};Password={connection.Password};Pooling=false;Timeout=3";
+    }
 }

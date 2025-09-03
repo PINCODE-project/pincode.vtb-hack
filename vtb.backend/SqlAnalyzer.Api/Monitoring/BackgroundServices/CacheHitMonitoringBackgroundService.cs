@@ -1,4 +1,7 @@
-﻿using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzer.Api.Services.DbConnection;
 
 namespace SqlAnalyzer.Api.Monitoring.BackgroundServices;
 
@@ -29,15 +32,22 @@ public class CacheHitMonitoringBackgroundService : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
                 _logger.LogInformation("Сбор метрик cache hit ratio...");
-                var success = await monitoringService.SaveCacheHitMetricsAsync();
-                    
-                if (success)
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
+                // TODO можно параллельно сделать
+                foreach (var connection in connectionStringList)
                 {
-                    _logger.LogInformation("Метрики cache hit ratio успешно сохранены");
-                }
-                else
-                {
-                    _logger.LogWarning("Не удалось сохранить метрики cache hit ratio");
+                    var connectionString = DbConnectionService.GetConnectionString(connection);
+                    var success = await monitoringService.SaveCacheHitMetricsAsync(connectionString);
+
+                    if (success)
+                    {
+                        _logger.LogInformation("Метрики cache hit ratio успешно сохранены, connectionString={connectionString}", connectionString);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Не удалось сохранить метрики cache hit ratio, connectionString={connectionString}", connectionString);
+                    }
                 }
             }
             catch (Exception ex)

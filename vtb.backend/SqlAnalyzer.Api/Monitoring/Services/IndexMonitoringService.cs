@@ -14,31 +14,29 @@ using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 public class IndexMonitoringService : IIndexMonitoringService
 {
     private readonly DataContext _context;
-    private readonly string _targetConnectionString;
     
-    public IndexMonitoringService(DataContext context, IConfiguration configuration)
+    public IndexMonitoringService(DataContext context)
     {
-        _targetConnectionString = configuration.GetConnectionString("TargetConnection");
         _context = context;
     }
     
-    public async Task CollectIndexStatisticsAsync()
+    public async Task CollectIndexStatisticsAsync(string connectionString)
     {
-        var indexStats = await GetIndexStatisticsAsync();
-        var bloatStats = await GetBloatStatisticsAsync();
-        var seqScanStats = await GetSeqScanStatisticsAsync();
-        var tableStats = await GetTableStatisticsAsync();
+        var indexStats = await GetIndexStatisticsAsync(connectionString);
+        var bloatStats = await GetBloatStatisticsAsync(connectionString);
+        var seqScanStats = await GetSeqScanStatisticsAsync(connectionString);
+        var tableStats = await GetTableStatisticsAsync(connectionString);
         
         var combinedStats = CombineStatistics(indexStats, bloatStats, seqScanStats, tableStats);
         
         await SaveStatisticsAsync(combinedStats);
     }
     
-    private async Task<List<IndexStatRecord>> GetIndexStatisticsAsync()
+    private async Task<List<IndexStatRecord>> GetIndexStatisticsAsync(string connectionString)
     {
         var results = new List<IndexStatRecord>();
         
-        using var connection = new NpgsqlConnection(_targetConnectionString);
+        using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         
         using var command = new NpgsqlCommand(@"
@@ -85,11 +83,11 @@ public class IndexMonitoringService : IIndexMonitoringService
         return results;
     }
     
-    private async Task<List<BloatStatRecord>> GetBloatStatisticsAsync()
+    private async Task<List<BloatStatRecord>> GetBloatStatisticsAsync(string connectionString)
     {
         var results = new List<BloatStatRecord>();
 
-        await using var connection = new NpgsqlConnection(_targetConnectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(@"
@@ -125,11 +123,11 @@ public class IndexMonitoringService : IIndexMonitoringService
         return results;
     }
     
-    private async Task<List<SeqScanRecord>> GetSeqScanStatisticsAsync()
+    private async Task<List<SeqScanRecord>> GetSeqScanStatisticsAsync(string connectionString)
     {
         var results = new List<SeqScanRecord>();
         
-        using var connection = new NpgsqlConnection(_targetConnectionString);
+        using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         
         using var command = new NpgsqlCommand(@"
@@ -164,11 +162,11 @@ public class IndexMonitoringService : IIndexMonitoringService
         return results;
     }
     
-    private async Task<List<TableStatRecord>> GetTableStatisticsAsync()
+    private async Task<List<TableStatRecord>> GetTableStatisticsAsync(string connectionString)
     {
         var results = new List<TableStatRecord>();
         
-        using var connection = new NpgsqlConnection(_targetConnectionString);
+        using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         
         using var command = new NpgsqlCommand(@"

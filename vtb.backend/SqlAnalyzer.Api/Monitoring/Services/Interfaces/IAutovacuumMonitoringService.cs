@@ -2,5 +2,5 @@
 
 public interface IAutovacuumMonitoringService
 {
-    Task<bool> SaveAutovacuumMetricsAsync();
+    Task<bool> SaveAutovacuumMetricsAsync(string connectionString);
 }

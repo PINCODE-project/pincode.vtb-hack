@@ -10,23 +10,20 @@ public class AutovacuumMonitoringService : IAutovacuumMonitoringService
 {
     private readonly ILogger<AutovacuumMonitoringService> _logger;
     private readonly DataContext _context;
-    private readonly string _targetConnectionString;
 
     public AutovacuumMonitoringService(
         ILogger<AutovacuumMonitoringService> logger, 
-        DataContext context,
-        IConfiguration configuration)
+        DataContext context)
     {
         _logger = logger;
         _context = context;
-        _targetConnectionString = configuration.GetConnectionString("TargetConnection");
     }
 
-    public async Task<bool> SaveAutovacuumMetricsAsync()
+    public async Task<bool> SaveAutovacuumMetricsAsync(string connectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(_targetConnectionString);
+            await using var targetConn = new NpgsqlConnection(connectionString);
             await targetConn.OpenAsync();
 
             var currentStats = await GetCurrentTableStats(targetConn);
