@@ -420,6 +420,28 @@ def editor_page():
     </aside>
     <main class=\"main\">
       <textarea id=\"editor\" spellcheck=\"false\" placeholder=\"Выберите файл слева...\"></textarea>
+      <div class=\"run-panel\">
+        <div class=\"run-toolbar\">
+          <div class=\"group\">
+            <div class=\"title\">Запустить один (/request)</div>
+            <div class=\"row\">
+              <input id=\"runN\" type=\"number\" min=\"1\" placeholder=\"n (по умолчанию выбранный)\" />
+              <label class=\"chk\"><input id=\"runTransactional1\" type=\"checkbox\" /> transactional</label>
+              <button id=\"runSingleBtn\" class=\"primary\">Запустить</button>
+            </div>
+          </div>
+          <div class=\"group\">
+            <div class=\"title\">Запустить все (/requests)</div>
+            <div class=\"row\">
+              <input id=\"runCount\" type=\"number\" min=\"1\" value=\"1\" placeholder=\"count\" />
+              <label class=\"chk\"><input id=\"runTransactionalMany\" type=\"checkbox\" /> transactional</label>
+              <input id=\"runWorkers\" type=\"number\" min=\"1\" placeholder=\"max_workers (опц.)\" />
+              <button id=\"runManyBtn\" class=\"primary\">Запустить</button>
+            </div>
+          </div>
+        </div>
+        <div id=\"runResults\" class=\"run-results\"></div>
+      </div>
       <div class=\"bottom-bar\">
         <button id=\"saveBtn\" class=\"primary\">Сохранить</button>
         <button id=\"deleteBtn\" class=\"danger\">Удалить</button>
@@ -456,6 +478,16 @@ textarea { width: 100%; height: 100%; resize: none; border: none; outline: none;
 .danger { background:#dc2626; border-color:#b91c1c; }
 .muted { background:#374151; border-color:#4b5563; }
 .status { margin-left:auto; opacity:0.8; }
+.run-panel { border-top:1px solid #1f2937; background:#0f172a; }
+.run-toolbar { display:grid; grid-template-columns: 1fr 1fr; gap:16px; padding: 12px; }
+.run-toolbar .group { background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:10px; }
+.run-toolbar .title { font-size:12px; opacity:0.8; margin-bottom:8px; }
+.run-toolbar .row { display:flex; gap:8px; align-items:center; }
+.run-toolbar input[type=number] { width: 170px; background:#111827; color:#e5e7eb; border:1px solid #374151; border-radius:6px; padding:6px 8px; }
+.run-toolbar .chk { display:flex; align-items:center; gap:6px; }
+.run-results { padding: 10px 12px; border-top:1px solid #1f2937; }
+.result-box { background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:10px; }
+.result-box pre { margin:0; white-space:pre-wrap; word-break:break-word; font-size:12px; color:#cbd5e1; }
 """
     return PlainTextResponse(css, media_type="text/css")
 
@@ -471,6 +503,21 @@ const statusEl = el('#status');
 let currentN = null;
 
 const api = {
+  async runSingle(n, transactional) {
+    const params = new URLSearchParams();
+    if (transactional) params.set('transactional', 'true');
+    const r = await fetch(`/request/${n}?` + params.toString());
+    if (!r.ok) throw new Error('request failed');
+    return r.json();
+  },
+  async runMany(count, transactional, maxWorkers) {
+    const params = new URLSearchParams();
+    if (transactional) params.set('transactional', 'true');
+    if (maxWorkers) params.set('max_workers', String(maxWorkers));
+    const r = await fetch(`/requests/${count}?` + params.toString());
+    if (!r.ok) throw new Error('requests failed');
+    return r.json();
+  },
   async list() {
     const r = await fetch('/api/scripts');
     if (!r.ok) throw new Error('list failed');
@@ -566,8 +613,50 @@ document.addEventListener('DOMContentLoaded', () => {
     try { await api.createEmpty(); await refresh(); setStatus('Создан'); }
     catch (e) { setStatus('Ошибка создания'); }
   });
+  // Run single
+  el('#runSingleBtn').addEventListener('click', async () => {
+    try {
+      const nInput = el('#runN').value;
+      const n = nInput ? Number(nInput) : currentN;
+      const transactional = el('#runTransactional1').checked;
+      if (!n) { setStatus('Укажите n или выберите файл'); return; }
+      setStatus('Запуск...');
+      const res = await api.runSingle(n, transactional);
+      renderRunResult(res);
+      setStatus('Готово');
+    } catch (e) { setStatus('Ошибка запуска'); }
+  });
+  // Run many
+  el('#runManyBtn').addEventListener('click', async () => {
+    try {
+      const count = Number(el('#runCount').value || '1');
+      const transactional = el('#runTransactionalMany').checked;
+      const workers = el('#runWorkers').value ? Number(el('#runWorkers').value) : undefined;
+      setStatus('Запуск...');
+      const res = await api.runMany(count, transactional, workers);
+      renderRunResult(res);
+      setStatus('Готово');
+    } catch (e) { setStatus('Ошибка запуска'); }
+  });
   refresh();
 });
+
+function renderRunResult(data) {
+  const box = document.createElement('div');
+  box.className = 'result-box';
+  const pretty = JSON.stringify(data, null, 2);
+  box.innerHTML = `<pre>${escapeHtml(pretty)}</pre>`;
+  const cont = el('#runResults');
+  cont.innerHTML = '';
+  cont.appendChild(box);
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 """
     return PlainTextResponse(js, media_type="application/javascript")
 
