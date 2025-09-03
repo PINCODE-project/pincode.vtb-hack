@@ -1,0 +1,22 @@
+bin/
+obj/
+*.user
+*.suo
+*.swp
+*.log
+*.tmp
+
+.git
+.gitignore
+.vscode
+.idea
+
+# Кеши и артефакты
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/node_modules/
+
+# Не исключаем appsettings.json, чтобы значения можно было переопределять env-переменными

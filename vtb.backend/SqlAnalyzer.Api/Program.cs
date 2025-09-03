@@ -33,9 +33,11 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))); 
 
+var llmBaseUrl = builder.Configuration["LLM_BASE_URL"] ?? "http://5.39.220.103:5009";
+
 builder.Services.AddHttpClient<ILlmClient, LlmClient>(client =>
 {
-    client.BaseAddress = new Uri("http://5.39.220.103:5009"); 
+    client.BaseAddress = new Uri(llmBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
