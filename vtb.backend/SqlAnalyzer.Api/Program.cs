@@ -30,6 +30,13 @@ builder.Services.AddSwaggerGen(options =>
     options.UseInlineDefinitionsForEnums();
 });
 
+// Переписываем TargetConnection из DB_DSN при наличии
+var dbDsn = builder.Configuration["DB_DSN"];
+if (!string.IsNullOrWhiteSpace(dbDsn))
+{
+    builder.Configuration["ConnectionStrings:TargetConnection"] = dbDsn;
+}
+
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))); 
 
