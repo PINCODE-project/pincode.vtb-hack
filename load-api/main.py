@@ -11,7 +11,7 @@ from statistics import mean, median
 from typing import List
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Body
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from psycopg_pool import ConnectionPool
 
 # -----------------------------
@@ -398,29 +398,8 @@ def editor_page():
   <meta charset=\"UTF-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <title>SQL Editor</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
-    header { padding: 12px 16px; background: #111827; border-bottom: 1px solid #1f2937; display:flex; align-items:center; gap:12px; }
-    header h1 { margin: 0; font-size: 16px; font-weight: 600; }
-    .container { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 50px); }
-    .sidebar { border-right: 1px solid #1f2937; overflow-y: auto; }
-    .toolbar { padding: 12px; display:flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #1f2937; }
-    .toolbar button, .toolbar label { background:#1f2937; color:#e5e7eb; border:1px solid #374151; padding:8px 10px; border-radius:6px; cursor:pointer; font-size: 13px; }
-    .toolbar input[type=file] { display:none; }
-    .file-list { padding: 8px; }
-    .file-item { display:flex; justify-content: space-between; align-items:center; padding: 8px 10px; margin-bottom:6px; background:#0b1220; border:1px solid #1f2937; border-radius:6px; cursor:pointer; }
-    .file-item.active { outline: 2px solid #3b82f6; }
-    .file-actions { display:flex; gap:6px; }
-    .main { display: grid; grid-template-rows: 1fr auto; }
-    textarea { width: 100%; height: 100%; resize: none; border: none; outline: none; padding: 14px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace; font-size: 13px; color:#e5e7eb; background:#0b1220; }
-    .bottom-bar { display:flex; gap:8px; padding: 10px; border-top:1px solid #1f2937; background:#111827; }
-    .primary { background:#2563eb; border-color:#1d4ed8; }
-    .danger { background:#dc2626; border-color:#b91c1c; }
-    .muted { background:#374151; border-color:#4b5563; }
-    .status { margin-left:auto; opacity:0.8; }
-  </style>
   <link rel=\"icon\" href=\"data:,\" />
-  <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;\" />
+  <link rel=\"stylesheet\" href=\"/editor.css\" />
 </head>
 <body>
   <header>
@@ -448,119 +427,149 @@ def editor_page():
       </div>
     </main>
   </div>
-  <script>
-    const el = (sel) => document.querySelector(sel);
-    const filesEl = el('#files');
-    const editorEl = el('#editor');
-    const opStatusEl = el('#opStatus');
-    const statusEl = el('#status');
-    let currentN = null;
-
-    const api = {
-      async list() {
-        const r = await fetch('/api/scripts');
-        if (!r.ok) throw new Error('list failed');
-        return r.json();
-      },
-      async get(n) {
-        const r = await fetch(`/api/scripts/${n}`);
-        if (!r.ok) throw new Error('get failed');
-        return r.json();
-      },
-      async save(n, content) {
-        const r = await fetch(`/api/scripts/${n}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
-        if (!r.ok) throw new Error('save failed');
-        return r.json();
-      },
-      async upload(fileList) {
-        const fd = new FormData();
-        for (const f of fileList) fd.append('files', f);
-        const r = await fetch('/api/scripts/upload', { method: 'POST', body: fd });
-        if (!r.ok) throw new Error('upload failed');
-        return r.json();
-      },
-      async del(n) {
-        const r = await fetch(`/api/scripts/${n}`, { method: 'DELETE' });
-        if (!r.ok) throw new Error('delete failed');
-        return r.json();
-      },
-      async createEmpty() {
-        // загрузить пустой файл как новый скрипт
-        const blob = new Blob([''], { type: 'text/plain' });
-        const file = new File([blob], 'empty.sql');
-        return this.upload([file]);
-      }
-    };
-
-    function setStatus(text, transient = true) {
-      opStatusEl.textContent = text || '';
-      if (transient && text) setTimeout(() => { if (opStatusEl.textContent === text) opStatusEl.textContent = ''; }, 2000);
-    }
-
-    function renderList(items) {
-      filesEl.innerHTML = '';
-      for (const it of items) {
-        const div = document.createElement('div');
-        div.className = 'file-item' + (currentN === it.n ? ' active' : '');
-        div.innerHTML = `<span>${it.filename}</span><span class=\"file-actions\"></span>`;
-        div.addEventListener('click', async () => {
-          try {
-            const data = await api.get(it.n);
-            currentN = it.n;
-            editorEl.value = data.content || '';
-            renderList(items.map(x => ({...x})));
-            setStatus(`Открыт ${it.filename}`);
-          } catch (e) { setStatus('Ошибка открытия'); }
-        });
-        filesEl.appendChild(div);
-      }
-    }
-
-    async function refresh() {
-      try {
-        statusEl.textContent = '';
-        const data = await api.list();
-        renderList(data.items);
-        // если после операций номера могли сместиться — пересчитать currentN
-        if (currentN) {
-          const exists = data.items.some(i => i.n === currentN);
-          if (!exists) { currentN = null; editorEl.value = ''; }
-        }
-      } catch (e) {
-        statusEl.textContent = 'Ошибка загрузки списка';
-      }
-    }
-
-    // Wire UI
-    el('#refreshBtn').addEventListener('click', refresh);
-    el('#fileInput').addEventListener('change', async (ev) => {
-      if (!ev.target.files?.length) return;
-      try { await api.upload(ev.target.files); setStatus('Загружено'); await refresh(); }
-      catch (e) { setStatus('Ошибка загрузки'); }
-      finally { ev.target.value = ''; }
-    });
-    el('#saveBtn').addEventListener('click', async () => {
-      if (!currentN) { setStatus('Нет выбранного файла'); return; }
-      try { await api.save(currentN, editorEl.value); setStatus('Сохранено'); }
-      catch (e) { setStatus('Ошибка сохранения'); }
-    });
-    el('#deleteBtn').addEventListener('click', async () => {
-      if (!currentN) { setStatus('Нет выбранного файла'); return; }
-      if (!confirm('Удалить файл?')) return;
-      try { await api.del(currentN); currentN = null; editorEl.value = ''; await refresh(); setStatus('Удалено'); }
-      catch (e) { setStatus('Ошибка удаления'); }
-    });
-    el('#createBtn').addEventListener('click', async () => {
-      try { await api.createEmpty(); await refresh(); setStatus('Создан'); }
-      catch (e) { setStatus('Ошибка создания'); }
-    });
-
-    refresh();
-  </script>
+  <script defer src=\"/editor.js\"></script>
 </body>
 </html>
     """
     return HTMLResponse(content=html)
+
+
+@app.get("/editor.css")
+def editor_css():
+    css = """
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+header { padding: 12px 16px; background: #111827; border-bottom: 1px solid #1f2937; display:flex; align-items:center; gap:12px; }
+header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.container { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 50px); }
+.sidebar { border-right: 1px solid #1f2937; overflow-y: auto; }
+.toolbar { padding: 12px; display:flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #1f2937; }
+.toolbar button, .toolbar label { background:#1f2937; color:#e5e7eb; border:1px solid #374151; padding:8px 10px; border-radius:6px; cursor:pointer; font-size: 13px; }
+.toolbar input[type=file] { display:none; }
+.file-list { padding: 8px; }
+.file-item { display:flex; justify-content: space-between; align-items:center; padding: 8px 10px; margin-bottom:6px; background:#0b1220; border:1px solid #1f2937; border-radius:6px; cursor:pointer; }
+.file-item.active { outline: 2px solid #3b82f6; }
+.file-actions { display:flex; gap:6px; }
+.main { display: grid; grid-template-rows: 1fr auto; }
+textarea { width: 100%; height: 100%; resize: none; border: none; outline: none; padding: 14px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace; font-size: 13px; color:#e5e7eb; background:#0b1220; }
+.bottom-bar { display:flex; gap:8px; padding: 10px; border-top:1px solid #1f2937; background:#111827; }
+.primary { background:#2563eb; border-color:#1d4ed8; }
+.danger { background:#dc2626; border-color:#b91c1c; }
+.muted { background:#374151; border-color:#4b5563; }
+.status { margin-left:auto; opacity:0.8; }
+"""
+    return PlainTextResponse(css, media_type="text/css")
+
+
+@app.get("/editor.js")
+def editor_js():
+    js = """
+const el = (sel) => document.querySelector(sel);
+const filesEl = el('#files');
+const editorEl = el('#editor');
+const opStatusEl = el('#opStatus');
+const statusEl = el('#status');
+let currentN = null;
+
+const api = {
+  async list() {
+    const r = await fetch('/api/scripts');
+    if (!r.ok) throw new Error('list failed');
+    return r.json();
+  },
+  async get(n) {
+    const r = await fetch(`/api/scripts/${n}`);
+    if (!r.ok) throw new Error('get failed');
+    return r.json();
+  },
+  async save(n, content) {
+    const r = await fetch(`/api/scripts/${n}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+    if (!r.ok) throw new Error('save failed');
+    return r.json();
+  },
+  async upload(fileList) {
+    const fd = new FormData();
+    for (const f of fileList) fd.append('files', f);
+    const r = await fetch('/api/scripts/upload', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error('upload failed');
+    return r.json();
+  },
+  async del(n) {
+    const r = await fetch(`/api/scripts/${n}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error('delete failed');
+    return r.json();
+  },
+  async createEmpty() {
+    const blob = new Blob([''], { type: 'text/plain' });
+    const file = new File([blob], 'empty.sql');
+    return this.upload([file]);
+  }
+};
+
+function setStatus(text, transient = true) {
+  opStatusEl.textContent = text || '';
+  if (transient && text) setTimeout(() => { if (opStatusEl.textContent === text) opStatusEl.textContent = ''; }, 2000);
+}
+
+function renderList(items) {
+  filesEl.innerHTML = '';
+  for (const it of items) {
+    const div = document.createElement('div');
+    div.className = 'file-item' + (currentN === it.n ? ' active' : '');
+    div.innerHTML = `<span>${it.filename}</span><span class=\\"file-actions\\"></span>`;
+    div.addEventListener('click', async () => {
+      try {
+        const data = await api.get(it.n);
+        currentN = it.n;
+        editorEl.value = data.content || '';
+        renderList(items.map(x => ({...x})));
+        setStatus(`Открыт ${it.filename}`);
+      } catch (e) { setStatus('Ошибка открытия'); }
+    });
+    filesEl.appendChild(div);
+  }
+}
+
+async function refresh() {
+  try {
+    statusEl.textContent = '';
+    const data = await api.list();
+    renderList(data.items);
+    if (currentN) {
+      const exists = data.items.some(i => i.n === currentN);
+      if (!exists) { currentN = null; editorEl.value = ''; }
+    }
+  } catch (e) {
+    statusEl.textContent = 'Ошибка загрузки списка';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  el('#refreshBtn').addEventListener('click', refresh);
+  el('#fileInput').addEventListener('change', async (ev) => {
+    if (!ev.target.files?.length) return;
+    try { await api.upload(ev.target.files); setStatus('Загружено'); await refresh(); }
+    catch (e) { setStatus('Ошибка загрузки'); }
+    finally { ev.target.value = ''; }
+  });
+  el('#saveBtn').addEventListener('click', async () => {
+    if (!currentN) { setStatus('Нет выбранного файла'); return; }
+    try { await api.save(currentN, editorEl.value); setStatus('Сохранено'); }
+    catch (e) { setStatus('Ошибка сохранения'); }
+  });
+  el('#deleteBtn').addEventListener('click', async () => {
+    if (!currentN) { setStatus('Нет выбранного файла'); return; }
+    if (!confirm('Удалить файл?')) return;
+    try { await api.del(currentN); currentN = null; editorEl.value = ''; await refresh(); setStatus('Удалено'); }
+    catch (e) { setStatus('Ошибка удаления'); }
+  });
+  el('#createBtn').addEventListener('click', async () => {
+    try { await api.createEmpty(); await refresh(); setStatus('Создан'); }
+    catch (e) { setStatus('Ошибка создания'); }
+  });
+  refresh();
+});
+"""
+    return PlainTextResponse(js, media_type="application/javascript")
 
 # -----------------------------
 # Запуск: uvicorn server:app --reload
