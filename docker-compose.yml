@@ -42,7 +42,7 @@ services:
       DB_DSN: ${DB_DSN}
       SCRIPTS_DIR: /app/sql
     volumes:
-      - ./load-api/sql:/app/sql:ro
+      - ./load-api/sql:/app/sql
     ports:
       - "5024:8000"
     depends_on:
