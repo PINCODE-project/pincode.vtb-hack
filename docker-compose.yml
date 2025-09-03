@@ -28,7 +28,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       LLM_BASE_URL: http://5.39.220.103:5009
     ports:
-      - "5003:8080"
+      - "5023:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
     volumes:
       - ./load-api/sql:/app/sql:ro
     ports:
-      - "8000:8000"
+      - "5024:8000"
     depends_on:
       postgres:
         condition: service_healthy
