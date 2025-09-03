@@ -16,6 +16,7 @@ public class DataContext: DbContext
     public DbSet<AutovacuumStat> AutovacuumStats { get; set; }
     
     public DbSet<TempFilesStatsDal> TempFilesStats { get; set; }
+    public DbSet<IndexMetric> IndexMetrics { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
