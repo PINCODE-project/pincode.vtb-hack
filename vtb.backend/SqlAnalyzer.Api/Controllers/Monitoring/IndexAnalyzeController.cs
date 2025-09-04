@@ -14,17 +14,10 @@ public class IndexAnalyzeController  : ControllerBase
         _analysisService = analysisService;
     }
 
-    [HttpGet("analyze")]
-    public async Task<IActionResult> AnalyzeAsync()
-    {
-        var result = await _analysisService.AnalyzeIndexesAsync();
-        return Ok(result);
-    }
-
     [HttpGet("recommendations")]
     public async Task<IActionResult> GetRecommendationsAsync()
     {
-        var recommendations = await _analysisService.AnalyzeIndexesAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
+        var recommendations = await _analysisService.GetFullAnalysisAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
         return Ok(recommendations);
     }
 }

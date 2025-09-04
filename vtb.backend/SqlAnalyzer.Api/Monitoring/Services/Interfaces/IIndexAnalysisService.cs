@@ -2,5 +2,5 @@
 
 public interface IIndexAnalysisService
 {
-    Task<IndexAnalysisReport> AnalyzeIndexesAsync(DateTime? fromDate = null, DateTime? toDate = null);
+    Task<IndexAnalysisResult> GetFullAnalysisAsync(DateTime startDate, DateTime endDate);
 }

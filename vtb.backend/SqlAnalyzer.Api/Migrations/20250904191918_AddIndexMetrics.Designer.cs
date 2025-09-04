@@ -12,8 +12,8 @@ using SqlAnalyzer.Api.Dal;
 namespace SqlAnalyzer.Api.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250903155828_AddIndexMonitoring")]
-    partial class AddIndexMonitoring
+    [Migration("20250904191918_AddIndexMetrics")]
+    partial class AddIndexMetrics
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,19 +31,10 @@ namespace SqlAnalyzer.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<double>("BloatFactor")
-                        .HasColumnType("double precision");
-
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("DeadTupleRatio")
-                        .HasColumnType("double precision");
-
-                    b.Property<long>("DeadTuples")
-                        .HasColumnType("bigint");
-
-                    b.Property<double>("IndexEfficiency")
+                    b.Property<double>("Efficiency")
                         .HasColumnType("double precision");
 
                     b.Property<string>("IndexName")
@@ -53,26 +44,12 @@ namespace SqlAnalyzer.Api.Migrations
                     b.Property<long>("IndexScans")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("IndexSize")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("IndexStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("LiveTuples")
+                    b.Property<long>("IndexSize")
                         .HasColumnType("bigint");
 
                     b.Property<string>("SchemaName")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<double>("SeqScanRatio")
-                        .HasColumnType("double precision");
-
-                    b.Property<long>("SequentialScans")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("TableName")
                         .IsRequired()
@@ -188,6 +165,43 @@ namespace SqlAnalyzer.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CacheHitStats");
+                });
+
+            modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.TableStatictics", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CountSeqScan")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("IndexCountSeqScan")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("IndexUsageRatio")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("SchemaName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("TuplesFetchedIndexScan")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TuplesReadCountSeqScan")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TableStatictics");
                 });
 
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.TempFilesStatsDal", b =>
