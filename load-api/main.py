@@ -8,9 +8,10 @@ from pathlib import Path
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from statistics import mean, median
+from typing import List
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Body
+from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from psycopg_pool import ConnectionPool
 
 # -----------------------------
@@ -45,6 +46,86 @@ def _require_scripts_dir():
         raise HTTPException(status_code=500, detail=f"Scripts dir not found: {SCRIPTS_DIR}")
     if not SCRIPTS_DIR.is_dir():
         raise HTTPException(status_code=500, detail=f"Scripts path is not a dir: {SCRIPTS_DIR}")
+
+
+def _ensure_scripts_dir():
+    """
+    Создать каталог sql при необходимости.
+    """
+    if not SCRIPTS_DIR.exists():
+        SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
+    if not SCRIPTS_DIR.is_dir():
+        raise HTTPException(status_code=500, detail=f"Scripts path is not a dir: {SCRIPTS_DIR}")
+
+
+def _list_numeric_sql_paths() -> list[Path]:
+    """
+    Вернуть пути к *.sql, у которых имя — число, отсортированные по возрастанию числа.
+    """
+    _ensure_scripts_dir()
+    pairs: list[tuple[int, Path]] = []
+    for p in SCRIPTS_DIR.glob("*.sql"):
+        m = NUMERIC_SQL_RE.match(p.name)
+        if m:
+            pairs.append((int(m.group(1)), p))
+    pairs.sort(key=lambda t: t[0])
+    return [p for _, p in pairs]
+
+
+def _renumber_scripts() -> None:
+    """
+    Обеспечить непрерывную нумерацию файлов 1..n без дырок.
+    Выполняется в две фазы, чтобы избежать конфликтов имён при переименовании.
+    """
+    files = _list_numeric_sql_paths()
+    if not files:
+        return
+
+    # Фаза 1: временные имена, чтобы избежать конфликтов
+    temp_paths: list[Path] = []
+    for idx, path in enumerate(files, start=1):
+        if path.name != f"{idx}.sql":
+            tmp = path.with_name(f".__tmp_{idx}__.sql")
+            if tmp.exists():
+                tmp.unlink()
+            path.rename(tmp)
+            temp_paths.append(tmp)
+        else:
+            # Уже корректное имя — оставляем как есть, но фиксируем как не требующий второй фазы
+            pass
+
+    # Фаза 2: пронумеровать строго как 1.sql .. n.sql
+    # Сначала заново собрать список: темпы + уже правильные имена
+    files_after = _list_numeric_sql_paths() + temp_paths
+    # Создать упорядоченный список на основе чисел в имени, если это .__tmp_*.sql — берём число из шаблона
+    ordered: list[Path] = []
+    for p in files_after:
+        m_num = NUMERIC_SQL_RE.match(p.name)
+        if m_num:
+            ordered.append(p)
+    # Плюс временные
+    ordered += temp_paths
+
+    # Итоговая перенумерация от 1
+    current = _list_numeric_sql_paths()  # пересобрать список корректных на данный момент
+    # Начнём с чистого упорядоченного множества путей к файлам (темпы в конце тоже учтём)
+    paths_to_process = []
+    seen = set()
+    for p in current + temp_paths:
+        if p.exists() and p not in seen:
+            paths_to_process.append(p)
+            seen.add(p)
+
+    for idx, p in enumerate(paths_to_process, start=1):
+        dest = SCRIPTS_DIR / f"{idx}.sql"
+        if p == dest:
+            continue
+        if dest.exists():
+            dest.unlink()
+        p.rename(dest)
+
+    # Сбросить кэш чтения, так как имена/содержимое могли измениться
+    _load_script.cache_clear()
 
 
 def _discover_script_numbers() -> list[int]:
@@ -216,6 +297,368 @@ async def run_all_many(
 def health():
     return {"status": "ok"}
 
+
+# -----------------------------
+# Файловый менеджмент для каталога sql (загрузка/удаление/чтение/редактирование) + UI /editor
+# -----------------------------
+
+@app.get("/api/scripts")
+def list_scripts():
+    """
+    Список файлов 1..n в каталоге sql.
+    """
+    _ensure_scripts_dir()
+    _renumber_scripts()  # на всякий случай поддерживаем непрерывность
+    items = []
+    for p in _list_numeric_sql_paths():
+        m = NUMERIC_SQL_RE.match(p.name)
+        n = int(m.group(1)) if m else None
+        items.append({
+            "n": n,
+            "filename": p.name,
+            "size": p.stat().st_size,
+        })
+    return {"status": "ok", "items": items}
+
+
+@app.get("/api/scripts/{n}")
+def get_script_content(n: int):
+    """
+    Получить содержимое файла n.sql
+    """
+    content = _load_script(n)
+    return {"status": "ok", "n": n, "filename": f"{n}.sql", "content": content}
+
+
+@app.put("/api/scripts/{n}")
+def update_script_content(n: int, payload: dict = Body(...)):
+    """
+    Перезаписать содержимое файла n.sql. Тело: {"content": "..."}
+    """
+    _ensure_scripts_dir()
+    path = SCRIPTS_DIR / f"{n}.sql"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Script {n}.sql not found")
+    content = payload.get("content")
+    if content is None:
+        raise HTTPException(status_code=400, detail="Missing 'content' field")
+    path.write_text(str(content), encoding="utf-8")
+    _load_script.cache_clear()
+    return {"status": "ok", "n": n, "filename": f"{n}.sql"}
+
+
+@app.post("/api/scripts/upload")
+async def upload_scripts(files: List[UploadFile] = File(...)):
+    """
+    Загрузка одного или нескольких файлов. Игнорируем исходные имена —
+    сохраняем как next.sql, где next = (кол-во существующих файлов) + 1,
+    предварительно выравнивая нумерацию до 1..n.
+    """
+    _ensure_scripts_dir()
+    _renumber_scripts()
+    saved = []
+    for f in files:
+        try:
+            data = await f.read()
+        finally:
+            await f.close()
+        existing = _list_numeric_sql_paths()
+        next_n = len(existing) + 1
+        dest = SCRIPTS_DIR / f"{next_n}.sql"
+        dest.write_bytes(data)
+        saved.append({"n": next_n, "filename": dest.name, "size": len(data)})
+    _load_script.cache_clear()
+    return {"status": "ok", "saved": saved}
+
+
+@app.delete("/api/scripts/{n}")
+def delete_script(n: int):
+    """
+    Удалить n.sql и перенумеровать оставшиеся в 1..(n-1).
+    """
+    _ensure_scripts_dir()
+    path = SCRIPTS_DIR / f"{n}.sql"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Script {n}.sql not found")
+    path.unlink()
+    _renumber_scripts()
+    _load_script.cache_clear()
+    return {"status": "ok"}
+
+
+@app.get("/editor")
+def editor_page():
+    """
+    Простой UI-редактор, доступный по /editor, для просмотра/редактирования/загрузки/удаления SQL-скриптов.
+    """
+    html = """
+<!DOCTYPE html>
+<html lang=\"ru\">
+<head>
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>SQL Editor</title>
+  <link rel=\"icon\" href=\"data:,\" />
+  <link rel=\"stylesheet\" href=\"/editor.css\" />
+</head>
+<body>
+  <header>
+    <h1>SQL Editor</h1>
+    <span id=\"status\"></span>
+  </header>
+  <div class=\"container\">
+    <aside class=\"sidebar\">
+      <div class=\"toolbar\">
+        <label>
+          Загрузить файл(ы)
+          <input id=\"fileInput\" type=\"file\" multiple />
+        </label>
+        <button id=\"createBtn\" class=\"muted\">Создать пустой скрипт</button>
+        <button id=\"refreshBtn\" class=\"muted\">Обновить список</button>
+      </div>
+      <div id=\"files\" class=\"file-list\"></div>
+    </aside>
+    <main class=\"main\">
+      <textarea id=\"editor\" spellcheck=\"false\" placeholder=\"Выберите файл слева...\"></textarea>
+      <div class=\"run-panel\">
+        <div class=\"run-toolbar\">
+          <div class=\"group\">
+            <div class=\"title\">Запустить один (/request)</div>
+            <div class=\"row\">
+              <input id=\"runN\" type=\"number\" min=\"1\" placeholder=\"n (по умолчанию выбранный)\" />
+              <label class=\"chk\"><input id=\"runTransactional1\" type=\"checkbox\" /> transactional</label>
+              <button id=\"runSingleBtn\" class=\"primary\">Запустить</button>
+            </div>
+          </div>
+          <div class=\"group\">
+            <div class=\"title\">Запустить все (/requests)</div>
+            <div class=\"row\">
+              <input id=\"runCount\" type=\"number\" min=\"1\" value=\"1\" placeholder=\"count\" />
+              <label class=\"chk\"><input id=\"runTransactionalMany\" type=\"checkbox\" /> transactional</label>
+              <input id=\"runWorkers\" type=\"number\" min=\"1\" placeholder=\"max_workers (опц.)\" />
+              <button id=\"runManyBtn\" class=\"primary\">Запустить</button>
+            </div>
+          </div>
+        </div>
+        <div id=\"runResults\" class=\"run-results\"></div>
+      </div>
+      <div class=\"bottom-bar\">
+        <button id=\"saveBtn\" class=\"primary\">Сохранить</button>
+        <button id=\"deleteBtn\" class=\"danger\">Удалить</button>
+        <span class=\"status\" id=\"opStatus\"></span>
+      </div>
+    </main>
+  </div>
+  <script defer src=\"/editor.js\"></script>
+</body>
+</html>
+    """
+    return HTMLResponse(content=html)
+
+
+@app.get("/editor.css")
+def editor_css():
+    css = """
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+header { padding: 12px 16px; background: #111827; border-bottom: 1px solid #1f2937; display:flex; align-items:center; gap:12px; }
+header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.container { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 50px); }
+.sidebar { border-right: 1px solid #1f2937; overflow-y: auto; }
+.toolbar { padding: 12px; display:flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #1f2937; }
+.toolbar button, .toolbar label { background:#1f2937; color:#e5e7eb; border:1px solid #374151; padding:8px 10px; border-radius:6px; cursor:pointer; font-size: 13px; }
+.toolbar input[type=file] { display:none; }
+.file-list { padding: 8px; }
+.file-item { display:flex; justify-content: space-between; align-items:center; padding: 8px 10px; margin-bottom:6px; background:#0b1220; border:1px solid #1f2937; border-radius:6px; cursor:pointer; }
+.file-item.active { outline: 2px solid #3b82f6; }
+.file-actions { display:flex; gap:6px; }
+.main { display: grid; grid-template-rows: 1fr auto; }
+textarea { width: 100%; height: 100%; resize: none; border: none; outline: none; padding: 14px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace; font-size: 13px; color:#e5e7eb; background:#0b1220; }
+.bottom-bar { display:flex; gap:8px; padding: 10px; border-top:1px solid #1f2937; background:#111827; }
+.primary { background:#2563eb; border-color:#1d4ed8; }
+.danger { background:#dc2626; border-color:#b91c1c; }
+.muted { background:#374151; border-color:#4b5563; }
+.status { margin-left:auto; opacity:0.8; }
+.run-panel { border-top:1px solid #1f2937; background:#0f172a; }
+.run-toolbar { display:grid; grid-template-columns: 1fr 1fr; gap:16px; padding: 12px; }
+.run-toolbar .group { background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:10px; }
+.run-toolbar .title { font-size:12px; opacity:0.8; margin-bottom:8px; }
+.run-toolbar .row { display:flex; gap:8px; align-items:center; }
+.run-toolbar input[type=number] { width: 170px; background:#111827; color:#e5e7eb; border:1px solid #374151; border-radius:6px; padding:6px 8px; }
+.run-toolbar .chk { display:flex; align-items:center; gap:6px; }
+.run-results { padding: 10px 12px; border-top:1px solid #1f2937; }
+.result-box { background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:10px; }
+.result-box pre { margin:0; white-space:pre-wrap; word-break:break-word; font-size:12px; color:#cbd5e1; }
+"""
+    return PlainTextResponse(css, media_type="text/css")
+
+
+@app.get("/editor.js")
+def editor_js():
+    js = """
+const el = (sel) => document.querySelector(sel);
+const filesEl = el('#files');
+const editorEl = el('#editor');
+const opStatusEl = el('#opStatus');
+const statusEl = el('#status');
+let currentN = null;
+
+const api = {
+  async runSingle(n, transactional) {
+    const params = new URLSearchParams();
+    if (transactional) params.set('transactional', 'true');
+    const r = await fetch(`/request/${n}?` + params.toString());
+    if (!r.ok) throw new Error('request failed');
+    return r.json();
+  },
+  async runMany(count, transactional, maxWorkers) {
+    const params = new URLSearchParams();
+    if (transactional) params.set('transactional', 'true');
+    if (maxWorkers) params.set('max_workers', String(maxWorkers));
+    const r = await fetch(`/requests/${count}?` + params.toString());
+    if (!r.ok) throw new Error('requests failed');
+    return r.json();
+  },
+  async list() {
+    const r = await fetch('/api/scripts');
+    if (!r.ok) throw new Error('list failed');
+    return r.json();
+  },
+  async get(n) {
+    const r = await fetch(`/api/scripts/${n}`);
+    if (!r.ok) throw new Error('get failed');
+    return r.json();
+  },
+  async save(n, content) {
+    const r = await fetch(`/api/scripts/${n}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+    if (!r.ok) throw new Error('save failed');
+    return r.json();
+  },
+  async upload(fileList) {
+    const fd = new FormData();
+    for (const f of fileList) fd.append('files', f);
+    const r = await fetch('/api/scripts/upload', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error('upload failed');
+    return r.json();
+  },
+  async del(n) {
+    const r = await fetch(`/api/scripts/${n}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error('delete failed');
+    return r.json();
+  },
+  async createEmpty() {
+    const blob = new Blob([''], { type: 'text/plain' });
+    const file = new File([blob], 'empty.sql');
+    return this.upload([file]);
+  }
+};
+
+function setStatus(text, transient = true) {
+  opStatusEl.textContent = text || '';
+  if (transient && text) setTimeout(() => { if (opStatusEl.textContent === text) opStatusEl.textContent = ''; }, 2000);
+}
+
+function renderList(items) {
+  filesEl.innerHTML = '';
+  for (const it of items) {
+    const div = document.createElement('div');
+    div.className = 'file-item' + (currentN === it.n ? ' active' : '');
+    div.innerHTML = `<span>${it.filename}</span><span class=\\"file-actions\\"></span>`;
+    div.addEventListener('click', async () => {
+      try {
+        const data = await api.get(it.n);
+        currentN = it.n;
+        editorEl.value = data.content || '';
+        renderList(items.map(x => ({...x})));
+        setStatus(`Открыт ${it.filename}`);
+      } catch (e) { setStatus('Ошибка открытия'); }
+    });
+    filesEl.appendChild(div);
+  }
+}
+
+async function refresh() {
+  try {
+    statusEl.textContent = '';
+    const data = await api.list();
+    renderList(data.items);
+    if (currentN) {
+      const exists = data.items.some(i => i.n === currentN);
+      if (!exists) { currentN = null; editorEl.value = ''; }
+    }
+  } catch (e) {
+    statusEl.textContent = 'Ошибка загрузки списка';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  el('#refreshBtn').addEventListener('click', refresh);
+  el('#fileInput').addEventListener('change', async (ev) => {
+    if (!ev.target.files?.length) return;
+    try { await api.upload(ev.target.files); setStatus('Загружено'); await refresh(); }
+    catch (e) { setStatus('Ошибка загрузки'); }
+    finally { ev.target.value = ''; }
+  });
+  el('#saveBtn').addEventListener('click', async () => {
+    if (!currentN) { setStatus('Нет выбранного файла'); return; }
+    try { await api.save(currentN, editorEl.value); setStatus('Сохранено'); }
+    catch (e) { setStatus('Ошибка сохранения'); }
+  });
+  el('#deleteBtn').addEventListener('click', async () => {
+    if (!currentN) { setStatus('Нет выбранного файла'); return; }
+    if (!confirm('Удалить файл?')) return;
+    try { await api.del(currentN); currentN = null; editorEl.value = ''; await refresh(); setStatus('Удалено'); }
+    catch (e) { setStatus('Ошибка удаления'); }
+  });
+  el('#createBtn').addEventListener('click', async () => {
+    try { await api.createEmpty(); await refresh(); setStatus('Создан'); }
+    catch (e) { setStatus('Ошибка создания'); }
+  });
+  // Run single
+  el('#runSingleBtn').addEventListener('click', async () => {
+    try {
+      const nInput = el('#runN').value;
+      const n = nInput ? Number(nInput) : currentN;
+      const transactional = el('#runTransactional1').checked;
+      if (!n) { setStatus('Укажите n или выберите файл'); return; }
+      setStatus('Запуск...');
+      const res = await api.runSingle(n, transactional);
+      renderRunResult(res);
+      setStatus('Готово');
+    } catch (e) { setStatus('Ошибка запуска'); }
+  });
+  // Run many
+  el('#runManyBtn').addEventListener('click', async () => {
+    try {
+      const count = Number(el('#runCount').value || '1');
+      const transactional = el('#runTransactionalMany').checked;
+      const workers = el('#runWorkers').value ? Number(el('#runWorkers').value) : undefined;
+      setStatus('Запуск...');
+      const res = await api.runMany(count, transactional, workers);
+      renderRunResult(res);
+      setStatus('Готово');
+    } catch (e) { setStatus('Ошибка запуска'); }
+  });
+  refresh();
+});
+
+function renderRunResult(data) {
+  const box = document.createElement('div');
+  box.className = 'result-box';
+  const pretty = JSON.stringify(data, null, 2);
+  box.innerHTML = `<pre>${escapeHtml(pretty)}</pre>`;
+  const cont = el('#runResults');
+  cont.innerHTML = '';
+  cont.appendChild(box);
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+"""
+    return PlainTextResponse(js, media_type="application/javascript")
 
 # -----------------------------
 # Запуск: uvicorn server:app --reload
