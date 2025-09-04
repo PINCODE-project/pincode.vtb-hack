@@ -24,7 +24,7 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         var response = new CacheAnalysisResponse
         {
             AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddHours(-1)
+            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
         };
 
         try

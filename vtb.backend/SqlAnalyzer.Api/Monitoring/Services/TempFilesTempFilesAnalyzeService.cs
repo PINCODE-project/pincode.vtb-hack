@@ -24,7 +24,7 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         var response = new TempFilesRecommendationResponse
         {
             AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddHours(-1)
+            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
         };
 
         try
