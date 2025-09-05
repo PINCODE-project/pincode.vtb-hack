@@ -22,47 +22,6 @@ namespace SqlAnalyzer.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("IndexMetric", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreateAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("Efficiency")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("IndexName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("IndexScans")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("IndexSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SchemaName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TableName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("TuplesFetched")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("TuplesRead")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("IndexMetrics");
-                });
-
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.DbConnection.DbConnection", b =>
                 {
                     b.Property<Guid>("Id")
@@ -93,7 +52,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DbConnections");
+                    b.ToTable("DbConnections", (string)null);
                 });
 
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.AutovacuumStat", b =>
@@ -138,7 +97,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AutovacuumStats");
+                    b.ToTable("AutovacuumStats", (string)null);
                 });
 
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.CacheHitStats", b =>
@@ -161,44 +120,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CacheHitStats");
-                });
-
-            modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.TableStatictics", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("CountSeqScan")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreateAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("IndexCountSeqScan")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("IndexUsageRatio")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("SchemaName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TableName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("TuplesFetchedIndexScan")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("TuplesReadCountSeqScan")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TableStatictics");
+                    b.ToTable("CacheHitStats", (string)null);
                 });
 
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.Monitoring.TempFilesStatsDal", b =>
@@ -218,7 +140,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TempFilesStats");
+                    b.ToTable("TempFilesStats", (string)null);
                 });
 
             modelBuilder.Entity("SqlAnalyzer.Api.Dal.Entities.QueryAnalysis.QueryAnalysis", b =>
@@ -242,7 +164,7 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("QueryAnalysis");
+                    b.ToTable("QueryAnalysis", (string)null);
                 });
 #pragma warning restore 612, 618
         }
