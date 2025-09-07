@@ -1,10 +1,10 @@
-# Используем многостадийную сборку для .NET 9
+﻿# Используем многостадийную сборку для .NET 9
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Копируем csproj и восстанавливаем зависимости
-COPY ["SqlAnalyzer.Api.csproj", "/src/"]
-COPY ["SqlAnalyzerLib.csproj", "/src/"]
+COPY ["SqlAnalyzer.Api/SqlAnalyzer.Api.csproj", "SqlAnalyzer.Api/"]
+COPY ["SqlAnalyzerLib/SqlAnalyzerLib.csproj", "SqlAnalyzerLib/"]
 RUN dotnet restore "/src/SqlAnalyzer.Api.csproj"
 
 # Копируем остальной код и публикуем
@@ -24,3 +24,4 @@ COPY --from=build /app/publish .
 # Открываем порт и запускаем приложение
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "SqlAnalyzer.Api.dll"]
+
