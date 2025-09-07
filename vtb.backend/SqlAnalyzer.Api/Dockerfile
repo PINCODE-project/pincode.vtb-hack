@@ -1,27 +1,26 @@
-﻿# Используем многостадийную сборку для .NET 9
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER $APP_UID
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
 
-# Копируем csproj и восстанавливаем зависимости
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
 COPY ["SqlAnalyzer.Api/SqlAnalyzer.Api.csproj", "SqlAnalyzer.Api/"]
 COPY ["SqlAnalyzerLib/SqlAnalyzerLib.csproj", "SqlAnalyzerLib/"]
-RUN dotnet restore "/src/SqlAnalyzer.Api.csproj"
+RUN dotnet restore "SqlAnalyzer.Api/SqlAnalyzer.Api.csproj"
+COPY . .
+WORKDIR "/src/SqlAnalyzer.Api"
+RUN dotnet build "SqlAnalyzer.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Копируем остальной код и публикуем
-COPY . /src
-RUN dotnet publish "/src/SqlAnalyzer.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-# Финальный образ на aspnet runtime
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
-WORKDIR /app
-
-# Переменная окружения — слушаем на 8080 внутри контейнера
 ENV ASPNETCORE_URLS=http://+:8080
 
-# Копируем опубликованное приложение
-COPY --from=build /app/publish .
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "SqlAnalyzer.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Открываем порт и запускаем приложение
-EXPOSE 8080
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "SqlAnalyzer.Api.dll"]
-
