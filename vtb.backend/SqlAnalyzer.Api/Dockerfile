@@ -4,6 +4,7 @@ WORKDIR /src
 
 # Копируем csproj и восстанавливаем зависимости
 COPY ["SqlAnalyzer.Api.csproj", "/src/"]
+COPY ["SqlAnalyzerLib.csproj", "/src/"]
 RUN dotnet restore "/src/SqlAnalyzer.Api.csproj"
 
 # Копируем остальной код и публикуем
