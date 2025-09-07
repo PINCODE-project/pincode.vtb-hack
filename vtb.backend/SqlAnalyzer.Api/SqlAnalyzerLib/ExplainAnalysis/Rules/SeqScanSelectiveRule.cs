@@ -76,6 +76,12 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
                 };
                 return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, Severity.Medium, new List<string>(), metadata));
             }
+            else if (planRows > 100_000)
+            {
+                var tableName = nodeSpec.GetValueOrDefault("Relation Name") ?? "unknown";
+                var msg = $"Seq Scan на колонке с более 100 тыс. строк. Рекомендуется создать индекс по таблице {tableName}";
+                return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, Severity.Medium, [], null));
+            }
 
             return Task.FromResult<PlanFinding?>(null);
         }
