@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SqlAnalyzer.Api.Services.LlmClient.Data;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
@@ -15,7 +16,7 @@ public sealed class LlmClient : ILlmClient
     private static readonly LlmMessage SystemMessage = new("system",
         "Ты эксперт по PostgreSQL и оптимизации SQL-запросов.\n" +
         "Я дам тебе SQL-запрос и результаты анализа его выполнения (EXPLAIN в формате JSON).\n" +
-        "Отвечай только на русском языке.\n" +
+        "Отвечай только на русском языке. Только кратко и по делу, без лишней воды!!!\n" +
         "Твоя задача:\n" +
         "1. Проанализировать исходный запрос и объяснить, какие есть проблемы в плане выполнения.\n" +
         "2. Предложить улучшенную версию запроса (сохранив логику, но оптимизировав joins, индексы, фильтры, агрегаты).\n" +
@@ -62,14 +63,21 @@ public LlmClient(HttpClient httpClient)
             "application/json");
 
         using var resp = await _http.PostAsync("/v1/chat/completions", content, ct);
-        var body = await resp.Content.ReadAsStringAsync(ct);
-
+        var body = JsonSerializer.Deserialize<JsonObject>(await resp.Content.ReadAsStringAsync(ct));
+        var answerJson = (
+            (JsonArray) 
+            (body.TryGetPropertyValue("choices", out var choice) 
+                ? choice 
+                : throw new InvalidOperationException("Empty LLM response.")
+            ))
+            .FirstOrDefault()
+            ["message"]["content"].ToString();
         if (resp.IsSuccessStatusCode == false)
         {
             throw new HttpRequestException($"LLM HTTP {(int)resp.StatusCode}: {body}");
         }
 
-        var parsed = JsonSerializer.Deserialize<LlmChatResponse>(body, _json)
+        var parsed = JsonSerializer.Deserialize<LlmChatResponse>(answerJson, _json)
                      ?? throw new InvalidOperationException("Empty LLM response.");
 
         var answer = JsonSerializer.Deserialize<LlmAnswer>(parsed.Choices.First().Message.Content, _json)

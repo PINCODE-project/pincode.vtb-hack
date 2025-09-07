@@ -4,21 +4,28 @@ using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dto.QueryAnalysis;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
+using SqlAnalyzer.Api.Services.Recomedation;
+using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
+using SqlAnalyzerLib.Facade.Interfaces;
+using SqlAnalyzerLib.Recommendation.Models;
 
 namespace SqlAnalyzer.Api.Services.QueryAnalysis;
 
 using Dal.Entities.QueryAnalysis;
+using SqlAnalyzerLib.Recommendation.Models;
 
 public class QueryAnalysisService : IQueryAnalysisService
 {
     private readonly DataContext _db;
+    private readonly ISqlAnalyzerFacade _analyzer;
 
-    public QueryAnalysisService(DataContext db)
+    public QueryAnalysisService(DataContext db, ISqlAnalyzerFacade analyzer)
     {
         _db = db;
+        _analyzer = analyzer;
     }
 
-    public async Task<QueryAnalysisResultDto> AnalyzeAsync(QueryAnalysisDto request)
+    public async Task<IReadOnlyCollection<Recommendation>> AnalyzeAsync(QueryAnalysisDto request)
     {
         var dbConnection = await _db
             .DbConnections.FirstOrDefaultAsync(x => x.Id == request.DbConnectionId);
@@ -54,12 +61,7 @@ public class QueryAnalysisService : IQueryAnalysisService
         _db.QueryAnalysis.Add(analysis);
         await _db.SaveChangesAsync();
 
-        return new QueryAnalysisResultDto(
-            analysis.Id,
-            analysis.DbConnectionId,
-            analysis.Query,
-            analysis.AnalyzeResult,
-            analysis.CreateAt
-        );
+        var analysisResult = await _analyzer.GetRecommendations(analysis.Query, analysis.AnalyzeResult);
+        return analysisResult;
     }
 }

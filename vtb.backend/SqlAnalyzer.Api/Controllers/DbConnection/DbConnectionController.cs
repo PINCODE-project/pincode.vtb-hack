@@ -17,22 +17,53 @@ public class DbConnectionController : ControllerBase
     }
 
     /// <summary>
+    /// Ищет все коннекшены
+    /// </summary>
+    [HttpGet("find")]
+    public async Task<IReadOnlyCollection<DbConnectionDto>> Find([FromQuery] DbConnectionFindDto dto)
+    {
+        var result = await _service.Find(dto);
+        return result;
+    }
+
+    /// <summary>
     /// Сохраняет подключение (без проверки).
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<SimpleDto<Guid>>> SaveConnection([FromBody] DbConnectionCreateDto request)
+    public async Task<ActionResult<SimpleDto<Guid>>> Save([FromBody] DbConnectionCreateDto dto)
     {
-        var result = await _service.SaveAsync(request);
+        var result = await _service.SaveAsync(dto);
         return Ok(result);
     }
-
+    
+    /// <summary>
+    /// Обновляет
+    /// </summary>
+    [HttpPatch]
+    public async Task<IActionResult> Update([FromBody] DbConnectionUpdateDto dto)
+    {
+        await _service.Update(dto);
+        return NoContent();
+    }
+    
+    
     /// <summary>
     /// Проверяет доступность подключения.
     /// </summary>
     [HttpGet("{dbConnectionId:guid}/check")]
-    public async Task<ActionResult<DbConnectionCheckDto>> CheckConnection([FromRoute] Guid dbConnectionId)
+    public async Task<ActionResult<DbConnectionCheckDto>> Check([FromRoute] Guid dbConnectionId)
     {
         var result = await _service.CheckAsync(dbConnectionId);
         return Ok(result);
+    }
+    
+    /// <summary>
+    /// Удаляет
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete([FromRoute]Guid id)
+    {
+        await _service.Delete(id);
+        return NoContent();
     }
 }

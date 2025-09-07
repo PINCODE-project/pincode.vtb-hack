@@ -1,12 +1,37 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dto.QueryAnalysis;
+using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
+using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
 
 namespace SqlAnalyzer.Api.Services.Recomedation;
 
-public class RecommendationService
+public class QueryRecommendationService : IQueryRecommendationService
 {
-    public void GetRecommendations(Guid queryAnalysisId)
+    private readonly DataContext _db;
+    private readonly ILlmClient _llm;
+
+    public QueryRecommendationService(DataContext db, ILlmClient llm)
     {
-        
+        _db = db;
+        _llm = llm;
+    }
+
+    public async Task<QueryAnalysisResultDto> GetRecommendations(Guid queryAnalysisId)
+    {
+        var query = await _db.QueryAnalysis.FirstAsync(x => x.Id == queryAnalysisId);
+        var algorithmRecommendation = AnalyzeExplainJson(query.AnalyzeResult);
+        var llmRecommendation =
+            await _llm.GetRecommendationAsync(algorithmRecommendation, query.Query, query.AnalyzeResult);
+        return new QueryAnalysisResultDto(
+            query.Id,
+            query.DbConnectionId,
+            query.Query,
+            query.AnalyzeResult,
+            algorithmRecommendation,
+            llmRecommendation
+        );
     }
 
     private string AnalyzeExplainJson(string explainJson)
@@ -18,17 +43,17 @@ public class RecommendationService
 
         void Walk(JsonElement plan, int depth = 0)
         {
-            string nodeType = plan.GetProperty("Node Type").GetString() ?? "Unknown";
+            var nodeType = plan.GetProperty("Node Type").GetString() ?? "Unknown";
 
-            long estRows = plan.TryGetProperty("Plan Rows", out var pr) ? pr.GetInt64() : -1;
-            long actRows = plan.TryGetProperty("Actual Rows", out var ar) ? ar.GetInt64() : -1;
+            var estRows = plan.TryGetProperty("Plan Rows", out var pr) ? pr.GetInt64() : -1;
+            var actRows = plan.TryGetProperty("Actual Rows", out var ar) ? ar.GetInt64() : -1;
 
-            double totalCost = plan.TryGetProperty("Total Cost", out var tc) ? tc.GetDouble() : 0;
-            double startupCost = plan.TryGetProperty("Startup Cost", out var sc) ? sc.GetDouble() : 0;
+            var totalCost = plan.TryGetProperty("Total Cost", out var tc) ? tc.GetDouble() : 0;
+            var startupCost = plan.TryGetProperty("Startup Cost", out var sc) ? sc.GetDouble() : 0;
 
-            string? rel = plan.TryGetProperty("Relation Name", out var relName) ? relName.GetString() : null;
-            string? filter = plan.TryGetProperty("Filter", out var f) ? f.GetString() : null;
-            string? indexCond = plan.TryGetProperty("Index Cond", out var ic) ? ic.GetString() : null;
+            var rel = plan.TryGetProperty("Relation Name", out var relName) ? relName.GetString() : null;
+            var filter = plan.TryGetProperty("Filter", out var f) ? f.GetString() : null;
+            var indexCond = plan.TryGetProperty("Index Cond", out var ic) ? ic.GetString() : null;
 
             // ---- RULES ----
 

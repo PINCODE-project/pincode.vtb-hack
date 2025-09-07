@@ -9,6 +9,11 @@ using SqlAnalyzer.Api.Services.DbConnection;
 using SqlAnalyzer.Api.Services.DbConnection.Interfaces;
 using SqlAnalyzer.Api.Services.LlmClient;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
+using SqlAnalyzer.Api.Services.QueryAnalysis;
+using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
+using SqlAnalyzer.Api.Services.Recomedation;
+using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
+using SqlAnalyzerLib.LibExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +67,9 @@ builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();
 builder.Services.AddScoped<IAutovacuumMonitoringService, AutovacuumMonitoringService>();
 builder.Services.AddScoped<IAutovacuumAnalysisService, AutovacuumAnalysisService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
+builder.Services.AddScoped<IQueryRecommendationService, QueryRecommendationService>();
+builder.Services.AddScoped<IQueryAnalysisService, QueryAnalysisService>();
+builder.Services.AddSqlAnalyzer();
 
 builder.Logging.AddConsole();
 
