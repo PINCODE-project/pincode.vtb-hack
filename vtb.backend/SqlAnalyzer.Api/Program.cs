@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SqlAnalyzer.Api.Dal;
@@ -60,7 +59,7 @@ builder.Services.AddHostedService<CacheHitMonitoringBackgroundService>();
 builder.Services.AddHostedService<AutovacuumBackgroundService>();
 builder.Services.AddHostedService<IndexMonitoringBackgroundService>();
 builder.Services.AddScoped<IIndexAnalysisService, IndexAnalysisService>();
-builder.Services.AddScoped<IIndexMonitoringService, IndexMonitoringService>();
+builder.Services.AddScoped<IPgStatAnalyzerService, PgStatAnalyzerService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<ITempFilesAnalyzeService, TempFilesTempFilesAnalyzeService>();
 builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();

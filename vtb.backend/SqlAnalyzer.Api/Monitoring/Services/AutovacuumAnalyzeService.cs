@@ -24,7 +24,7 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
         var response = new AutovacuumAnalysisResponse
         {
             AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddHours(-1)
+            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
         };
 
         try

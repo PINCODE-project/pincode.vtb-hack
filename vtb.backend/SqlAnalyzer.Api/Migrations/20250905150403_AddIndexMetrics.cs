@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SqlAnalyzer.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIndexMonitoring : Migration
+    public partial class AddIndexMetrics : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,22 +20,34 @@ namespace SqlAnalyzer.Api.Migrations
                     TableName = table.Column<string>(type: "text", nullable: false),
                     IndexName = table.Column<string>(type: "text", nullable: false),
                     IndexScans = table.Column<long>(type: "bigint", nullable: false),
+                    IndexSize = table.Column<long>(type: "bigint", nullable: false),
                     TuplesRead = table.Column<long>(type: "bigint", nullable: false),
                     TuplesFetched = table.Column<long>(type: "bigint", nullable: false),
-                    IndexSize = table.Column<string>(type: "text", nullable: false),
-                    IndexEfficiency = table.Column<double>(type: "double precision", nullable: false),
-                    IndexStatus = table.Column<string>(type: "text", nullable: false),
-                    BloatFactor = table.Column<double>(type: "double precision", nullable: false),
-                    SequentialScans = table.Column<long>(type: "bigint", nullable: false),
-                    SeqScanRatio = table.Column<double>(type: "double precision", nullable: false),
-                    LiveTuples = table.Column<long>(type: "bigint", nullable: false),
-                    DeadTuples = table.Column<long>(type: "bigint", nullable: false),
-                    DeadTupleRatio = table.Column<double>(type: "double precision", nullable: false),
+                    Efficiency = table.Column<double>(type: "double precision", nullable: false),
                     CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_IndexMetrics", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TableStatictics",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SchemaName = table.Column<string>(type: "text", nullable: false),
+                    TableName = table.Column<string>(type: "text", nullable: false),
+                    CountSeqScan = table.Column<long>(type: "bigint", nullable: false),
+                    TuplesReadCountSeqScan = table.Column<long>(type: "bigint", nullable: false),
+                    IndexCountSeqScan = table.Column<long>(type: "bigint", nullable: false),
+                    TuplesFetchedIndexScan = table.Column<long>(type: "bigint", nullable: false),
+                    IndexUsageRatio = table.Column<decimal>(type: "numeric", nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TableStatictics", x => x.Id);
                 });
         }
 
@@ -44,6 +56,9 @@ namespace SqlAnalyzer.Api.Migrations
         {
             migrationBuilder.DropTable(
                 name: "IndexMetrics");
+
+            migrationBuilder.DropTable(
+                name: "TableStatictics");
         }
     }
 }

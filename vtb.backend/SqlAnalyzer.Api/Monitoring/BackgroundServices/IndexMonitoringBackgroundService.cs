@@ -31,14 +31,15 @@ public class IndexMonitoringBackgroundService : BackgroundService
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var monitoringService = scope.ServiceProvider.GetRequiredService<IIndexMonitoringService>();
+                var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
                 _logger.LogInformation("Сбор метрик индексов...");
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
                 var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
                 foreach (var connection in connectionStringList)
                 {
                     var connectionString = DbConnectionService.GetConnectionString(connection);
-                    await monitoringService.CollectIndexStatisticsAsync(connectionString);
+                    await monitoringService.SaveEfficiencyIndexListAsync(connectionString);
+                    await monitoringService.SaveTableStatisticsListAsync(connectionString);
                     _logger.LogInformation("Метрики индексов успешно сохранены, connectionString={connectionString}", connectionString);
                 }
             }

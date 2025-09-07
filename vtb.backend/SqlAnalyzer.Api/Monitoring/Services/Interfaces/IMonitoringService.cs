@@ -16,4 +16,14 @@ public interface IMonitoringService
     /// </summary>
     /// <returns></returns>
     Task<bool> SaveCacheHitMetricsAsync(string monitoringConnectionString);
+
+    /// <summary>
+    /// Сохранить метрики таблиц
+    /// </summary>
+    Task SaveTableStatisticsListAsync(string monitoringConnectionString);
+
+    /// <summary>
+    /// сохранить статистику индексов по таблицам
+    /// </summary>
+    Task SaveEfficiencyIndexListAsync(string connectionString);
 }
