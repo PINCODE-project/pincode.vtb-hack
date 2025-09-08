@@ -12,6 +12,8 @@ using SqlAnalyzer.Api.Services.QueryAnalysis;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 using SqlAnalyzer.Api.Services.Recomedation;
 using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
+using SqlAnalyzer.Api.Services.SubstituteValuesToSql;
+using SqlAnalyzer.Api.Services.SubstituteValuesToSql.Interfaces;
 using SqlAnalyzerLib.LibExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,14 +54,13 @@ builder.Services.AddHttpClient<ILlmClient, LlmClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-
-
 builder.Services.AddHostedService<TempFilesMonitoringBackgroundService>();
 builder.Services.AddHostedService<CacheHitMonitoringBackgroundService>();
 builder.Services.AddHostedService<AutovacuumBackgroundService>();
 builder.Services.AddHostedService<IndexMonitoringBackgroundService>();
 builder.Services.AddScoped<IIndexAnalysisService, IndexAnalysisService>();
 builder.Services.AddScoped<IPgStatAnalyzerService, PgStatAnalyzerService>();
+builder.Services.AddScoped<ISubstituteValuesToSqlServer, SubstituteValuesToSqlServer>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<ITempFilesAnalyzeService, TempFilesTempFilesAnalyzeService>();
 builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();
