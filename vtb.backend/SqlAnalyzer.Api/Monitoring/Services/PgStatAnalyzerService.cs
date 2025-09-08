@@ -177,7 +177,8 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
         {
             throw new Exception("Ошибка");
         }
-        var conn = new NpgsqlConnection(dbConnection.GetConnectionString());
+        await using var conn = new NpgsqlConnection(dbConnection.GetConnectionString());
+        await conn.OpenAsync(cancellationToken);
         if (_columnMap != null && DateTime.UtcNow - _columnMapLoadedAt < _columnMapTtl)
             return _columnMap;
 
