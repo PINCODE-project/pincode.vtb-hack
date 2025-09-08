@@ -12,7 +12,7 @@ public class TempFilesMonitoringBackgroundService : BackgroundService
 {
     private readonly ILogger<TempFilesMonitoringBackgroundService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TimeSpan _interval = TimeSpan.FromHours(1); // Оптимальный интервал
+    private readonly TimeSpan _interval = TimeSpan.FromSeconds(5); // Оптимальный интервал
 
     public TempFilesMonitoringBackgroundService(
         ILogger<TempFilesMonitoringBackgroundService> logger,
@@ -38,16 +38,15 @@ public class TempFilesMonitoringBackgroundService : BackgroundService
                 // TODO можно параллельно сделать
                 foreach (var connection in connectionStringList)
                 {
-                    var connectionString = DbConnectionService.GetConnectionString(connection);
-                    var success = await monitoringService.SaveTempFilesMetricsAsync(connectionString);
+                    var success = await monitoringService.SaveTempFilesMetricsAsync(connection);
                     
                     if (success)
                     {
-                        _logger.LogInformation("Метрики успешно сохранены {connectionString}", connectionString);
+                        _logger.LogInformation("Метрики успешно сохранены, dbConnectionId={dbConnectionId}", connection.Id);
                     }
                     else
                     {
-                        _logger.LogWarning("Не удалось сохранить метрики{connectionString}", connectionString);
+                        _logger.LogWarning("Не удалось сохранить метрики, dbConnectionId={dbConnectionId}", connection.Id);
                     }    
                 }
             }

@@ -19,17 +19,17 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         _db = db;
     }
 
-    public async Task<CacheAnalysisResponse> AnalyzeCacheLastHourAsync()
+    public async Task<CacheAnalysisResponse> AnalyzeCacheAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd)
     {
         var response = new CacheAnalysisResponse
         {
-            AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
+            AnalysisPeriodEnd = periodEnd,
+            AnalysisPeriodStart = periodStart,
         };
 
         try
         {
-            var stats = await GetCacheStatsForPeriodAsync(response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
+            var stats = await GetCacheStatsForPeriodAsync(dbConnectionId, response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
                     
             if (stats.Count < 2)
             {
@@ -67,53 +67,18 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
         return response;
     }
 
-    public async Task<CacheHealthStatus> GetCacheHealthStatusAsync()
+    private async Task<List<CacheHitStats>> GetCacheStatsForPeriodAsync(Guid dbConnectionId, DateTime start, DateTime end)
     {
-        try
+        if (end == DateTime.MinValue)
         {
-            var endTime = DateTime.UtcNow;
-            var startTime = endTime.AddHours(-1);
-            var stats = await GetCacheStatsForPeriodAsync(startTime, endTime);
-
-            if (stats.Count == 0)
-            {
-                return new CacheHealthStatus
-                {
-                    Status = "unknown",
-                    CacheHitRatio = 0,
-                    Message = "Данные отсутствуют",
-                    Timestamp = DateTime.UtcNow
-                };
-            }
-
-            var metrics = CalculateCacheMetricsSummary(stats);
-            var status = DetermineOverallStatus(metrics.AvgCacheHitRatio);
-
-            return new CacheHealthStatus
-            {
-                Status = status,
-                CacheHitRatio = metrics.AvgCacheHitRatio,
-                Message = GetHealthStatusMessage(status, metrics.AvgCacheHitRatio),
-                Timestamp = DateTime.UtcNow,
-                Suggestions = GetHealthSuggestions(status, metrics)
-            };
+            var cacheStatsForAllTimeList = await _db.CacheHitStats
+                .Where(x => x.CreateAt >= start && x.DbConnectionId == dbConnectionId)
+                .ToListAsync();
+            return cacheStatsForAllTimeList;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Ошибка при получении статуса здоровья кэша");
-            return new CacheHealthStatus
-            {
-                Status = "error",
-                CacheHitRatio = 0,
-                Message = $"Ошибка: {ex.Message}",
-                Timestamp = DateTime.UtcNow
-            };
-        }
-    }
-
-    private async Task<List<CacheHitStats>> GetCacheStatsForPeriodAsync(DateTime start, DateTime end)
-    {
-        var cacheStatsList = await _db.CacheHitStats.Where(x => x.CreateAt >= start && x.CreateAt <= end).ToListAsync();
+        var cacheStatsList = await _db.CacheHitStats
+            .Where(x => x.CreateAt >= start && x.CreateAt <= end && x.DbConnectionId == dbConnectionId)
+            .ToListAsync();
         return cacheStatsList;
     }
 

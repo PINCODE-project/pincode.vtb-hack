@@ -31,6 +31,9 @@ namespace SqlAnalyzer.Api.Migrations
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
+
                     b.Property<double>("Efficiency")
                         .HasColumnType("double precision");
 
@@ -112,6 +115,9 @@ namespace SqlAnalyzer.Api.Migrations
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("DeadTupleRatio")
                         .HasColumnType("decimal(5,2)");
 
@@ -163,6 +169,9 @@ namespace SqlAnalyzer.Api.Migrations
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.ToTable("CacheHitStats");
@@ -179,6 +188,9 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
 
                     b.Property<long>("IndexCountSeqScan")
                         .HasColumnType("bigint");
@@ -213,6 +225,9 @@ namespace SqlAnalyzer.Api.Migrations
 
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DbConnectionId")
+                        .HasColumnType("uuid");
 
                     b.Property<long>("TempBytes")
                         .HasColumnType("bigint");

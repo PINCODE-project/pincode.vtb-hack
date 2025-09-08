@@ -15,9 +15,22 @@ internal class IndexAnalysisService : IIndexAnalysisService
         _context = context;
     }
 
-    public async Task<IndexAnalysisResult> GetFullAnalysisAsync(DateTime startDate, DateTime endDate)
+    public async Task<IndexAnalysisResult> GetFullAnalysisAsync(Guid dbConnectionId, DateTime startDate, DateTime endDate)
     {
-        var metrics = await _context.IndexMetrics.Where(x => x.CreateAt >= startDate && x.CreateAt <= endDate).ToListAsync();
+        List<IndexMetric> metrics;
+        if (endDate == DateTime.MinValue)
+        {
+            metrics = await _context.IndexMetrics
+                .Where(x => x.CreateAt >= startDate && x.DbConnectionId == dbConnectionId)
+                .ToListAsync();
+        }
+        else
+        {
+            metrics = await _context.IndexMetrics
+                .Where(x => x.CreateAt >= startDate && x.CreateAt <= endDate && x.DbConnectionId == dbConnectionId)
+                .ToListAsync();
+        }
+
         if (metrics.Count == 0)
         {
             return new IndexAnalysisResult();
@@ -49,7 +62,6 @@ internal class IndexAnalysisService : IIndexAnalysisService
                 AverageValue = (double)g.Average(m => m.IndexScans),
                 MaxSize = g.Max(m => m.IndexSize),
                 Recommendation = GenerateUnusedIndexRecommendation(g.Key.IndexName, g.Average(m => m.IndexScans), g.Max(m => m.IndexSize)),
-                DataPoints = g.OrderBy(m => m.CreateAt).ToList()
             })
             .OrderByDescending(r => r.MaxSize) // Сначала большие индексы
             .ToList();
@@ -74,7 +86,6 @@ internal class IndexAnalysisService : IIndexAnalysisService
                 MaxSize = g.Max(m => m.IndexSize),
                 Recommendation = GenerateInefficientIndexRecommendation(g.Key.IndexName, g.Average(m => m.Efficiency), 
                                                                        g.Average(m => m.TuplesRead), g.Average(m => m.TuplesFetched)),
-                DataPoints = g.OrderBy(m => m.CreateAt).ToList()
             })
             .OrderBy(r => r.AverageValue) // Сначала самые неэффективные
             .ToList();
@@ -103,7 +114,6 @@ internal class IndexAnalysisService : IIndexAnalysisService
                     AverageValue = (double)growthPercentage,
                     MaxSize = last.IndexSize,
                     Recommendation = GenerateGrowingIndexRecommendation(g.Key.IndexName, first.IndexSize, last.IndexSize, growthPercentage),
-                    DataPoints = g.OrderBy(m => m.CreateAt).ToList()
                 };
             })
             .Where(r => r.AverageValue >= (double)growthPercentageThreshold)
@@ -360,7 +370,6 @@ public class IndexRecommendation
     public double AverageValue { get; set; }
     public long MaxSize { get; set; }
     public string Recommendation { get; set; }
-    public List<IndexMetric> DataPoints { get; set; } = new();
     
     public string FormattedSize => FormatBytes(MaxSize);
     

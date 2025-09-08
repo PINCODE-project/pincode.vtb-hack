@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Monitoring.BackgroundServices;
@@ -70,6 +71,18 @@ builder.Services.AddScoped<IQueryRecommendationService, QueryRecommendationServi
 builder.Services.AddScoped<IQueryAnalysisService, QueryAnalysisService>();
 builder.Services.AddSqlAnalyzer();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        b =>
+        {
+            //you can configure your custom policy
+            b.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 builder.Logging.AddConsole();
 
 
@@ -87,6 +100,12 @@ using (var scope = app.Services.CreateScope())
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
     await db.Database.MigrateAsync();
 }
+
+app.UseCors(x => x
+    .AllowAnyOrigin()
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .WithExposedHeaders(HeaderNames.ContentDisposition));
 
 app.Run();
 

@@ -14,4 +14,5 @@ public class TableStatictics : EntityBase, IEntityCreatedAt
     public decimal IndexUsageRatio { get; set; }
 
     public DateTime CreateAt { get; set; }
+    public Guid DbConnectionId { get; set; }
 }

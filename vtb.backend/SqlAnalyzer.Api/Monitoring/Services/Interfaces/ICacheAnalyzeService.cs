@@ -8,11 +8,5 @@ public interface ICacheAnalyzeService
     /// 
     /// </summary>
     /// <returns></returns>
-    Task<CacheAnalysisResponse> AnalyzeCacheLastHourAsync();
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    Task<CacheHealthStatus> GetCacheHealthStatusAsync();
+    Task<CacheAnalysisResponse> AnalyzeCacheAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd);
 }

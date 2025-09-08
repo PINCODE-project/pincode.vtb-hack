@@ -9,7 +9,7 @@ public class AutovacuumBackgroundService : BackgroundService
 {
     private readonly ILogger<CacheHitMonitoringBackgroundService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TimeSpan _interval = TimeSpan.FromHours(4); 
+    private readonly TimeSpan _interval = TimeSpan.FromSeconds(4); 
 
     public AutovacuumBackgroundService(
         ILogger<CacheHitMonitoringBackgroundService> logger,
@@ -33,16 +33,15 @@ public class AutovacuumBackgroundService : BackgroundService
                 var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
                 foreach (var connection in connectionStringList)
                 {
-                    var connectionString = DbConnectionService.GetConnectionString(connection);
-                    var success = await monitoringService.SaveAutovacuumMetricsAsync(connectionString);
+                    var success = await monitoringService.SaveAutovacuumMetricsAsync(connection);
 
                     if (success)
                     {
-                        _logger.LogInformation("Метрики autovacuum успешно сохранены, connectionString={connectionString}", connectionString);
+                        _logger.LogInformation("Метрики autovacuum успешно сохранены, dbConnectionId={dbConnectionId}", connection.Id);
                     }
                     else
                     {
-                        _logger.LogWarning("Не удалось сохранить метрики autovacuum, connectionString={connectionString}", connectionString);
+                        _logger.LogWarning("Не удалось сохранить метрики autovacuum, dbConnectionId={dbConnectionId}", connection.Id);
                     }
                 }
             }

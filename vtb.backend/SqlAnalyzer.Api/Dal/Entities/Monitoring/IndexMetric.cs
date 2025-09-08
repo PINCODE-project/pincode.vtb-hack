@@ -12,4 +12,5 @@ public class IndexMetric : EntityBase, IEntityCreatedAt
     public double Efficiency { get; set; }
     
     public DateTime CreateAt { get; set; }
+    public Guid DbConnectionId { get; set; }
 }
