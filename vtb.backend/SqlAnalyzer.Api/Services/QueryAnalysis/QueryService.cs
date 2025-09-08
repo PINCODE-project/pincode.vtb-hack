@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Base;
 using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dto.QueryAnalysis;
 using SqlAnalyzer.Api.Services.LlmClient.Data;
@@ -25,6 +26,24 @@ public class QueryService : IQueryService
         _db = db;
         _analyzer = analyzer;
         _llm = llm;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<QueryDto>> Find(QueriesFindDto dto)
+    {
+        var queries = await _db
+            .QueryAnalysis.AsNoTracking()
+            .UseLimiter(dto.Skip, dto.Take)
+            .Select(query => new QueryDto
+            {
+                Id = query.Id,
+                Sql = query.Query,
+                ExplainResult = query.AnalyzeResult ?? "",
+                DbConnectionId = query.DbConnectionId,
+                CreatedAt = query.CreateAt
+            })
+            .ToListAsync();
+        return queries;
     }
 
     /// <inheritdoc />

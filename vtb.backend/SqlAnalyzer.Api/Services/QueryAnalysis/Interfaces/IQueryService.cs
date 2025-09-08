@@ -4,6 +4,7 @@ namespace SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 
 public interface IQueryService
 {
+    Task<IReadOnlyCollection<QueryDto>> Find(QueriesFindDto dto);
     Task<Guid> Create(QueryCreateDto dto);
 
     Task<QueryDto> Get(Guid id);

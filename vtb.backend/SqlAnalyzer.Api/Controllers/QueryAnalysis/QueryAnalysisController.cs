@@ -18,6 +18,16 @@ public class QueryAnalysisController : ControllerBase
     }
 
     /// <summary>
+    /// Поиск всех сохраненных запросов
+    /// </summary>
+    [HttpGet("find")]
+    public async Task<IReadOnlyCollection<QueryDto>> Find([FromQuery] QueriesFindDto dto)
+    {
+        var result = await _service.Find(dto);
+        return result;
+    }
+
+    /// <summary>
     /// Только создает запись запроса и его эксплейна, выводит созданный id
     /// </summary>
     [HttpPost("create")]
