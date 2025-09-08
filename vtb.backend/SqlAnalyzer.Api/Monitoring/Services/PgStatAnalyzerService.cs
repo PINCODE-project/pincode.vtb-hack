@@ -2,7 +2,9 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 
@@ -17,16 +19,19 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
 {
     private readonly DataContext _db;
     private readonly ILogger<PgStatAnalyzerService> _log;
+    private readonly DataContext _dbContext;
 
     // кеш отображения колонок pg_stat_statements (TTL)
     private Dictionary<string, string>? _columnMap;
     private DateTime _columnMapLoadedAt = DateTime.MinValue;
     private readonly TimeSpan _columnMapTtl = TimeSpan.FromMinutes(5);
 
-    public PgStatAnalyzerService(DataContext db, ILogger<PgStatAnalyzerService> log)
+    public PgStatAnalyzerService(DataContext db, ILogger<PgStatAnalyzerService> log,
+        DataContext dbContext)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _dbContext = dbContext;
     }
 
     public void Dispose()
@@ -39,12 +44,12 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
     /// - limit: сколько результатов вернуть (по score)
     /// - includeExplain: если true — попробует выполнить EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) для каждого топ-запроса (опасно в prod)
     /// </summary>
-    public async Task<AnalysisReportAdvanced> AnalyzeTopAsync(int limit = 50, bool includeExplain = false,
+    public async Task<AnalysisReportAdvanced> AnalyzeTopAsync(Guid dbConnectionId, int limit = 50, bool includeExplain = false,
         CancellationToken cancellationToken = default)
     {
         if (limit <= 0) limit = 50;
-
-        var map = await EnsureColumnMapAsync(cancellationToken);
+        
+        var map = await EnsureColumnMapAsync(dbConnectionId, cancellationToken);
         if (map == null || map.Count == 0)
             throw new InvalidOperationException(
                 "pg_stat_statements недоступен или не удалось определить колонки. Убедитесь, что расширение установлено.");
@@ -165,13 +170,19 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
 
     #region Внутренние хелперы (детект колонок, выборка, explain, scoring, рекомендации на русском)
 
-    private async Task<Dictionary<string, string>> EnsureColumnMapAsync(CancellationToken cancellationToken)
+    private async Task<Dictionary<string, string>> EnsureColumnMapAsync(Guid dbConnectionId, CancellationToken cancellationToken)
     {
+        var dbConnection = _db.DbConnections.FirstOrDefault(x => x.Id == dbConnectionId);
+        if (dbConnection == null)
+        {
+            throw new Exception("Ошибка");
+        }
+        await using var conn = new NpgsqlConnection(dbConnection.GetConnectionString());
+        await conn.OpenAsync(cancellationToken);
         if (_columnMap != null && DateTime.UtcNow - _columnMapLoadedAt < _columnMapTtl)
             return _columnMap;
 
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var conn = _db.Database.GetDbConnection();
         var openedHere = false;
         if (conn.State != ConnectionState.Open)
         {

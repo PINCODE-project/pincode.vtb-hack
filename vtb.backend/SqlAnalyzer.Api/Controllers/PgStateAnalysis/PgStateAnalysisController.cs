@@ -19,11 +19,11 @@ public class PgStateAnalysisController : ControllerBase
     /// Возвращает анализ топ-N запросов из pg_stat_statements.
     /// </summary>
     [HttpGet("top")]
-    public async Task<IActionResult> GetTop([FromQuery] int limit = 50, [FromQuery] bool explain = false)
+    public async Task<IActionResult> GetTop([FromQuery] Guid dbConnectionId, [FromQuery] int limit = 50, [FromQuery] bool explain = false)
     {
         try
         {
-            var report = await _analyzer.AnalyzeTopAsync(limit, explain);
+            var report = await _analyzer.AnalyzeTopAsync(dbConnectionId, limit, explain);
             return Ok(report);
         }
         catch (InvalidOperationException ex)
