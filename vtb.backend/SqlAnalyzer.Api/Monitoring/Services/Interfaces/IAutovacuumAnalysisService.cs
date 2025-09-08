@@ -4,5 +4,5 @@ namespace SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 public interface IAutovacuumAnalysisService
 {
-    Task<AutovacuumAnalysisResponse> AnalyzeAutovacuumLastHourAsync();
+    Task<AutovacuumAnalysisResponse> AnalyzeAutovacuumLastHourAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd);
 }

@@ -4,6 +4,7 @@ using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Base;
 using SqlAnalyzer.Api.Dto.Common;
 using SqlAnalyzer.Api.Dto.DbConnection;
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 using SqlAnalyzer.Api.Services.DbConnection.Interfaces;
 
 namespace SqlAnalyzer.Api.Services.DbConnection;
@@ -13,10 +14,16 @@ using Dal.Entities.DbConnection;
 public class DbConnectionService : IDbConnectionService
 {
     private readonly DataContext _db;
+    private readonly IMonitoringService _monitoringService;
+    private readonly IAutovacuumMonitoringService _autovacuumMonitoringService;
 
-    public DbConnectionService(DataContext db)
+    public DbConnectionService(DataContext db,
+        IMonitoringService monitoringService,
+        IAutovacuumMonitoringService autovacuumMonitoringService)
     {
         _db = db;
+        _monitoringService = monitoringService;
+        _autovacuumMonitoringService = autovacuumMonitoringService;
     }
 
     public async Task<IReadOnlyCollection<DbConnectionDto>> Find(DbConnectionFindDto dto)
@@ -67,6 +74,16 @@ public class DbConnectionService : IDbConnectionService
 
         _db.DbConnections.Add(entity);
         await _db.SaveChangesAsync();
+
+        for (var i = 0; i < 2; i++)
+        { 
+            // Кастомно сохраняем данные чтобы не получить ошибку сразу при сохранении
+            await _monitoringService.SaveCacheHitMetricsAsync(entity);
+            await _monitoringService.SaveEfficiencyIndexListAsync(entity);
+            await _monitoringService.SaveTableStatisticsListAsync(entity);
+            await _monitoringService.SaveTempFilesMetricsAsync(entity);
+            await _autovacuumMonitoringService.SaveAutovacuumMetricsAsync(entity);
+        }
 
         return new SimpleDto<Guid>(entity.Id);
     }

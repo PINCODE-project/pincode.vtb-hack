@@ -37,16 +37,15 @@ public class CacheHitMonitoringBackgroundService : BackgroundService
                 // TODO можно параллельно сделать
                 foreach (var connection in connectionStringList)
                 {
-                    var connectionString = DbConnectionService.GetConnectionString(connection);
-                    var success = await monitoringService.SaveCacheHitMetricsAsync(connectionString);
+                    var success = await monitoringService.SaveCacheHitMetricsAsync(connection);
 
                     if (success)
                     {
-                        _logger.LogInformation("Метрики cache hit ratio успешно сохранены, connectionString={connectionString}", connectionString);
+                        _logger.LogInformation("Метрики cache hit ratio успешно сохранены, dbConnectionId={dbConnectionId}", connection.Id);
                     }
                     else
                     {
-                        _logger.LogWarning("Не удалось сохранить метрики cache hit ratio, connectionString={connectionString}", connectionString);
+                        _logger.LogWarning("Не удалось сохранить метрики cache hit ratio, dbConnectionId={dbConnectionId}", connection.Id);
                     }
                 }
             }

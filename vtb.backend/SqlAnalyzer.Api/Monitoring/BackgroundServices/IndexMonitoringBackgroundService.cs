@@ -37,10 +37,9 @@ public class IndexMonitoringBackgroundService : BackgroundService
                 var connectionStringList = await dbContext.DbConnections.ToListAsync(cancellationToken: stoppingToken);
                 foreach (var connection in connectionStringList)
                 {
-                    var connectionString = DbConnectionService.GetConnectionString(connection);
-                    await monitoringService.SaveEfficiencyIndexListAsync(connectionString);
-                    await monitoringService.SaveTableStatisticsListAsync(connectionString);
-                    _logger.LogInformation("Метрики индексов успешно сохранены, connectionString={connectionString}", connectionString);
+                    await monitoringService.SaveEfficiencyIndexListAsync(connection);
+                    await monitoringService.SaveTableStatisticsListAsync(connection);
+                    _logger.LogInformation("Метрики индексов успешно сохранены, dbConnectionId={dbConnectionId}", connection.Id);
                 }
             }
             catch (Exception ex)

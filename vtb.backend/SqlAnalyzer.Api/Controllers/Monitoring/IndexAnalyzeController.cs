@@ -15,9 +15,9 @@ public class IndexAnalyzeController  : ControllerBase
     }
 
     [HttpGet("recommendations")]
-    public async Task<IActionResult> GetRecommendationsAsync()
+    public async Task<IActionResult> GetRecommendationsAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
-        var recommendations = await _analysisService.GetFullAnalysisAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
+        var recommendations = await _analysisService.GetFullAnalysisAsync(dbConnectionId, startDate, endDate);
         return Ok(recommendations);
     }
 }

@@ -19,18 +19,18 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         _db = db;
     }
 
-    public async Task<TempFilesRecommendationResponse> AnalyzeTempFilesLastHourAsync()
+    public async Task<TempFilesRecommendationResponse> AnalyzeTempFilesAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd)
     {
         var response = new TempFilesRecommendationResponse
         {
-            AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
+            AnalysisPeriodEnd = periodEnd,
+            AnalysisPeriodStart = periodStart,
         };
 
         try
         {
             // Получаем статистику за последний час
-            var stats = await GetStatsForPeriodAsync(response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
+            var stats = await GetStatsForPeriodAsync(dbConnectionId, response.AnalysisPeriodStart, response.AnalysisPeriodEnd);
                     
             if (stats.Count < 2)
             {
@@ -65,9 +65,18 @@ internal class TempFilesTempFilesAnalyzeService : ITempFilesAnalyzeService
         return response;
     }
 
-    private async Task<List<TempFilesStatsDal>> GetStatsForPeriodAsync(DateTime start, DateTime end)
+    private async Task<List<TempFilesStatsDal>> GetStatsForPeriodAsync(Guid dbConnectionId, DateTime start, DateTime end)
     {
-        var tempFilesStatList = await _db.TempFilesStats.Where(x => x.CreateAt >= start && x.CreateAt <= end).ToListAsync();
+        if (end == DateTime.MinValue)
+        {
+            var tempFilesStatForAllTimeList = await _db.TempFilesStats
+                .Where(x => x.CreateAt >= start && x.DbConnectionId == dbConnectionId)
+                .ToListAsync();
+            return tempFilesStatForAllTimeList;
+        }
+        var tempFilesStatList = await _db.TempFilesStats
+            .Where(x => x.CreateAt >= start && x.CreateAt <= end && x.DbConnectionId == dbConnectionId)
+            .ToListAsync();
         return tempFilesStatList;
     }
 

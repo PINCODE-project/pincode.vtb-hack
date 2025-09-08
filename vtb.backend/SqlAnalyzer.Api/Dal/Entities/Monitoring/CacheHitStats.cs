@@ -8,4 +8,5 @@ public class CacheHitStats : EntityBase, IEntityCreatedAt
     public long BlksRead { get; set; }
     public decimal CacheHitRatio { get; set; }
     public DateTime CreateAt { get; set; }
+    public Guid DbConnectionId { get; set; }
 }

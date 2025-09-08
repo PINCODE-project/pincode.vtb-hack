@@ -32,4 +32,6 @@ public class AutovacuumStat : EntityBase, IEntityCreatedAt
         
     [Column(TypeName = "decimal(5,2)")]
     public decimal ChangeRatePercent { get; set; } // % изменения за период
+    
+    public Guid DbConnectionId { get; set; }
 }

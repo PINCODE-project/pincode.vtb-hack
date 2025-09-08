@@ -1,8 +1,11 @@
 ﻿using Npgsql;
 using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.DbConnection;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
+using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dal.Helpers;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzer.Api.Services.DbConnection;
 
 namespace SqlAnalyzer.Api.Monitoring.Services;
 
@@ -20,11 +23,12 @@ internal class MonitoringService : IMonitoringService
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveTempFilesMetricsAsync(string monitoringConnectionString)
+    public async Task<bool> SaveTempFilesMetricsAsync(DbConnection monitoringConnectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(monitoringConnectionString);
+            var connectionString = monitoringConnectionString.GetConnectionString();
+            await using var targetConn = new NpgsqlConnection(connectionString);
             await targetConn.OpenAsync();
 
             // Получаем текущие значения из целевой БД
@@ -36,6 +40,7 @@ internal class MonitoringService : IMonitoringService
                 Id = Guid.NewGuid(),
                 TempFiles = currentStats.tempFiles,
                 TempBytes = currentStats.tempBytes,
+                DbConnectionId = monitoringConnectionString.Id
             });
             await _db.SaveChangesAsync();
 
@@ -49,18 +54,19 @@ internal class MonitoringService : IMonitoringService
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveCacheHitMetricsAsync(string monitoringConnectionString)
+    public async Task<bool> SaveCacheHitMetricsAsync(DbConnection monitoringConnectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(monitoringConnectionString);
+            var connectionString = monitoringConnectionString.GetConnectionString();
+            await using var targetConn = new NpgsqlConnection(connectionString);
             await targetConn.OpenAsync();
 
             // Получаем текущие значения кэша
             var cacheHitStats = await GetCacheHitStats(targetConn);
 
             // Сохраняем в мониторинговую БД
-            await SaveCacheHitStatsToMonitoringDb(cacheHitStats);
+            await SaveCacheHitStatsToMonitoringDb(cacheHitStats, monitoringConnectionString.Id);
 
             return true;
         }
@@ -100,9 +106,10 @@ internal class MonitoringService : IMonitoringService
         return new CacheHitStats();
     }
     
-    public async Task SaveTableStatisticsListAsync(string monitoringConnectionString)
+    public async Task SaveTableStatisticsListAsync(DbConnection monitoringConnectionString)
     {
-        await using var connection = new NpgsqlConnection(monitoringConnectionString);
+        var connectionString = monitoringConnectionString.GetConnectionString();
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         var results = new List<TableStatictics>();
         await using var command = new NpgsqlCommand(@"SELECT
@@ -135,7 +142,8 @@ ORDER BY seq_tup_read DESC;", connection);
                 IndexCountSeqScan = reader.GetInt64(4),
                 TuplesFetchedIndexScan = reader.GetInt64(5),
                 IndexUsageRatio = reader.GetDecimal(6),
-                CreateAt = DateTime.UtcNow
+                CreateAt = DateTime.UtcNow,
+                DbConnectionId = monitoringConnectionString.Id
             });
         }
         
@@ -143,9 +151,10 @@ ORDER BY seq_tup_read DESC;", connection);
         await _db.SaveChangesAsync();
     }
 
-    public async Task SaveEfficiencyIndexListAsync(string connectionString)
+    public async Task SaveEfficiencyIndexListAsync(DbConnection connectionString)
     {
-        await using var connection = new NpgsqlConnection(connectionString);
+        var connectionS = connectionString.GetConnectionString();
+        await using var connection = new NpgsqlConnection(connectionS);
         await connection.OpenAsync();
         var results = new List<IndexMetric>();
         await using var command = new NpgsqlCommand(@"SELECT
@@ -179,6 +188,7 @@ ORDER BY index_efficiency ASC;", connection);
                 TuplesFetched = reader.GetInt64(5),
                 Efficiency = reader.GetDouble(6),
                 IndexSize = PostgresSizeConverter.ParsePostgresSizeToBytes(reader.GetString(7)),
+                DbConnectionId = connectionString.Id
             });
         }
 
@@ -186,8 +196,9 @@ ORDER BY index_efficiency ASC;", connection);
         await _db.SaveChangesAsync();
     }
 
-    private async Task SaveCacheHitStatsToMonitoringDb(CacheHitStats stats)
+    private async Task SaveCacheHitStatsToMonitoringDb(CacheHitStats stats, Guid dbConnectionId)
     {
+        stats.DbConnectionId = dbConnectionId;
         _db.CacheHitStats.Add(stats);
         await _db.SaveChangesAsync();
     }

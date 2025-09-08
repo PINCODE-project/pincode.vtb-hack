@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.DbConnection;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
+using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Monitoring.Services;
@@ -19,18 +21,18 @@ public class AutovacuumMonitoringService : IAutovacuumMonitoringService
         _context = context;
     }
 
-    public async Task<bool> SaveAutovacuumMetricsAsync(string connectionString)
+    public async Task<bool> SaveAutovacuumMetricsAsync(DbConnection connectionString)
     {
         try
         {
-            await using var targetConn = new NpgsqlConnection(connectionString);
+            await using var targetConn = new NpgsqlConnection(connectionString.GetConnectionString());
             await targetConn.OpenAsync();
 
             var currentStats = await GetCurrentTableStats(targetConn);
             var previousStats = await GetPreviousStatsForComparison();
                 
             var statsWithTrends = CalculateTrends(currentStats, previousStats);
-            await SaveStatsToDatabase(statsWithTrends);
+            await SaveStatsToDatabase(statsWithTrends, connectionString.Id);
 
             return true;
         }
@@ -128,8 +130,12 @@ public class AutovacuumMonitoringService : IAutovacuumMonitoringService
         return result;
     }
 
-    private async Task SaveStatsToDatabase(List<AutovacuumStat> stats)
+    private async Task SaveStatsToDatabase(List<AutovacuumStat> stats, Guid dbConnectionId)
     {
+        foreach (var stat in stats)
+        {
+            stat.DbConnectionId = dbConnectionId;
+        }
         await _context.AutovacuumStats.AddRangeAsync(stats);
         await _context.SaveChangesAsync();
     }

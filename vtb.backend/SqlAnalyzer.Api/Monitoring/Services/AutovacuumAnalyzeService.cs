@@ -19,17 +19,17 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
         _context = context;
     }
 
-    public async Task<AutovacuumAnalysisResponse> AnalyzeAutovacuumLastHourAsync()
+    public async Task<AutovacuumAnalysisResponse> AnalyzeAutovacuumLastHourAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd)
     {
         var response = new AutovacuumAnalysisResponse
         {
-            AnalysisPeriodEnd = DateTime.UtcNow,
-            AnalysisPeriodStart = DateTime.UtcNow.AddDays(-1)
+            AnalysisPeriodEnd = periodEnd,
+            AnalysisPeriodStart = periodStart
         };
 
         try
         {
-            var recentStats = await GetRecentStats();
+            var recentStats = await GetRecentStats(dbConnectionId, periodStart, periodEnd);
             response.ProblematicTables = IdentifyProblematicTables(recentStats);
             response.MetricsSummary = CalculateMetricsSummary(recentStats, response.ProblematicTables);
             response.Recommendations = GenerateRecommendations(response.ProblematicTables, response.MetricsSummary);
@@ -45,15 +45,25 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
         }
     }
 
-    private async Task<List<AutovacuumStat>> GetRecentStats()
+    private async Task<List<AutovacuumStat>> GetRecentStats(Guid dbConnectionId, DateTime start, DateTime end)
     {
-        var oneHourAgo = DateTime.UtcNow.AddHours(-1);
-        return await _context.AutovacuumStats
-            .Where(s => s.CreateAt >= oneHourAgo)
+        if (end == DateTime.MinValue)
+        {
+            var vacuumListForAllTime = await _context.AutovacuumStats
+                .Where(s => s.CreateAt >= start && s.DbConnectionId == dbConnectionId)
+                .OrderByDescending(s => s.CreateAt)
+                .ThenBy(s => s.SchemaName)
+                .ThenBy(s => s.TableName)
+                .ToListAsync();
+            return vacuumListForAllTime;
+        }
+        var vacuumList = await _context.AutovacuumStats
+            .Where(s => s.CreateAt >= start && s.CreateAt <= end && s.DbConnectionId == dbConnectionId)
             .OrderByDescending(s => s.CreateAt)
             .ThenBy(s => s.SchemaName)
             .ThenBy(s => s.TableName)
             .ToListAsync();
+        return vacuumList;
     }
 
     private List<ProblematicTable> IdentifyProblematicTables(List<AutovacuumStat> stats)
@@ -74,6 +84,10 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
                 var priority = DeterminePriority(stat.DeadTupleRatio, stat.ChangeRatePercent);
                 var growthTrend = DetermineGrowthTrend(stat.ChangeRatePercent);
 
+                if (stat.ChangeRatePercent < 30.0m)
+                {
+                    continue;
+                }
                 problematic.Add(new ProblematicTable
                 {
                     SchemaName = stat.SchemaName,
@@ -151,7 +165,7 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
         foreach (var table in problematicTables.Where(t => t.Priority == "critical"))
         {
             var scaleFactor = table.DeadTupleRatio > 50m ? 0.02m : 0.05m;
-                
+            
             recommendations.Add(new AutovacuumRecommendation
             {
                 Type = "table_specific",
@@ -164,7 +178,7 @@ public class AutovacuumAnalysisService : IAutovacuumAnalysisService
                 SqlCommand = $"ALTER TABLE {table.SchemaName}.{table.TableName} SET (autovacuum_vacuum_scale_factor = {scaleFactor});"
             });
         }
-
+        
         return recommendations;
     }
 

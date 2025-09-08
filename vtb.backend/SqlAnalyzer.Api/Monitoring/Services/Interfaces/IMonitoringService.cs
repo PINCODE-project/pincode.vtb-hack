@@ -1,4 +1,6 @@
-﻿namespace SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+﻿using SqlAnalyzer.Api.Dal.Entities.DbConnection;
+
+namespace SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 /// <summary>
 /// Сервис для мониторинга состояния бд
@@ -9,21 +11,21 @@ public interface IMonitoringService
     /// 
     /// </summary>
     /// <returns></returns>
-    Task<bool> SaveTempFilesMetricsAsync(string monitoringConnectionString);
+    Task<bool> SaveTempFilesMetricsAsync(DbConnection monitoringConnectionString);
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    Task<bool> SaveCacheHitMetricsAsync(string monitoringConnectionString);
+    Task<bool> SaveCacheHitMetricsAsync(DbConnection monitoringConnectionString);
 
     /// <summary>
     /// Сохранить метрики таблиц
     /// </summary>
-    Task SaveTableStatisticsListAsync(string monitoringConnectionString);
+    Task SaveTableStatisticsListAsync(DbConnection monitoringConnectionString);
 
     /// <summary>
     /// сохранить статистику индексов по таблицам
     /// </summary>
-    Task SaveEfficiencyIndexListAsync(string connectionString);
+    Task SaveEfficiencyIndexListAsync(DbConnection connectionString);
 }

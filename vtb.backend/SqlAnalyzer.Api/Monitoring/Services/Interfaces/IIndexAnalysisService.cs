@@ -2,5 +2,5 @@
 
 public interface IIndexAnalysisService
 {
-    Task<IndexAnalysisResult> GetFullAnalysisAsync(DateTime startDate, DateTime endDate);
+    Task<IndexAnalysisResult> GetFullAnalysisAsync(Guid dbConnectionId, DateTime periodStart, DateTime periodEnd);
 }
