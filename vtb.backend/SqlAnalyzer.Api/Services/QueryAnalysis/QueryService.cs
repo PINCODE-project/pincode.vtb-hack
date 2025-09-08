@@ -4,31 +4,28 @@ using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dto.QueryAnalysis;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
-using SqlAnalyzer.Api.Services.Recomedation;
-using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
 using SqlAnalyzerLib.Facade.Interfaces;
-using SqlAnalyzerLib.Recommendation.Models;
 
 namespace SqlAnalyzer.Api.Services.QueryAnalysis;
 
 using Dal.Entities.QueryAnalysis;
 using SqlAnalyzerLib.Recommendation.Models;
 
-public class QueryAnalysisService : IQueryAnalysisService
+public class QueryService : IQueryService
 {
     private readonly DataContext _db;
     private readonly ISqlAnalyzerFacade _analyzer;
 
-    public QueryAnalysisService(DataContext db, ISqlAnalyzerFacade analyzer)
+    public QueryService(DataContext db, ISqlAnalyzerFacade analyzer)
     {
         _db = db;
         _analyzer = analyzer;
     }
 
-    public async Task<IReadOnlyCollection<Recommendation>> AnalyzeAsync(QueryAnalysisDto request)
+    public async Task<Guid> Create(QueryCreateDto dto)
     {
         var dbConnection = await _db
-            .DbConnections.FirstOrDefaultAsync(x => x.Id == request.DbConnectionId);
+            .DbConnections.FirstOrDefaultAsync(x => x.Id == dto.DbConnectionId);
 
         if (dbConnection == null)
         {
@@ -40,7 +37,7 @@ public class QueryAnalysisService : IQueryAnalysisService
         {
             await conn.OpenAsync();
 
-            var cmd = new NpgsqlCommand($"EXPLAIN (FORMAT JSON) {request.Sql}", conn);
+            var cmd = new NpgsqlCommand($"EXPLAIN (FORMAT JSON) {dto.Sql}", conn);
             var result = await cmd.ExecuteScalarAsync();
 
             analyzeResult = result switch
@@ -53,15 +50,38 @@ public class QueryAnalysisService : IQueryAnalysisService
 
         var analysis = new QueryAnalysis
         {
-            DbConnectionId = request.DbConnectionId,
-            Query = request.Sql,
+            DbConnectionId = dto.DbConnectionId,
+            Query = dto.Sql,
             AnalyzeResult = analyzeResult
         };
 
         _db.QueryAnalysis.Add(analysis);
         await _db.SaveChangesAsync();
 
-        var analysisResult = await _analyzer.GetRecommendations(analysis.Query, analysis.AnalyzeResult);
+        return analysis.Id;
+    }
+
+    public async Task<QueryDto> Get(Guid id)
+    {
+        var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == id);
+
+        if (query == null)
+        {
+            throw new InvalidOperationException("Query not found");
+        }
+        
+        return new QueryDto(query.Id, query.Query, query.AnalyzeResult, query.DbConnectionId, query.CreateAt);
+    }
+
+    public async Task<IReadOnlyCollection<Recommendation>> AnalyzeAsync(Guid queryId, bool useLlm)
+    {
+        var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == queryId);
+        
+        if (query == null)
+        {
+            throw new InvalidOperationException("Query not found");
+        }
+        var analysisResult = await _analyzer.GetRecommendations(query.Query, query.AnalyzeResult);
         return analysisResult;
     }
 }
