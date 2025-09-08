@@ -12,7 +12,7 @@ public class TempFilesMonitoringBackgroundService : BackgroundService
 {
     private readonly ILogger<TempFilesMonitoringBackgroundService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(5); // Оптимальный интервал
+    private readonly TimeSpan _interval = TimeSpan.FromHours(1); // Оптимальный интервал
 
     public TempFilesMonitoringBackgroundService(
         ILogger<TempFilesMonitoringBackgroundService> logger,

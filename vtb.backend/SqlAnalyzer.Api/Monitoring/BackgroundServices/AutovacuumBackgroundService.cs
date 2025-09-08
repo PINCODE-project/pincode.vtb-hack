@@ -9,7 +9,7 @@ public class AutovacuumBackgroundService : BackgroundService
 {
     private readonly ILogger<CacheHitMonitoringBackgroundService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(4); 
+    private readonly TimeSpan _interval = TimeSpan.FromHours(4); 
 
     public AutovacuumBackgroundService(
         ILogger<CacheHitMonitoringBackgroundService> logger,
