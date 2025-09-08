@@ -67,7 +67,7 @@ builder.Services.AddScoped<IAutovacuumMonitoringService, AutovacuumMonitoringSer
 builder.Services.AddScoped<IAutovacuumAnalysisService, AutovacuumAnalysisService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
 builder.Services.AddScoped<IQueryRecommendationService, QueryRecommendationService>();
-builder.Services.AddScoped<IQueryAnalysisService, QueryAnalysisService>();
+builder.Services.AddScoped<IQueryService, QueryService>();
 builder.Services.AddSqlAnalyzer();
 
 builder.Logging.AddConsole();
