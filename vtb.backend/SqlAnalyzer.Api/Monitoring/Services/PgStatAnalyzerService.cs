@@ -1,288 +1,243 @@
-﻿using System.Data;
-using System.Text.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Extensions;
-using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
-
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces; // DataContext и модель DbConnections
 
 /// <summary>
-/// Продвинутый анализатор pg_stat_statements.
-/// - scoped сервис (инжектится DataContext)
-/// - анализирует все записи pg_stat_statements (без orderBy)
-/// - вычисляет score (0..100), классифицирует критичность и генерирует рекомендации на русском
-/// - опционально выполняет EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) для топ-запросов (includeExplain=true)
+/// Анализатор pg_stat_statements — упрощённая версия:
+/// - нет limit и нет EXPLAIN
+/// - возвращает все записи pg_stat_statements для заданного dbConnectionId
+/// - не ломается при отсутствии колонок/расширения
+/// - рекомендации и сообщения — только на русском; если проблем не найдено — добавляется "Нет замечаний"
 /// </summary>
 public class PgStatAnalyzerService : IPgStatAnalyzerService
 {
-    private readonly DataContext _db;
+    private readonly DataContext _db; // содержит список DbConnections
     private readonly ILogger<PgStatAnalyzerService> _log;
-    private readonly DataContext _dbContext;
 
-    // кеш отображения колонок pg_stat_statements (TTL)
-    private Dictionary<string, string>? _columnMap;
-    private DateTime _columnMapLoadedAt = DateTime.MinValue;
+    // Кеш карт колонок на целевую БД (ключ — hash connection string)
+    private readonly Dictionary<string, (Dictionary<string, string> map, DateTime loadedAt)> _columnMaps = new();
     private readonly TimeSpan _columnMapTtl = TimeSpan.FromMinutes(5);
 
-    public PgStatAnalyzerService(DataContext db, ILogger<PgStatAnalyzerService> log,
-        DataContext dbContext)
+    public PgStatAnalyzerService(DataContext db, ILogger<PgStatAnalyzerService> log)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _log = log ?? throw new ArgumentNullException(nameof(log));
-        _dbContext = dbContext;
-    }
-
-    public void Dispose()
-    {
-        // DbContext управляется DI, ничего не делаем
     }
 
     /// <summary>
-    /// Анализирует все записи pg_stat_statements и возвращает top N проблемных запросов.
-    /// - limit: сколько результатов вернуть (по score)
-    /// - includeExplain: если true — попробует выполнить EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) для каждого топ-запроса (опасно в prod)
+    /// Анализирует все записи pg_stat_statements в целевой базе (dbConnectionId).
+    /// Возвращает полный отчёт (включая все найденные записи).
     /// </summary>
-    public async Task<AnalysisReportAdvanced> AnalyzeTopAsync(Guid dbConnectionId, int limit = 50, bool includeExplain = false,
-        CancellationToken cancellationToken = default)
+    public async Task<AnalysisReportAdvanced> AnalyzeTopAsync(Guid dbConnectionId, CancellationToken cancellationToken = default)
     {
-        if (limit <= 0) limit = 50;
-        
         var map = await EnsureColumnMapAsync(dbConnectionId, cancellationToken);
         if (map == null || map.Count == 0)
-            throw new InvalidOperationException(
-                "pg_stat_statements недоступен или не удалось определить колонки. Убедитесь, что расширение установлено.");
+        {
+            return new AnalysisReportAdvanced
+            {
+                GeneratedAtUtc = DateTime.UtcNow,
+                Results = new List<QueryStatAdvanced>(),
+                Note = "pg_stat_statements недоступен в целевой базе или не удалось определить колонки."
+            };
+        }
 
-        // Получаем все записи pg_stat_statements (без ORDER BY / LIMIT) — анализ "по всем сразу".
-        // Важно: на очень больших инсталляциях это может вернуть много строк — мониторьте потребление памяти.
-        var stats = await FetchAllPgStatStatementsAsync(map, cancellationToken);
+        var stats = await FetchAllPgStatStatementsAsync(dbConnectionId, map, cancellationToken);
 
         if (stats.Count == 0)
-            return new AnalysisReportAdvanced { Note = "В pg_stat_statements нет записей." };
+            return new AnalysisReportAdvanced { GeneratedAtUtc = DateTime.UtcNow, Results = new List<QueryStatAdvanced>(), Note = "В pg_stat_statements нет доступных записей." };
 
-        // Нормализация: найдём максимумы по метрикам, чтобы вычислить относительный score
+        // Нормализация для score
         var maxTotal = stats.Max(x => x.TotalTimeMs);
         var maxMean = stats.Max(x => x.MeanTimeMs);
         var maxCalls = Math.Max(1, stats.Max(x => x.Calls));
         var maxShared = Math.Max(1, stats.Max(x => x.SharedBlksRead));
         var maxTemp = Math.Max(1, stats.Max(x => x.TempBlksWritten));
         var maxRows = Math.Max(1, stats.Max(x => x.Rows));
-        var maxStd = Math.Max(1.0, stats.Max(x => x.StdDevTimeMs));
 
-        // Вычисляем score и генерируем рекомендации (на русском)
         foreach (var s in stats)
         {
-            s.Score = ComputeScore(s, maxTotal, maxMean, maxCalls, maxShared, maxTemp, maxRows, maxStd);
-            s.Suggestions.AddRange(GenerateSuggestionsInRussian(s));
+            s.Score = ComputeScore(s, maxTotal, maxMean, maxCalls, maxShared, maxTemp, maxRows);
+            var suggestions = GenerateSuggestionsInRussian(s).ToList();
+
+            // если предложений нет (т.е. явных проблем не выявлено) — добавляем "Нет замечаний"
+            if (!suggestions.Any())
+            {
+                suggestions.Add(new Suggestion
+                {
+                    Title = "Нет замечаний",
+                    Description = "По текущим эвристикам проблем не обнаружено.",
+                    Priority = 0
+                });
+                s.Severity = Criticality.Info;
+            }
+            else
+            {
+                s.Severity = ClassifySeverity(s.Score);
+            }
+
+            s.Suggestions = suggestions;
         }
 
-        // Берём top N по score
-        var top = stats.OrderByDescending(x => x.Score).Take(limit).ToList();
-
-        // Классифицируем критичность и сортируем рекомендации по приоритету
-        foreach (var q in top)
-        {
-            q.Severity = ClassifySeverity(q.Score);
-            q.Suggestions.Sort((a, b) => b.Priority.CompareTo(a.Priority));
-        }
-
-        // Опционально: run EXPLAIN (dangerous)
-        if (includeExplain)
-        {
-            await RunExplainForTopAsync(top, cancellationToken);
-        }
-
+        // возвращаем все записи в отчёте (по запросу без лимита)
         return new AnalysisReportAdvanced
         {
             GeneratedAtUtc = DateTime.UtcNow,
-            Results = top,
-            Note = includeExplain
-                ? "В отчёт включены EXPLAIN (ANALYZE). Убедитесь, что выполнение происходило на реплике или тестовой среде."
-                : "Рекомендации сгенерированы эвристически. Для подтверждения используйте EXPLAIN (ANALYZE, BUFFERS)."
+            Results = stats,
+            Note = "Анализ выполнен. EXPLAIN отключён (по запросу)."
         };
     }
 
     /// <summary>
-    /// Попытка создать расширение, если pg_stat_statements предзагружен.
-    /// Возвращает текстовое сообщение о результате.
+    /// Проверяет наличие расширения и строит карту доступных колонок (fallback для PG15),
+    /// используя соединение по dbConnectionId.
     /// </summary>
-    public async Task<string> EnsurePgStatStatementsInstalledAsync(bool tryCreateExtension = false,
-        CancellationToken cancellationToken = default)
-    {
-        var conn = _db.Database.GetDbConnection();
-        var opened = false;
-        if (conn.State != ConnectionState.Open)
-        {
-            await _db.Database.OpenConnectionAsync(cancellationToken);
-            opened = true;
-        }
-
-        try
-        {
-            // Проверим shared_preload_libraries
-            string preload;
-            await using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = "SHOW shared_preload_libraries;";
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandTimeout = 10;
-                var res = await cmd.ExecuteScalarAsync(cancellationToken);
-                preload = res?.ToString() ?? "";
-            }
-
-            var preloaded = preload.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Trim())
-                .Any(x => x.Equals("pg_stat_statements", StringComparison.OrdinalIgnoreCase));
-            if (!preloaded)
-            {
-                return
-                    $"pg_stat_statements отсутствует в shared_preload_libraries (текущий='{preload}'). Добавьте его в postgresql.conf и перезапустите сервер, затем выполните CREATE EXTENSION в каждой базе.";
-            }
-
-            if (tryCreateExtension)
-            {
-                try
-                {
-                    await using var cmd = conn.CreateCommand();
-                    cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;";
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandTimeout = 30;
-                    await cmd.ExecuteNonQueryAsync(cancellationToken);
-                    _columnMap = null; // очистить кеш
-                    return "CREATE EXTENSION выполнен (или расширение уже существует).";
-                }
-                catch (Exception ex)
-                {
-                    _log.LogWarning(ex, "CREATE EXTENSION завершился ошибкой.");
-                    return $"CREATE EXTENSION завершился ошибкой: {ex.Message}";
-                }
-            }
-
-            return
-                "pg_stat_statements предзагружен на сервере. Выполните CREATE EXTENSION IF NOT EXISTS pg_stat_statements; в текущей базе (нужны привилегии).";
-        }
-        finally
-        {
-            if (opened) await _db.Database.CloseConnectionAsync();
-        }
-    }
-
-    #region Внутренние хелперы (детект колонок, выборка, explain, scoring, рекомендации на русском)
-
     private async Task<Dictionary<string, string>> EnsureColumnMapAsync(Guid dbConnectionId, CancellationToken cancellationToken)
     {
         var dbConnection = _db.DbConnections.FirstOrDefault(x => x.Id == dbConnectionId);
-        if (dbConnection == null)
-        {
-            throw new Exception("Ошибка");
-        }
-        await using var conn = new NpgsqlConnection(dbConnection.GetConnectionString());
-        await conn.OpenAsync(cancellationToken);
-        if (_columnMap != null && DateTime.UtcNow - _columnMapLoadedAt < _columnMapTtl)
-            return _columnMap;
+        if (dbConnection == null) throw new Exception("DbConnection не найден.");
 
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var openedHere = false;
-        if (conn.State != ConnectionState.Open)
+        var connStr = dbConnection.GetConnectionString();
+        var cacheKey = connStr.GetHashCode().ToString();
+
+        if (_columnMaps.TryGetValue(cacheKey, out var cached) && DateTime.UtcNow - cached.loadedAt < _columnMapTtl)
+            return cached.map;
+
+        // Открываем NpgsqlConnection
+        await using var conn = new NpgsqlConnection(connStr);
+        try
         {
-            await _db.Database.OpenConnectionAsync(cancellationToken);
-            openedHere = true;
+            await conn.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "Не удалось открыть соединение к целевой БД (id={DbConnectionId})", dbConnectionId);
+            _columnMaps[cacheKey] = (new Dictionary<string, string>(), DateTime.UtcNow);
+            return _columnMaps[cacheKey].map;
         }
 
         try
         {
-            // Получим колонки pg_stat_statements
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText =
-                @"SELECT column_name FROM information_schema.columns WHERE table_name = 'pg_stat_statements';";
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandTimeout = 10;
+            // Проверим установлено ли расширение в базе
+            try
+            {
+                await using var cmdExt = conn.CreateCommand();
+                cmdExt.CommandText = "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements')";
+                cmdExt.CommandType = CommandType.Text;
+                cmdExt.CommandTimeout = 5;
+                var exists = await cmdExt.ExecuteScalarAsync(cancellationToken);
+                if (exists is bool b && !b)
+                {
+                    _columnMaps[cacheKey] = (new Dictionary<string, string>(), DateTime.UtcNow);
+                    return _columnMaps[cacheKey].map;
+                }
+            }
+            catch
+            {
+                // продолжим — попробуем information_schema (пусть будет fallback)
+            }
 
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+            try
             {
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT column_name FROM information_schema.columns WHERE table_name = 'pg_stat_statements';";
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandTimeout = 10;
+
+                await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
                 while (await reader.ReadAsync(cancellationToken))
                     existing.Add(reader.GetString(0));
             }
+            catch
+            {
+                existing.Clear(); // force fallback
+            }
 
-            // Сопоставляем логические имена -> реальные имена колонок
-            map["total_time"] = existing.Contains("total_exec_time")
-                ? "total_exec_time"
-                : (existing.Contains("total_time") ? "total_time" : "");
-            map["mean_time"] = existing.Contains("mean_exec_time")
-                ? "mean_exec_time"
-                : (existing.Contains("mean_time") ? "mean_time" : "");
-            map["min_time"] = existing.Contains("min_exec_time")
-                ? "min_exec_time"
-                : (existing.Contains("min_time") ? "min_time" : "");
-            map["max_time"] = existing.Contains("max_exec_time")
-                ? "max_exec_time"
-                : (existing.Contains("max_time") ? "max_time" : "");
-            map["stddev_time"] = existing.Contains("stddev_exec_time")
-                ? "stddev_exec_time"
-                : (existing.Contains("stddev_time") ? "stddev_time" : "");
-            map["rows"] = existing.Contains("rows") ? "rows" : "";
-            map["shared_blks_read"] = existing.Contains("shared_blks_read") ? "shared_blks_read" : "";
-            map["shared_blks_hit"] = existing.Contains("shared_blks_hit") ? "shared_blks_hit" : "";
-            map["temp_blks_written"] = existing.Contains("temp_blks_written") ? "temp_blks_written" : "";
-            map["blk_read_time"] = existing.Contains("blk_read_time") ? "blk_read_time" : "";
-            map["blk_write_time"] = existing.Contains("blk_write_time") ? "blk_write_time" : "";
-            map["calls"] = existing.Contains("calls") ? "calls" : "";
-            map["queryid"] = existing.Contains("queryid") ? "queryid" : "";
-            map["query"] = existing.Contains("query") ? "query" : "";
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            var clean = map.Where(kv => !string.IsNullOrEmpty(kv.Value))
-                .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+            if (existing.Count > 0)
+            {
+                map["queryid"] = existing.Contains("queryid") ? "queryid" : "";
+                map["query"] = existing.Contains("query") ? "query" : "";
+                map["calls"] = existing.Contains("calls") ? "calls" : "";
+                map["total_time"] = existing.Contains("total_exec_time") ? "total_exec_time" : (existing.Contains("total_time") ? "total_time" : "");
+                map["mean_time"] = existing.Contains("mean_exec_time") ? "mean_exec_time" : (existing.Contains("mean_time") ? "mean_time" : "");
+                map["rows"] = existing.Contains("rows") ? "rows" : "";
+                map["shared_blks_read"] = existing.Contains("shared_blks_read") ? "shared_blks_read" : "";
+                map["temp_blks_written"] = existing.Contains("temp_blks_written") ? "temp_blks_written" : "";
+            }
+            else
+            {
+                // fallback assume PG15-ish names
+                map["queryid"] = "queryid";
+                map["query"] = "query";
+                map["calls"] = "calls";
+                map["total_time"] = "total_exec_time";
+                map["mean_time"] = "mean_exec_time";
+                map["rows"] = "rows";
+                map["shared_blks_read"] = "shared_blks_read";
+                map["temp_blks_written"] = "temp_blks_written";
+            }
 
-            _columnMap = clean;
-            _columnMapLoadedAt = DateTime.UtcNow;
-            return _columnMap;
+            var clean = map.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+            _columnMaps[cacheKey] = (clean, DateTime.UtcNow);
+            return clean;
         }
         finally
         {
-            if (openedHere) await _db.Database.CloseConnectionAsync();
+            await conn.CloseAsync();
         }
     }
 
+    // Формируем SQL с фолбэком: отсутствующие колонки заменяются на константы (0 / '')
     private string BuildSelectAllSql(Dictionary<string, string> map)
     {
         string col(string alias, string fallback = "0") =>
             map.TryGetValue(alias, out var actual) ? $"{actual} AS {alias}" : $"{fallback} AS {alias}";
 
         var select = $@"
-SELECT 
+SELECT
   {(map.ContainsKey("queryid") ? "queryid::bigint AS queryid" : "0 AS queryid")},
   {(map.ContainsKey("query") ? "query AS query" : "'' AS query")},
   {(map.ContainsKey("calls") ? "calls::bigint AS calls" : "0 AS calls")},
   {col("total_time")},
   {col("mean_time")},
-  {col("min_time")},
-  {col("max_time")},
-  {col("stddev_time")},
   {col("rows")},
   {col("shared_blks_read")},
-  {col("shared_blks_hit")},
-  {col("temp_blks_written")},
-  {col("blk_read_time")},
-  {col("blk_write_time")}
-FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
+  {col("temp_blks_written")}
+FROM pg_stat_statements
+WHERE COALESCE(query, '') <> '<insufficient privilege>' AND COALESCE(query, '') <> '';";
 
         return select;
     }
 
-    private async Task<List<QueryStatAdvanced>> FetchAllPgStatStatementsAsync(Dictionary<string, string> map,
-        CancellationToken cancellationToken)
+    private async Task<List<QueryStatAdvanced>> FetchAllPgStatStatementsAsync(Guid dbConnectionId, Dictionary<string, string> map, CancellationToken cancellationToken)
     {
-        var sql = BuildSelectAllSql(map);
-        var list = new List<QueryStatAdvanced>();
+        var dbConnection = _db.DbConnections.FirstOrDefault(x => x.Id == dbConnectionId);
+        if (dbConnection == null) throw new Exception("DbConnection не найден.");
 
-        var conn = _db.Database.GetDbConnection();
-        var openedHere = false;
-        if (conn.State != ConnectionState.Open)
+        var connStr = dbConnection.GetConnectionString();
+        var sql = BuildSelectAllSql(map);
+        var result = new List<QueryStatAdvanced>();
+
+        await using var conn = new NpgsqlConnection(connStr);
+        try
         {
-            await _db.Database.OpenConnectionAsync(cancellationToken);
-            openedHere = true;
+            await conn.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "Не удалось открыть соединение для FetchAllPgStatStatementsAsync (id={DbConnectionId})", dbConnectionId);
+            return result;
         }
 
         try
@@ -290,52 +245,53 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
             cmd.CommandType = CommandType.Text;
-            cmd.CommandTimeout = 120; // можно увеличить при необходимости
+            cmd.CommandTimeout = 120;
 
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 var qs = new QueryStatAdvanced
                 {
-                    QueryId = reader.IsDBNull(0) ? 0L : reader.GetFieldValue<long>(0),
                     Query = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
                     Calls = reader.IsDBNull(2) ? 0L : reader.GetFieldValue<long>(2),
                     TotalTimeMs = reader.IsDBNull(3) ? 0.0 : reader.GetFieldValue<double>(3),
                     MeanTimeMs = reader.IsDBNull(4) ? 0.0 : reader.GetFieldValue<double>(4),
-                    MinTimeMs = reader.IsDBNull(5) ? 0.0 : reader.GetFieldValue<double>(5),
-                    MaxTimeMs = reader.IsDBNull(6) ? 0.0 : reader.GetFieldValue<double>(6),
-                    StdDevTimeMs = reader.IsDBNull(7) ? 0.0 : reader.GetFieldValue<double>(7),
-                    Rows = reader.IsDBNull(8) ? 0L : reader.GetFieldValue<long>(8),
-                    SharedBlksRead = reader.IsDBNull(9) ? 0L : reader.GetFieldValue<long>(9),
-                    SharedBlksHit = reader.IsDBNull(10) ? 0L : reader.GetFieldValue<long>(10),
-                    TempBlksWritten = reader.IsDBNull(11) ? 0L : reader.GetFieldValue<long>(11),
-                    BlkReadTimeMs = reader.IsDBNull(12) ? 0.0 : reader.GetFieldValue<double>(12),
-                    BlkWriteTimeMs = reader.IsDBNull(13) ? 0.0 : reader.GetFieldValue<double>(13),
+                    Rows = reader.IsDBNull(5) ? 0L : reader.GetFieldValue<long>(5),
+                    SharedBlksRead = reader.IsDBNull(6) ? 0L : reader.GetFieldValue<long>(6),
+                    TempBlksWritten = reader.IsDBNull(7) ? 0L : reader.GetFieldValue<long>(7),
                     Suggestions = new List<Suggestion>()
                 };
 
-                list.Add(qs);
+                result.Add(qs);
             }
+        }
+        catch (PostgresException pgEx)
+        {
+            _log.LogWarning(pgEx, "Ошибка при чтении pg_stat_statements (возможно расширение не создано в базе).");
+            return new List<QueryStatAdvanced>();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Неожиданная ошибка при чтении pg_stat_statements.");
+            return new List<QueryStatAdvanced>();
         }
         finally
         {
-            if (openedHere) await _db.Database.CloseConnectionAsync();
+            await conn.CloseAsync();
         }
 
-        return list;
+        return result;
     }
 
-    private double ComputeScore(QueryStatAdvanced s, double maxTotal, double maxMean, double maxCalls,
-        double maxSharedRead, double maxTemp, double maxRows, double maxStddev)
+    // Score и рекомендации (русский)
+    private double ComputeScore(QueryStatAdvanced s, double maxTotal, double maxMean, double maxCalls, double maxSharedRead, double maxTemp, double maxRows)
     {
-        // Веса можно подстроить под вашу нагрузку
-        const double wTotal = 0.30;
-        const double wMean = 0.12;
+        const double wTotal = 0.40;
+        const double wMean = 0.15;
         const double wCalls = 0.10;
         const double wShared = 0.20;
-        const double wTemp = 0.12;
-        const double wRows = 0.06;
-        const double wStd = 0.10;
+        const double wTemp = 0.10;
+        const double wRows = 0.05;
 
         double nTotal = maxTotal > 0 ? s.TotalTimeMs / maxTotal : 0;
         double nMean = maxMean > 0 ? s.MeanTimeMs / maxMean : 0;
@@ -343,23 +299,16 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
         double nShared = maxSharedRead > 0 ? (double)s.SharedBlksRead / maxSharedRead : 0;
         double nTemp = maxTemp > 0 ? (double)s.TempBlksWritten / maxTemp : 0;
         double nRows = maxRows > 0 ? (double)s.Rows / maxRows : 0;
-        double nStd = maxStddev > 0 ? s.StdDevTimeMs / maxStddev : 0;
 
-        double baseScore = wTotal * nTotal + wMean * nMean + wCalls * nCalls + wShared * nShared + wTemp * nTemp +
-                           wRows * nRows + wStd * nStd;
+        double baseScore = wTotal * nTotal + wMean * nMean + wCalls * nCalls + wShared * nShared + wTemp * nTemp + wRows * nRows;
 
-        // Текстовые эвристики — добавляют "бонус" к score
         double textBoost = 0;
         var q = (s.Query ?? "").ToLowerInvariant();
-
         if (q.Contains("select *")) textBoost += 0.08;
-        if (Regex.IsMatch(q, @"like\s+'%")) textBoost += 0.14;
-        if (q.Contains("ilike")) textBoost += 0.12;
-        if (Regex.IsMatch(q, @"where\s+.*\b(lower|upper|to_char|date_trunc)\s*\(")) textBoost += 0.10;
-        if (Regex.IsMatch(q, @"order\s+by") && !Regex.IsMatch(q, @"limit\s+\d+")) textBoost += 0.09;
-        if (q.Contains(" in (select")) textBoost += 0.04;
-        if (s.Rows > 10000) textBoost += 0.06;
-        if (s.TempBlksWritten > 0) textBoost += 0.12;
+        if (Regex.IsMatch(q, @"like\s+'%")) textBoost += 0.12;
+        if (q.Contains("ilike")) textBoost += 0.08;
+        if (Regex.IsMatch(q, @"order\s+by") && !Regex.IsMatch(q, @"limit\s+\d+")) textBoost += 0.06;
+        if (s.TempBlksWritten > 0) textBoost += 0.10;
 
         var raw = baseScore + textBoost;
         var scaled = Math.Min(1.0, raw) * 100.0;
@@ -368,10 +317,10 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
 
     private Criticality ClassifySeverity(double score)
     {
-        if (score >= 75) return Criticality.Critical;
-        if (score >= 55) return Criticality.High;
-        if (score >= 35) return Criticality.Medium;
-        if (score >= 15) return Criticality.Low;
+        if (score >= 80) return Criticality.Critical;
+        if (score >= 60) return Criticality.High;
+        if (score >= 40) return Criticality.Medium;
+        if (score >= 20) return Criticality.Low;
         return Criticality.Info;
     }
 
@@ -380,154 +329,22 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
         var list = new List<Suggestion>();
         var q = (s.Query ?? "").ToLowerInvariant();
 
-        if (s.TotalTimeMs > 10_000 || s.MeanTimeMs > 2_000)
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Выполните EXPLAIN (ANALYZE, BUFFERS)",
-                Description =
-                    $"Запрос суммарно выполнялся {s.TotalTimeMs:F0} ms (в среднем {s.MeanTimeMs:F0} ms). Запустите EXPLAIN (ANALYZE, BUFFERS) на реплике/тестовой среде, чтобы получить точный план — это даст информацию о seq scan / sort / hash spills.",
-                Priority = 100
-            });
-        }
-
+        // Вставляем только целевые предложения (без призывов к EXPLAIN)
         if (s.Calls > 10_000 && s.MeanTimeMs > 1)
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Использовать подготовленные запросы / batching",
-                Description =
-                    $"Этот запрос вызывается {s.Calls} раз. Если запрос параметризуем — используйте prepared statements, batching или кэширование на клиенте.",
-                Priority = 90
-            });
-        }
+            list.Add(new Suggestion { Title = "Использовать подготовленные запросы / batching", Description = $"Запрос вызывается {s.Calls} раз. Рассмотрите prepared statements или batching.", Priority = 90 });
 
-        if (s.SharedBlksRead > 1000 || s.SharedBlksRead > s.SharedBlksHit * 2)
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Много чтения блоков — возможен full table scan",
-                Description =
-                    $"shared_blks_read = {s.SharedBlksRead}, shared_blks_hit = {s.SharedBlksHit}. Проверьте фильтры WHERE/JOIN и селективность — возможно, нужен индекс или изменение запроса.",
-                Priority = 95
-            });
-        }
+        if (s.SharedBlksRead > 1000)
+            list.Add(new Suggestion { Title = "Проверить индексы / селективность", Description = $"Много чтения блоков: shared_blks_read = {s.SharedBlksRead}. Проверьте WHERE/JOIN и подумайте об индексе.", Priority = 85 });
 
         if (s.TempBlksWritten > 0)
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Временные блоки — внешние сортировки/spills",
-                Description =
-                    $"temp_blks_written = {s.TempBlksWritten}. Запрос использует большие сортировки/хэш-операции и проливает на диск. Попробуйте увеличить work_mem локально и заново выполнить EXPLAIN; рассмотрите пересмотр ORDER BY/GROUP BY.",
-                Priority = 95,
-                ExampleSql = "SET LOCAL work_mem = '64MB'; -- выполнить EXPLAIN повторно на реплике"
-            });
-        }
+            list.Add(new Suggestion { Title = "Spill на диск", Description = $"temp_blks_written = {s.TempBlksWritten}. Рассмотрите временное повышение work_mem при тестировании и оптимизацию сортировок/агрегаций.", Priority = 85 });
 
         if (q.Contains("select *"))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Избегать SELECT *",
-                Description =
-                    "SELECT * увеличивает чтение ненужных колонок и передачу по сети. Указывайте только необходимые поля.",
-                Priority = 70
-            });
-        }
-
-        if (Regex.IsMatch(q, @"like\s+'%"))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "LIKE с ведущим %",
-                Description =
-                    "LIKE '%foo' не использует B-tree индекс. Рассмотрите pg_trgm + GIN или полнотекстовый поиск.",
-                Priority = 88,
-                ExampleSql =
-                    "CREATE EXTENSION IF NOT EXISTS pg_trgm;\nCREATE INDEX ON schema.table USING gin (column gin_trgm_ops);"
-            });
-        }
-
-        if (q.Contains("ilike") || Regex.IsMatch(q, @"lower\("))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Поиск без учёта регистра",
-                Description =
-                    "ILIKE или LOWER(col) мешают стандартному индексу. Рассмотрите функциональный индекс (lower(col)) или pg_trgm для строковых совпадений.",
-                Priority = 80,
-                ExampleSql = "CREATE INDEX ON schema.table (lower(column));"
-            });
-        }
-
-        if (Regex.IsMatch(q, @"order\s+by") && !Regex.IsMatch(q, @"limit\s+\d+"))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "ORDER BY без LIMIT",
-                Description =
-                    "Полное сортирование большого количества строк дорого. Добавьте LIMIT, используйте индекс для порядка или материализованный вид.",
-                Priority = 70
-            });
-        }
-
-        if (q.Contains(" in (select"))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "IN (SELECT...)",
-                Description =
-                    "IN (SELECT ...) иногда можно заменить на EXISTS или JOIN — это может дать более оптимальный план.",
-                Priority = 60
-            });
-        }
+            list.Add(new Suggestion { Title = "Избегать SELECT *", Description = "Указывайте только нужные колонки.", Priority = 60 });
 
         var idx = TryProposeSimpleIndex(s.Query);
         if (!string.IsNullOrEmpty(idx))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Возможный индекс (эвристика)",
-                Description =
-                    "Предложение индекса сформировано автоматически (best-effort). Проверьте селективность и сравните EXPLAIN до/после.",
-                Priority = 90,
-                ExampleSql = idx
-            });
-        }
-
-        if (s.SharedBlksRead > 10_000)
-        {
-            list.Add(new Suggestion
-            {
-                Title = "ANALYZE / статистика",
-                Description =
-                    "Возможно статистика таблиц устарела — выполните ANALYZE на релевантных таблицах или настройте autovacuum.",
-                Priority = 75
-            });
-        }
-
-        if (q.Contains("group by") || q.Contains("count(") || q.Contains("sum("))
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Материализованные представления / pre-aggregation",
-                Description =
-                    "Если запрос — heavy aggregate для отчётов, рассмотрите materialized views, инкрементальную агрегацию или денормализацию.",
-                Priority = 65
-            });
-        }
-
-        if (!list.Any())
-        {
-            list.Add(new Suggestion
-            {
-                Title = "Общий совет",
-                Description =
-                    "Выполните EXPLAIN (ANALYZE, BUFFERS) и проанализируйте план вручную. Автоматические подсказки — эвристики.",
-                Priority = 10
-            });
-        }
+            list.Add(new Suggestion { Title = "Возможный индекс (эвристика)", Description = "Проверьте селективность и сравните план выполнения до/после.", Priority = 80, ExampleSql = idx });
 
         return list;
     }
@@ -541,8 +358,7 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
             var fromMatch = Regex.Match(qn, @"from\s+([a-zA-Z0-9_\.]+)", RegexOptions.IgnoreCase);
             if (!fromMatch.Success) return null;
             var table = fromMatch.Groups[1].Value;
-            var whereMatch = Regex.Match(qn, @"where\s+(.*?)($|\border\b|\bgroup\b|\blimit\b)",
-                RegexOptions.IgnoreCase);
+            var whereMatch = Regex.Match(qn, @"where\s+(.*?)($|\border\b|\bgroup\b|\blimit\b)", RegexOptions.IgnoreCase);
             if (!whereMatch.Success) return null;
             var where = whereMatch.Groups[1].Value;
             var colMatch = Regex.Match(where, @"([a-zA-Z0-9_\.]+)\s*=\s*(?:[:'\d\w\(])", RegexOptions.IgnoreCase);
@@ -558,97 +374,29 @@ FROM pg_stat_statements;"; // intentionally no ORDER BY / LIMIT
         }
     }
 
-    private async Task RunExplainForTopAsync(List<QueryStatAdvanced> top, CancellationToken cancellationToken)
+    public Task<string> EnsurePgStatStatementsInstalledAsync(bool tryCreateExtension = false,
+        CancellationToken cancellationToken = default)
     {
-        foreach (var q in top)
-        {
-            try
-            {
-                var rawQuery = q.Query;
-                if (string.IsNullOrWhiteSpace(rawQuery)) continue;
-
-                // Заменяем $1,$2 на NULL — best-effort; план может отличаться
-                var safe = Regex.Replace(rawQuery, @"\$\d+", "NULL", RegexOptions.Compiled);
-                safe = safe.Trim().TrimEnd(';');
-
-                var explainSql = $"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {safe};";
-
-                var conn = _db.Database.GetDbConnection();
-                var openedHere = false;
-                if (conn.State != ConnectionState.Open)
-                {
-                    await _db.Database.OpenConnectionAsync(cancellationToken);
-                    openedHere = true;
-                }
-
-                try
-                {
-                    await using var cmd = conn.CreateCommand();
-                    cmd.CommandText = explainSql;
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandTimeout = 300;
-
-                    await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-                    if (await reader.ReadAsync(cancellationToken))
-                    {
-                        var raw = reader.GetString(0);
-                        try
-                        {
-                            q.ExplainPlanJson = JsonSerializer.Deserialize<object>(raw);
-                        }
-                        catch
-                        {
-                            q.ExplainPlanJson = raw;
-                        }
-                    }
-                }
-                finally
-                {
-                    if (openedHere) await _db.Database.CloseConnectionAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogWarning(ex,
-                    "EXPLAIN завершился ошибкой для запроса — пропускаем. Запрос может содержать параметры или требовать прав.");
-                q.ExplainPlanJson = null;
-            }
-        }
+        throw new NotImplementedException();
     }
-
-    #endregion
 }
 
-// --- DTOs (если у тебя уже есть модели, используй свои; это минимальные реализации) ---
-public enum Criticality
-{
-    Critical,
-    High,
-    Medium,
-    Low,
-    Info
-}
+// DTOs (минимальные)
+public enum Criticality { Critical, High, Medium, Low, Info }
 
 public class QueryStatAdvanced
 {
-    public long QueryId { get; set; }
     public string Query { get; set; } = "";
     public long Calls { get; set; }
     public double TotalTimeMs { get; set; }
     public double MeanTimeMs { get; set; }
-    public double MinTimeMs { get; set; }
-    public double MaxTimeMs { get; set; }
-    public double StdDevTimeMs { get; set; }
     public long Rows { get; set; }
     public long SharedBlksRead { get; set; }
-    public long SharedBlksHit { get; set; }
     public long TempBlksWritten { get; set; }
-    public double BlkReadTimeMs { get; set; }
-    public double BlkWriteTimeMs { get; set; }
     public double Score { get; set; }
     public Criticality Severity { get; set; }
     public List<Suggestion> Suggestions { get; set; } = new();
-    public object? ExplainPlanJson { get; set; }
+    public object? ExplainPlanJson { get; set; } = null;
 }
 
 public class Suggestion
