@@ -16,7 +16,7 @@ public sealed class LlmClient : ILlmClient
     private static readonly LlmMessage SystemMessage = new("system",
         "Ты эксперт по PostgreSQL и оптимизации SQL-запросов.\n" +
         "Я дам тебе SQL-запрос и результаты анализа его выполнения (EXPLAIN в формате JSON).\n" +
-        "Отвечай только на русском языке. Только кратко и по делу, без лишней воды!!!\n" +
+        "Отвечай только на русском языке! Выдавай все рекомендации и сообщения только на русском языке! Только кратко и по делу, без лишней воды!!!\n" +
         "Твоя задача:\n" +
         "1. Проанализировать исходный запрос и объяснить, какие есть проблемы в плане выполнения.\n" +
         "2. Предложить улучшенную версию запроса (сохранив логику, но оптимизировав joins, индексы, фильтры, агрегаты).\n" +
@@ -24,20 +24,20 @@ public sealed class LlmClient : ILlmClient
         "4. Предупредить, если твои изменения могут повлиять на корректность результата.\n" +
         "5. Если запрос уже оптимален — объясни почему.\n\n" +
         "Формат ответа - JSON. В ответ отправляй только его и ничего больше:\n" +
-        "- Анализ проблем в текущем плане (поле \"problems\")\n" +
-        "- Предложение по улучшению (поле \"recommendations\")\n" +
-        "- Новый улучшенный SQL-запрос (поле \"newQuery\")\n" +
-        "- Обоснование изменений (поле \"newQueryAbout\")");
+        "- Анализ проблем в текущем плане (поле \"problems\" - массив сущностей {\"message\" : string, \"severity\" : enum (Info=0,Warning=1Critical=2)})\n" +
+        "- Предложение по улучшению (поле \"recommendations\" - массив сущностей {\"message\" : string, \"severity\" : enum(Info=0,Warning=1Critical=2)})\n" +
+        "- Новый улучшенный SQL-запрос (поле \"newQuery\" - строка)\n" +
+        "- Обоснование изменений (поле \"newQueryAbout\" - строка)");
 
-public LlmClient(HttpClient httpClient)
+    public LlmClient(HttpClient httpClient)
     {
         _http = httpClient;
         _json = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = null, 
+            PropertyNamingPolicy = null,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
-        
+
         if (_http.Timeout == Timeout.InfiniteTimeSpan)
             _http.Timeout = TimeSpan.FromSeconds(30);
     }
@@ -65,11 +65,11 @@ public LlmClient(HttpClient httpClient)
         using var resp = await _http.PostAsync("/v1/chat/completions", content, ct);
         var body = JsonSerializer.Deserialize<JsonObject>(await resp.Content.ReadAsStringAsync(ct));
         var answerJson = (
-            (JsonArray) 
-            (body.TryGetPropertyValue("choices", out var choice) 
-                ? choice 
-                : throw new InvalidOperationException("Empty LLM response.")
-            ))
+                (JsonArray)
+                (body.TryGetPropertyValue("choices", out var choice)
+                    ? choice
+                    : throw new InvalidOperationException("Empty LLM response.")
+                ))
             .FirstOrDefault()
             ["message"]["content"].ToString();
         if (resp.IsSuccessStatusCode == false)
@@ -77,15 +77,15 @@ public LlmClient(HttpClient httpClient)
             throw new HttpRequestException($"LLM HTTP {(int)resp.StatusCode}: {body}");
         }
 
-        var parsed = JsonSerializer.Deserialize<LlmChatResponse>(answerJson, _json)
+        var parsed = JsonSerializer.Deserialize<LlmChatResponse>(body, _json)
                      ?? throw new InvalidOperationException("Empty LLM response.");
 
         var answer = JsonSerializer.Deserialize<LlmAnswer>(parsed.Choices.First().Message.Content, _json)
-            ?? throw new InvalidOperationException("Invalid LLM response.");
+                     ?? throw new InvalidOperationException("Invalid LLM response.");
         return answer;
     }
 
-    public Task<LlmAnswer> GetRecommendationAsync(
+    public Task<LlmAnswer> GetRecommendation(
         string findings,
         string originalSql,
         string? explainJson = null,

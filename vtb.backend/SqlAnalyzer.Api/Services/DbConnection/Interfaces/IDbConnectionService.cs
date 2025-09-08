@@ -6,11 +6,11 @@ namespace SqlAnalyzer.Api.Services.DbConnection.Interfaces;
 public interface IDbConnectionService
 {
     Task<IReadOnlyCollection<DbConnectionDto>> Find(DbConnectionFindDto dto);
-    Task<SimpleDto<Guid>> SaveAsync(DbConnectionCreateDto request);
+    Task<SimpleDto<Guid>> SaveAsync(DbConnectionCreateDto dto);
     
     Task Update(DbConnectionUpdateDto dto);
 
-    Task Delete(Guid Id);
+    Task Delete(Guid id);
     
-    Task<DbConnectionCheckDto> CheckAsync(Guid dbConnectionId);
+    Task<DbConnectionCheckDto> CheckAsync(DbConnectionCreateDto dto);
 }

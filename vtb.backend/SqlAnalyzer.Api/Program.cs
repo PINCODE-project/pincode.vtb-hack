@@ -11,9 +11,6 @@ using SqlAnalyzer.Api.Services.LlmClient;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 using SqlAnalyzer.Api.Services.QueryAnalysis;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
-using SqlAnalyzer.Api.Services.Recomedation;
-using SqlAnalyzer.Api.Services.Recomedation.Interfaces;
-using SqlAnalyzer.Api.Services.SubstituteValuesToSql;
 using SqlAnalyzer.Api.Services.SubstituteValuesToSql.Interfaces;
 using SqlAnalyzerLib.LibExtensions;
 
@@ -68,7 +65,6 @@ builder.Services.AddScoped<ICacheAnalyzeService, CacheAnalyzeService>();
 builder.Services.AddScoped<IAutovacuumMonitoringService, AutovacuumMonitoringService>();
 builder.Services.AddScoped<IAutovacuumAnalysisService, AutovacuumAnalysisService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
-builder.Services.AddScoped<IQueryRecommendationService, QueryRecommendationService>();
 builder.Services.AddScoped<IQueryService, QueryService>();
 builder.Services.AddSqlAnalyzer();
 

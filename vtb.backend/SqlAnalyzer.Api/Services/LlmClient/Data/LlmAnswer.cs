@@ -5,10 +5,10 @@ namespace SqlAnalyzer.Api.Services.LlmClient.Data;
 public class LlmAnswer
 {
     [JsonPropertyName("problems")] 
-    public required string Problems { get; init; }
+    public required IReadOnlyCollection<LlmAnswerPoint> Problems { get; init; }
     
     [JsonPropertyName("recommendations")]
-    public required string Recommendations { get; init; }
+    public required IReadOnlyCollection<LlmAnswerPoint> Recommendations { get; init; }
     
     [JsonPropertyName("newQuery")]
     public required string NewQuery { get; init; }

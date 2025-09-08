@@ -1,3 +1,17 @@
 namespace SqlAnalyzer.Api.Dto.DbConnection;
 
-public record DbConnectionCheckDto(bool IsValid, string? ErrorMessage = null);
+/// <summary>
+/// Ответ на проверку доступа к БД
+/// </summary>
+public class DbConnectionCheckDto
+{
+    /// <summary>
+    /// Доступна ли БД
+    /// </summary>
+    public required bool IsValid { get; init; }
+    
+    /// <summary>
+    /// Сообщение об ошибке (если есть)
+    /// </summary>
+    public string? ErrorMessage { get; init; }
+}

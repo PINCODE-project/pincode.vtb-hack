@@ -11,12 +11,14 @@ namespace SqlAnalyzer.Api.Services.DbConnection;
 
 using Dal.Entities.DbConnection;
 
+/// <inheritdoc />
 public class DbConnectionService : IDbConnectionService
 {
     private readonly DataContext _db;
     private readonly IMonitoringService _monitoringService;
     private readonly IAutovacuumMonitoringService _autovacuumMonitoringService;
 
+    /// 
     public DbConnectionService(DataContext db,
         IMonitoringService monitoringService,
         IAutovacuumMonitoringService autovacuumMonitoringService)
@@ -26,6 +28,7 @@ public class DbConnectionService : IDbConnectionService
         _autovacuumMonitoringService = autovacuumMonitoringService;
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<DbConnectionDto>> Find(DbConnectionFindDto dto)
     {
         var query = _db.DbConnections.AsNoTracking();
@@ -54,12 +57,16 @@ public class DbConnectionService : IDbConnectionService
 
         query = query.UseLimiter(dto.Skip, dto.Take);
         var result = await query
-            .Select(d => new DbConnectionDto(d.Id, d.Name, d.Host, d.Port, d.Database, d.Username))
+            .Select(d => new DbConnectionDto
+            {
+                Id = d.Id, Name = d.Name, Host = d.Host, Port = d.Port, Database = d.Database, Username = d.Username
+            })
             .ToListAsync();
 
         return result;
     }
 
+    /// <inheritdoc />
     public async Task<SimpleDto<Guid>> SaveAsync(DbConnectionCreateDto request)
     {
         var entity = new DbConnection
@@ -76,11 +83,11 @@ public class DbConnectionService : IDbConnectionService
         await _db.SaveChangesAsync();
 
         for (var i = 0; i < 2; i++)
-        { 
+        {
             // Кастомно сохраняем данные чтобы не получить ошибку сразу при сохранении
             await _monitoringService.SaveCacheHitMetricsAsync(entity);
             await _monitoringService.SaveEfficiencyIndexListAsync(entity);
-            await _monitoringService.SaveTableStatisticsListAsync(entity);
+            //await _monitoringService.SaveTableStatisticsListAsync(entity);
             await _monitoringService.SaveTempFilesMetricsAsync(entity);
             await _autovacuumMonitoringService.SaveAutovacuumMetricsAsync(entity);
         }
@@ -88,6 +95,7 @@ public class DbConnectionService : IDbConnectionService
         return new SimpleDto<Guid>(entity.Id);
     }
 
+    /// <inheritdoc />
     public async Task Update(DbConnectionUpdateDto dto)
     {
         var db = await _db.DbConnections.FirstAsync(db => db.Id == dto.Id);
@@ -121,42 +129,36 @@ public class DbConnectionService : IDbConnectionService
         {
             db.Password = dto.Password;
         }
-        
+
         _db.DbConnections.Update(db);
         await _db.SaveChangesAsync();
     }
 
-    public Task Delete(Guid Id)
+    /// <inheritdoc />
+    public async Task Delete(Guid id)
     {
-        throw new NotImplementedException();
+        await _db.DbConnections.Where(db => db.Id == id).ExecuteDeleteAsync();
     }
 
-    public async Task<DbConnectionCheckDto> CheckAsync(Guid dbConnectionId)
+    /// <inheritdoc />
+    public async Task<DbConnectionCheckDto> CheckAsync(DbConnectionCreateDto dto)
     {
-        var dbConnection = _db.DbConnections.FirstOrDefault(x => x.Id == dbConnectionId);
-        if (dbConnection == null)
-        {
-            return new DbConnectionCheckDto(false, "DbConnection not found");
-        }
-
-        var connectionString =
-            $"Host={dbConnection.Host};Port={dbConnection.Port};Database={dbConnection.Database};Username={dbConnection.Username};Password={dbConnection.Password};Pooling=false;Timeout=3";
-
+        var connectionString = GetConnectionString(dto.Host, dto.Port, dto.Database, dto.Username, dto.Password);
         try
         {
             await using var conn = new NpgsqlConnection(connectionString);
             await conn.OpenAsync();
-            return new DbConnectionCheckDto(true);
+            return new DbConnectionCheckDto { IsValid = true };
         }
         catch (Exception ex)
         {
-            return new DbConnectionCheckDto(false, ex.Message);
+            return new DbConnectionCheckDto { IsValid = false, ErrorMessage = ex.Message };
         }
     }
 
-    public static string GetConnectionString(DbConnection connection)
+    private static string GetConnectionString(string host, int port, string database, string username, string password)
     {
         return
-            $"Host={connection.Host};Port={connection.Port};Database={connection.Database};Username={connection.Username};Password={connection.Password};Pooling=false;Timeout=3";
+            $"Host={host};Port={port};Database={database};Username={username};Password={password};Pooling=false;Timeout=3";
     }
 }

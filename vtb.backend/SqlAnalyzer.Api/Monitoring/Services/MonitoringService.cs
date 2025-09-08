@@ -142,7 +142,6 @@ ORDER BY seq_tup_read DESC;", connection);
                 IndexCountSeqScan = reader.GetInt64(4),
                 TuplesFetchedIndexScan = reader.GetInt64(5),
                 IndexUsageRatio = reader.GetDecimal(6),
-                CreateAt = DateTime.UtcNow,
                 DbConnectionId = monitoringConnectionString.Id
             });
         }

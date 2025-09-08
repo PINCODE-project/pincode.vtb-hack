@@ -11,6 +11,7 @@ public class DbConnectionController : ControllerBase
 {
     private readonly IDbConnectionService _service;
 
+    /// 
     public DbConnectionController(IDbConnectionService service)
     {
         _service = service;
@@ -50,10 +51,10 @@ public class DbConnectionController : ControllerBase
     /// <summary>
     /// Проверяет доступность подключения.
     /// </summary>
-    [HttpGet("{dbConnectionId:guid}/check")]
-    public async Task<ActionResult<DbConnectionCheckDto>> Check([FromRoute] Guid dbConnectionId)
+    [HttpPost("check")]
+    public async Task<ActionResult<DbConnectionCheckDto>> Check([FromRoute] DbConnectionCreateDto dto)
     {
-        var result = await _service.CheckAsync(dbConnectionId);
+        var result = await _service.CheckAsync(dto);
         return Ok(result);
     }
     

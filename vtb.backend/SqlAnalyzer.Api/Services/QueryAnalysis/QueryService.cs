@@ -3,25 +3,31 @@ using Npgsql;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dto.QueryAnalysis;
+using SqlAnalyzer.Api.Services.LlmClient.Data;
+using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 using SqlAnalyzerLib.Facade.Interfaces;
 
 namespace SqlAnalyzer.Api.Services.QueryAnalysis;
 
 using Dal.Entities.QueryAnalysis;
-using SqlAnalyzerLib.Recommendation.Models;
 
+/// <inheritdoc />
 public class QueryService : IQueryService
 {
     private readonly DataContext _db;
     private readonly ISqlAnalyzerFacade _analyzer;
+    private readonly ILlmClient _llm;
 
-    public QueryService(DataContext db, ISqlAnalyzerFacade analyzer)
+    /// 
+    public QueryService(DataContext db, ISqlAnalyzerFacade analyzer, ILlmClient llm)
     {
         _db = db;
         _analyzer = analyzer;
+        _llm = llm;
     }
 
+    /// <inheritdoc />
     public async Task<Guid> Create(QueryCreateDto dto)
     {
         var dbConnection = await _db
@@ -31,7 +37,7 @@ public class QueryService : IQueryService
         {
             throw new InvalidOperationException("DbConnection not found");
         }
-        
+
         string analyzeResult;
         await using (var conn = new NpgsqlConnection(dbConnection.GetConnectionString()))
         {
@@ -61,6 +67,7 @@ public class QueryService : IQueryService
         return analysis.Id;
     }
 
+    /// <inheritdoc />
     public async Task<QueryDto> Get(Guid id)
     {
         var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == id);
@@ -69,19 +76,48 @@ public class QueryService : IQueryService
         {
             throw new InvalidOperationException("Query not found");
         }
-        
-        return new QueryDto(query.Id, query.Query, query.AnalyzeResult, query.DbConnectionId, query.CreateAt);
+
+        return new QueryDto
+        {
+            Id = query.Id,
+            Sql = query.Query,
+            ExplainResult = query.AnalyzeResult ?? "",
+            DbConnectionId = query.DbConnectionId,
+            CreatedAt = query.CreateAt
+        };
     }
 
-    public async Task<IReadOnlyCollection<Recommendation>> AnalyzeAsync(Guid queryId, bool useLlm)
+    /// <inheritdoc />
+    public async Task<QueryAnalysisResultDto> AnalyzeAsync(Guid queryId, bool useLlm)
     {
         var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == queryId);
-        
+
         if (query == null)
         {
             throw new InvalidOperationException("Query not found");
         }
-        var analysisResult = await _analyzer.GetRecommendations(query.Query, query.AnalyzeResult);
-        return analysisResult;
+
+        var analysisResult = await _analyzer.GetRecommendations(query.Query, query.AnalyzeResult ?? string.Empty);
+
+        LlmAnswer? llmAnswer = null;
+        if (useLlm)
+        {
+            var analysisRecommendationsString = string.Join(',', analysisResult.Select(x => x.Message));
+            llmAnswer = await _llm.GetRecommendation(
+                analysisRecommendationsString,
+                query.Query,
+                query.AnalyzeResult
+            );
+        }
+
+        return new QueryAnalysisResultDto
+        {
+            Id = query.Id,
+            DbConnectionId = query.DbConnectionId,
+            Query = query.Query,
+            ExplainResult = query.AnalyzeResult ?? string.Empty,
+            AlgorithmRecommendation = analysisResult,
+            LlmRecommendations = llmAnswer
+        };
     }
 }

@@ -4,7 +4,7 @@ namespace SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 
 public interface ILlmClient
 {
-    Task<LlmAnswer> GetRecommendationAsync(
+    Task<LlmAnswer> GetRecommendation(
         string findings,
         string originalSql,
         string? explainJson = null,
