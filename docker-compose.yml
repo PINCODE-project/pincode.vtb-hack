@@ -50,6 +50,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  frontend:
+    container_name: frontend-vtb-hack
+    build:
+      context: ./pincode.vtb-hack.fe
+      dockerfile: Dockerfile
+    environment:
+      - API_BASE_URL=https://sql-analyzer.pincode-infra.ru
+    ports:
+      - "5025:8080"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   pgadmin_data:

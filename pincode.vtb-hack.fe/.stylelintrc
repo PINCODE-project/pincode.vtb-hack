@@ -1,0 +1,47 @@
+{
+  "extends": [
+    "stylelint-config-standard-scss",
+    "stylelint-scss",
+    "stylelint-config-idiomatic-order"
+  ],
+  "rules": {
+    "declaration-block-no-duplicate-properties": true,
+    "no-duplicate-at-import-rules": true,
+    "declaration-no-important": null,
+    "max-nesting-depth": 2,
+    "selector-class-pattern": null,
+    "scss/at-mixin-pattern": [
+      "^[a-z][a-zA-Z0-9]+$",
+      {
+        "message": "Expect @mixin to be lowerCamelCase. Example: @mixinRule"
+      }
+    ],
+    "scss/at-function-pattern": [
+      "^[a-z][a-zA-Z0-9]+$",
+      {
+        "message": "Expect @function to be lowerCamelCase. Example: @someFunction"
+      }
+    ],
+    "selector-pseudo-class-no-unknown": [
+      null,
+      {
+        "ignorePseudoClasses": ["global"]
+      }
+    ],
+    "scss/dollar-variable-pattern": [
+      "^([a-z][a-z0-9]*)(-[a-z0-9]+)*$",
+      {
+        "message": "Expect variable to be kebab-case."
+      }
+    ],
+    "color-named": ["never", { "ignore": ["inside-function"] }],
+    "color-no-hex": [
+      null,
+      {
+        "message": "Все цвета должны тянуться из темы или должны быть прописаны в кастомных цветах проекта (src/app/ui/styles/mixins/colors.scss)"
+      }
+    ],
+    "function-name-case": null,
+    "custom-property-pattern": null
+  }
+}

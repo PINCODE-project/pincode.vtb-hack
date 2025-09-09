@@ -1,0 +1,1848 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Postgresql analyzer API",
+    "description": "Сервис для анализа метрик бд и sql запросов",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/autovacuum/analysis": {
+      "get": {
+        "tags": [
+          "AutovacuumAnalysis"
+        ],
+        "summary": "Полный анализ состояния autovacuum",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutovacuumAnalysisResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutovacuumAnalysisResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutovacuumAnalysisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/analysis": {
+      "get": {
+        "tags": [
+          "CacheAnalysis"
+        ],
+        "summary": "Анализ изменения состояния кеша за последний час",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheAnalysisResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheAnalysisResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheAnalysisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/db-connections/find": {
+      "get": {
+        "tags": [
+          "DbConnection"
+        ],
+        "summary": "Ищет все коннекшены",
+        "parameters": [
+          {
+            "name": "Search",
+            "in": "query",
+            "description": "Строка запроса - ищет по названию, хосту, порту, названию БД, юзернейму",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Skip",
+            "in": "query",
+            "description": "Сколько записей пропускаем",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Take",
+            "in": "query",
+            "description": "Сколько записей берем",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DbConnectionDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DbConnectionDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DbConnectionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/db-connections": {
+      "post": {
+        "tags": [
+          "DbConnection"
+        ],
+        "summary": "Сохраняет подключение (без проверки).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "DbConnection"
+        ],
+        "summary": "Обновляет",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionUpdateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionUpdateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/db-connections/check": {
+      "post": {
+        "tags": [
+          "DbConnection"
+        ],
+        "summary": "Проверяет доступность подключения.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbConnectionCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbConnectionCheckDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbConnectionCheckDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbConnectionCheckDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/db-connections/{id}": {
+      "delete": {
+        "tags": [
+          "DbConnection"
+        ],
+        "summary": "Удаляет",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/index/recommendations": {
+      "get": {
+        "tags": [
+          "IndexAnalyze"
+        ],
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexAnalysisResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexAnalysisResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexAnalysisResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pg-state-analysis/top": {
+      "get": {
+        "tags": [
+          "PgStateAnalysis"
+        ],
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisReportAdvanced"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisReportAdvanced"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisReportAdvanced"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queries/find": {
+      "get": {
+        "tags": [
+          "QueryAnalysis"
+        ],
+        "summary": "Поиск всех сохраненных запросов",
+        "parameters": [
+          {
+            "name": "Skip",
+            "in": "query",
+            "description": "Сколько записей пропускаем",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Take",
+            "in": "query",
+            "description": "Сколько записей берем",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueryDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueryDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queries/create": {
+      "post": {
+        "tags": [
+          "QueryAnalysis"
+        ],
+        "summary": "Только создает запись запроса и его эксплейна, выводит созданный id",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidSimpleDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queries/{queryId}": {
+      "get": {
+        "tags": [
+          "QueryAnalysis"
+        ],
+        "summary": "По Id запроса выдает его содержимое и результат EXPLAIN",
+        "parameters": [
+          {
+            "name": "queryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queries/{queryId}/analyze": {
+      "post": {
+        "tags": [
+          "QueryAnalysis"
+        ],
+        "summary": "Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос",
+        "parameters": [
+          {
+            "name": "queryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "useLlm",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryAnalysisResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryAnalysisResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryAnalysisResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/substitute-values-to-sql/substitute": {
+      "post": {
+        "tags": [
+          "SubstituteValuesToSql"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubstituteValuesToSqlRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubstituteValuesToSqlRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubstituteValuesToSqlRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temp-file/analysis": {
+      "get": {
+        "tags": [
+          "TempFilesAnalyzeMonitoring"
+        ],
+        "summary": "Получить результаты анализа временных файлов за последний час",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempFilesRecommendationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempFilesRecommendationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempFilesRecommendationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisReportAdvanced": {
+        "type": "object",
+        "properties": {
+          "generatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueryStatAdvanced"
+            },
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutovacuumAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "analysisPeriodStart": {
+            "type": "string",
+            "description": "Начало анализа",
+            "format": "date-time"
+          },
+          "analysisPeriodEnd": {
+            "type": "string",
+            "description": "Завершение анализа",
+            "format": "date-time"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutovacuumRecommendation"
+            },
+            "description": "Рекомендации по улучшению вакуума",
+            "nullable": true
+          },
+          "metricsSummary": {
+            "$ref": "#/components/schemas/AutovacuumMetricsSummary"
+          },
+          "overallStatus": {
+            "type": "string",
+            "description": "Статус автовакуума в целом по всей базе",
+            "nullable": true
+          },
+          "problematicTables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblematicTable"
+            },
+            "description": "Список проблемных таблиц",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результаты анализа автовакуума"
+      },
+      "AutovacuumMetricsSummary": {
+        "type": "object",
+        "properties": {
+          "totalTables": {
+            "type": "integer",
+            "description": "Общее количество таблиц в базе данных",
+            "format": "int32"
+          },
+          "problematicTables": {
+            "type": "integer",
+            "description": "Количество таблиц, требующих внимания (dead tuple ratio > 10%)",
+            "format": "int32"
+          },
+          "criticalTables": {
+            "type": "integer",
+            "description": "Количество таблиц в критическом состоянии (dead tuple ratio > 20%)",
+            "format": "int32"
+          },
+          "avgDeadTupleRatio": {
+            "type": "number",
+            "description": "Средний процент мертвых строк по всем таблицам",
+            "format": "double"
+          },
+          "maxDeadTupleRatio": {
+            "type": "number",
+            "description": "Максимальный процент мертвых строк среди всех таблиц",
+            "format": "double"
+          },
+          "worstTable": {
+            "type": "string",
+            "description": "Наименование таблицы с наихудшим показателем мертвых строк",
+            "nullable": true
+          },
+          "worstTableRatio": {
+            "type": "number",
+            "description": "Процент мертвых строк в таблице с наихудшим показателем",
+            "format": "double"
+          },
+          "totalDeadTuples": {
+            "type": "integer",
+            "description": "Общее количество мертвых строк во всех таблицах",
+            "format": "int64"
+          },
+          "totalLiveTuples": {
+            "type": "integer",
+            "description": "Общее количество живых строк во всех таблицах",
+            "format": "int64"
+          },
+          "systemWideDeadTupleRatio": {
+            "type": "number",
+            "description": "Общий процент мертвых строк (dead tuples) во всех базах данных кластера\nРассчитывается как: (TotalDeadTuples / TotalLiveTuples) * 100",
+            "format": "double",
+            "readOnly": true
+          },
+          "tablesAbove10Percent": {
+            "type": "integer",
+            "description": "Количество таблиц с процентом мертвых строк более 10%",
+            "format": "int32"
+          },
+          "tablesAbove20Percent": {
+            "type": "integer",
+            "description": "Количество таблиц с процентом мертвых строк более 20%",
+            "format": "int32"
+          },
+          "tablesAbove30Percent": {
+            "type": "integer",
+            "description": "Количество таблиц с процентом мертвых строк более 30%",
+            "format": "int32"
+          },
+          "avgChangeRatePercent": {
+            "type": "number",
+            "description": "Средний процент изменения данных в таблицах (скорость накопления мертвых строк)",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Сводка метрик автовакуума для мониторинга состояния базы данных"
+      },
+      "AutovacuumRecommendation": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Тип рекомендации (\"vacuum\", \"analyze\", \"parameter_tuning\", \"maintenance\")",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "description": "Уровень серьезности проблемы (\"critical\", \"warning\", \"info\")",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Текстовое описание рекомендации или проблемы",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "description": "Имя таблицы, к которой относится рекомендация",
+            "nullable": true
+          },
+          "parameter": {
+            "type": "string",
+            "description": "Наименование параметра PostgreSQL, который требует настройки",
+            "nullable": true
+          },
+          "currentValue": {
+            "type": "string",
+            "description": "Текущее значение параметра",
+            "nullable": true
+          },
+          "recommendedValue": {
+            "type": "string",
+            "description": "Рекомендуемое значение параметра",
+            "nullable": true
+          },
+          "sqlCommand": {
+            "type": "string",
+            "description": "SQL-команда для применения рекомендации",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Рекомендация по настройке автовакуума для оптимизации работы базы данных"
+      },
+      "CacheAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "analysisPeriodStart": {
+            "type": "string",
+            "description": "Начальная дата и время периода анализа",
+            "format": "date-time"
+          },
+          "analysisPeriodEnd": {
+            "type": "string",
+            "description": "Конечная дата и время периода анализа",
+            "format": "date-time"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CacheRecommendation"
+            },
+            "description": "Список рекомендаций по оптимизации кэша",
+            "nullable": true
+          },
+          "metricsSummary": {
+            "$ref": "#/components/schemas/CacheMetricsSummary"
+          },
+          "overallStatus": {
+            "type": "string",
+            "description": "Общий статус здоровья кэша\n\"healthy\" - кэш работает эффективно,\n\"warning\" - требуются некоторые оптимизации,\n\"critical\" - серьезные проблемы с кэшем",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Модель ответа для анализа кэша базы данных\nСодержит результаты анализа эффективности работы кэша PostgreSQL за определенный период"
+      },
+      "CacheMetricsSummary": {
+        "type": "object",
+        "properties": {
+          "totalBlksHit": {
+            "type": "integer",
+            "description": "Общее количество блоков, найденных в кэше (cache hits)",
+            "format": "int64"
+          },
+          "totalBlksRead": {
+            "type": "integer",
+            "description": "Общее количество блоков, прочитанных с диска (cache misses)",
+            "format": "int64"
+          },
+          "totalBlksAccessed": {
+            "type": "integer",
+            "description": "Общее количество обращений к блокам (hits + reads)",
+            "format": "int64",
+            "readOnly": true
+          },
+          "avgCacheHitRatio": {
+            "type": "number",
+            "description": "Средний процент попаданий в кэш за период анализа\nРассчитывается как: (TotalBlksHit / TotalBlksAccessed) * 100",
+            "format": "double"
+          },
+          "minCacheHitRatio": {
+            "type": "number",
+            "description": "Минимальный процент попаданий в кэш за период анализа",
+            "format": "double"
+          },
+          "maxCacheHitRatio": {
+            "type": "number",
+            "description": "Максимальный процент попаданий в кэш за период анализа",
+            "format": "double"
+          },
+          "blksReadPerMinute": {
+            "type": "number",
+            "description": "Количество чтений блоков с диска в минуту",
+            "format": "double"
+          },
+          "blksHitPerMinute": {
+            "type": "number",
+            "description": "Количество попаданий в кэш в минуту",
+            "format": "double"
+          },
+          "blksAccessedPerMinute": {
+            "type": "number",
+            "description": "Общее количество обращений к блокам в минуту",
+            "format": "double",
+            "readOnly": true
+          },
+          "readToHitRatio": {
+            "type": "number",
+            "description": "Соотношение чтений с диска к попаданиям в кэш\nБолее высокие значения указывают на неэффективность кэша",
+            "format": "double",
+            "readOnly": true
+          },
+          "dataPointsCount": {
+            "type": "integer",
+            "description": "Количество точек данных, использованных для анализа",
+            "format": "int32"
+          },
+          "analysisDuration": {
+            "type": "string",
+            "description": "Продолжительность периода анализа",
+            "format": "date-span"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Метрики специфичные для анализа эффективности кэша"
+      },
+      "CacheRecommendation": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Тип рекомендации по оптимизации кэша\n\"shared_buffers\" - настройка размера shared_buffers,\n\"index_optimization\" - оптимизация индексов,\n\"query_tuning\" - настройка запросов,\n\"work_mem\" - настройка work_mem,\n\"effective_cache_size\" - настройка effective_cache_size",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "description": "Уровень серьезности рекомендации\n\"low\" - низкий приоритет,\n\"medium\" - средний приоритет,\n\"high\" - высокий приоритет",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Детальное описание рекомендации и обоснование",
+            "nullable": true
+          },
+          "currentValue": {
+            "type": "number",
+            "description": "Текущее значение параметра (если применимо)",
+            "format": "double"
+          },
+          "recommendedValue": {
+            "type": "number",
+            "description": "Рекомендуемое значение параметра",
+            "format": "double"
+          },
+          "threshold": {
+            "type": "number",
+            "description": "Пороговое значение для срабатывания рекомендации",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Рекомендации специфичные для оптимизации кэша базы данных"
+      },
+      "DbConnectionCheckDto": {
+        "required": [
+          "isValid"
+        ],
+        "type": "object",
+        "properties": {
+          "isValid": {
+            "type": "boolean",
+            "description": "Доступна ли БД"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Сообщение об ошибке (если есть)",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Ответ на проверку доступа к БД"
+      },
+      "DbConnectionCreateDto": {
+        "required": [
+          "database",
+          "host",
+          "name",
+          "password",
+          "port",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Название БД (внутри сервиса)",
+            "nullable": true
+          },
+          "host": {
+            "type": "string",
+            "description": "Хост БД",
+            "nullable": true
+          },
+          "port": {
+            "type": "integer",
+            "description": "Порт БД",
+            "format": "int32"
+          },
+          "database": {
+            "type": "string",
+            "description": "Название БД",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "description": "Пользователь под которым логинимся в БД",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль для пользователя в БД",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Дто для создания сущности соединения с БД, а также проверки на доступность"
+      },
+      "DbConnectionDto": {
+        "required": [
+          "database",
+          "host",
+          "id",
+          "name",
+          "port",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название БД (внутри сервиса)",
+            "nullable": true
+          },
+          "host": {
+            "type": "string",
+            "description": "Хост БД",
+            "nullable": true
+          },
+          "port": {
+            "type": "integer",
+            "description": "Порт БД",
+            "format": "int32"
+          },
+          "database": {
+            "type": "string",
+            "description": "Название БД",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "description": "Пользователь под которым логинимся в БД",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": ""
+      },
+      "DbConnectionUpdateDto": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название БД (внутри сервиса)",
+            "nullable": true
+          },
+          "host": {
+            "type": "string",
+            "description": "Хост БД",
+            "nullable": true
+          },
+          "port": {
+            "type": "integer",
+            "description": "Порт БД",
+            "format": "int32",
+            "nullable": true
+          },
+          "database": {
+            "type": "string",
+            "description": "Название БД",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "description": "Пользователь под которым логинимся в БД",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль для пользователя в БД",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Дто для обновления сущности соединения с БД"
+      },
+      "GuidSimpleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IndexAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "unusedIndexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IndexRecommendation"
+            },
+            "nullable": true
+          },
+          "inefficientIndexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IndexRecommendation"
+            },
+            "nullable": true
+          },
+          "growingIndexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IndexRecommendation"
+            },
+            "nullable": true
+          },
+          "mostUsedIndexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IndexUsage"
+            },
+            "nullable": true
+          },
+          "indexUsageStatistics": {
+            "$ref": "#/components/schemas/IndexUsageStatistics"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IndexRecommendation": {
+        "type": "object",
+        "properties": {
+          "schemaName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "nullable": true
+          },
+          "indexName": {
+            "type": "string",
+            "nullable": true
+          },
+          "metricType": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "averageValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          },
+          "formattedSize": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IndexUsage": {
+        "type": "object",
+        "properties": {
+          "schemaName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "nullable": true
+          },
+          "indexName": {
+            "type": "string",
+            "nullable": true
+          },
+          "averageScans": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalScans": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "averageEfficiency": {
+            "type": "number",
+            "format": "double"
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IndexUsageStatistics": {
+        "type": "object",
+        "properties": {
+          "totalIndexes": {
+            "type": "integer",
+            "description": "Общее количество уникальных индексов в анализируемом наборе",
+            "format": "int32"
+          },
+          "totalScans": {
+            "type": "integer",
+            "description": "Общее количество сканирований индексов за период",
+            "format": "int64"
+          },
+          "averageEfficiency": {
+            "type": "number",
+            "description": "Средняя эффективность индексов в процентах",
+            "format": "double"
+          },
+          "indexesByEfficiency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Количество индексов по уровням эффективности",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LlmAnswer": {
+        "required": [
+          "newQuery",
+          "newQueryAbout",
+          "problems",
+          "recommendations"
+        ],
+        "type": "object",
+        "properties": {
+          "problems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LlmAnswerPoint"
+            },
+            "nullable": true
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LlmAnswerPoint"
+            },
+            "nullable": true
+          },
+          "newQuery": {
+            "type": "string",
+            "nullable": true
+          },
+          "newQueryAbout": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LlmAnswerPoint": {
+        "required": [
+          "message",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Степень критичности найденной проблемы при анализе SQL-запроса или EXPLAIN",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblematicTable": {
+        "type": "object",
+        "properties": {
+          "schemaName": {
+            "type": "string",
+            "description": "Наименование схемы базы данных, в которой находится таблица",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "description": "Наименование проблемной таблицы",
+            "nullable": true
+          },
+          "tableSize": {
+            "type": "integer",
+            "description": "Размер таблицы в байтах",
+            "format": "int64"
+          },
+          "liveTuples": {
+            "type": "integer",
+            "description": "Количество живых (актуальных) строк в таблице",
+            "format": "int64"
+          },
+          "deadTuples": {
+            "type": "integer",
+            "description": "Количество мертвых строк (удаленных или устаревших версий) в таблице",
+            "format": "int64"
+          },
+          "deadTupleRatio": {
+            "type": "number",
+            "description": "Процентное соотношение мертвых строк к общему количеству строк\nРассчитывается как: (DeadTuples / (LiveTuples + DeadTuples)) * 100",
+            "format": "double"
+          },
+          "changeRatePercent": {
+            "type": "number",
+            "description": "Процент роста мертвых строк в час\nПоказывает скорость накопления мертвых данных",
+            "format": "double"
+          },
+          "lastAutoVacuum": {
+            "type": "string",
+            "description": "Время последнего запуска автовакуума для данной таблицы",
+            "format": "date-time"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Приоритет обработки таблицы (\"high\", \"medium\", \"low\")\nОпределяется на основе DeadTupleRatio и ChangeRatePercent",
+            "nullable": true
+          },
+          "growthTrend": {
+            "type": "string",
+            "description": "Тенденция роста мертвых строк (\"rapid\" - быстрый, \"moderate\" - умеренный, \"slow\" - медленный)",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Информация о проблемной таблице, требующей внимания автовакуума"
+      },
+      "QueryAnalysisResultDto": {
+        "required": [
+          "algorithmRecommendation",
+          "dbConnectionId",
+          "explainResult",
+          "id",
+          "query"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id запроса",
+            "format": "uuid"
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Id подключения к БД",
+            "format": "uuid"
+          },
+          "query": {
+            "type": "string",
+            "description": "Содержимое SQL запроса",
+            "nullable": true
+          },
+          "explainResult": {
+            "type": "string",
+            "description": "Результат выполнения EXPLAIN для запроса",
+            "nullable": true
+          },
+          "algorithmRecommendation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "description": "Алгоритмически собранные рекомендации для запроса",
+            "nullable": true
+          },
+          "llmRecommendations": {
+            "$ref": "#/components/schemas/LlmAnswer"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат анализа SQL запроса"
+      },
+      "QueryCreateDto": {
+        "required": [
+          "dbConnectionId",
+          "sql"
+        ],
+        "type": "object",
+        "properties": {
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Id подключения к БД в которой будет выполняться запрос",
+            "format": "uuid"
+          },
+          "sql": {
+            "type": "string",
+            "description": "Содержимое запроса",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Дто для создания SQL запроса"
+      },
+      "QueryDto": {
+        "required": [
+          "createdAt",
+          "dbConnectionId",
+          "explainResult",
+          "id",
+          "sql"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id запроса",
+            "format": "uuid"
+          },
+          "sql": {
+            "type": "string",
+            "description": "Содержимое SQL запроса",
+            "nullable": true
+          },
+          "explainResult": {
+            "type": "string",
+            "description": "Резульатат выполнения EXPLAIN для запроса",
+            "nullable": true
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Id подключения к БД в которой выполнялся запрос",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Дата и время создания",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Дто запроса"
+      },
+      "QueryStatAdvanced": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "nullable": true
+          },
+          "calls": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalTimeMs": {
+            "type": "number",
+            "format": "double"
+          },
+          "meanTimeMs": {
+            "type": "number",
+            "format": "double"
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sharedBlksRead": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tempBlksWritten": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "score": {
+            "type": "number",
+            "format": "double"
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Suggestion"
+            },
+            "nullable": true
+          },
+          "explainPlanJson": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Recommendation": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "type": "integer",
+            "description": "Категории рекомендаций по оптимизации SQL-запросов",
+            "format": "int32"
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Уровень важности рекомендации",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Модель рекомендации по оптимизации"
+      },
+      "SubstituteValuesToSqlRequestDto": {
+        "type": "object",
+        "properties": {
+          "dbConnectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sql": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Suggestion": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "exampleSql": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TempFilesMetricsSummary": {
+        "type": "object",
+        "properties": {
+          "totalTempFiles": {
+            "type": "integer",
+            "description": "Общее количество созданных временных файлов за период анализа\nВысокое значение может указывать на нехватку work_mem",
+            "format": "int64"
+          },
+          "totalTempBytes": {
+            "type": "integer",
+            "description": "Общий объем данных в байтах, записанных во временные файлы\nБольшой объем указывает на интенсивное использование диска для временных операций",
+            "format": "int64"
+          },
+          "tempFilesPerMinute": {
+            "type": "number",
+            "description": "Среднее количество временных файлов, создаваемых в минуту\nПоказывает интенсивность создания временных файлов",
+            "format": "double"
+          },
+          "tempBytesPerMinute": {
+            "type": "number",
+            "description": "Средний объем данных в байтах, записываемых во временные файлы в минуту\nПоказывает интенсивность использования диска для временных операций",
+            "format": "double"
+          },
+          "tempBytesPerSecond": {
+            "type": "number",
+            "description": "Средний объем данных в байтах, записываемых во временные файлы в секунду\nКлючевой показатель нагрузки на подсистему ввода-вывода",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Метрики специфичные для анализа временных файлов базы данных\nСодержит статистические данные о создании и использовании временных файлов"
+      },
+      "TempFilesRecommendation": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Тип рекомендации по оптимизации временных файлов\n\"work_mem\" - увеличение памяти для операций сортировки и хэширования,\n\"temp_buffers\" - настройка буферов для временных таблиц,\n\"query_optimization\" - оптимизация запросов, генерирующих временные файлы,\n\"maintenance_work_mem\" - увеличение памяти для операций обслуживания,\n\"temp_file_limit\" - установка лимита временных файлов",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "description": "Уровень серьезности рекомендации\n\"low\" - низкий приоритет (незначительное влияние на производительность),\n\"medium\" - средний приоритет (заметное влияние на производительность),\n\"high\" - высокий приоритет (критическое влияние на производительность)",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Детальное описание рекомендации и обоснование\nСодержит объяснение проблемы, последствия и ожидаемый эффект от применения",
+            "nullable": true
+          },
+          "currentValue": {
+            "type": "number",
+            "description": "Текущее значение параметра (если применимо)\nАктуальное значение настройки, которое требует оптимизации",
+            "format": "double"
+          },
+          "threshold": {
+            "type": "number",
+            "description": "Пороговое значение для срабатывания рекомендации\nЗначение, при превышении которого рекомендация становится актуальной\nНапример: лимит временных файлов или объем используемой памяти",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Рекомендации по оптимизации работы с временными файлами базы данных\nПредставляет конкретные предложения по настройке параметров, влияющих на временные файлы"
+      },
+      "TempFilesRecommendationResponse": {
+        "type": "object",
+        "properties": {
+          "analysisPeriodStart": {
+            "type": "string",
+            "description": "Начальная дата и время периода анализа\nОпределяет момент начала сбора метрик временных файлов",
+            "format": "date-time"
+          },
+          "analysisPeriodEnd": {
+            "type": "string",
+            "description": "Конечная дата и время периода анализа\nОпределяет момент окончания сбора метрик временных файлов",
+            "format": "date-time"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TempFilesRecommendation"
+            },
+            "description": "Список рекомендаций по оптимизации работы с временными файлами\nСодержит конкретные предложения по уменьшению использования временных файлов",
+            "nullable": true
+          },
+          "metricsSummary": {
+            "$ref": "#/components/schemas/TempFilesMetricsSummary"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Модель ответа для анализа временных файлов базы данных\nСодержит результаты анализа использования временных файлов PostgreSQL за определенный период\nИспользуется для выявления проблем с производительностью, связанных с временными файлами"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "AutovacuumAnalysis",
+      "description": "Контроллер для работы с метриками работы автовакуума"
+    },
+    {
+      "name": "CacheAnalysis",
+      "description": "контроллер для отслеживания состояния кеша"
+    },
+    {
+      "name": "TempFilesAnalyzeMonitoring",
+      "description": "контроллер для получения результатов анализа метрик бд"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "useDefineForClassFields": true,
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "preserveWatchOutput": true,
+    "experimentalDecorators": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@src/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@constants/*": ["./src/constants/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@generated": ["./src/generated/index.ts"],
+      "@generated/*": ["./src/generated/*"],
+      "@store/*": ["./src/store/*"],
+      "@styles/*": ["./src/styles/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "dist/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

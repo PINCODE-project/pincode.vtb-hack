@@ -1,0 +1,11 @@
+{
+  "name": "Swagger Provider - swagger-provider.com",
+  "description": "Chrome DevTools configuration for my-math.ru",
+  "version": "1.0.0",
+  "background_page": {
+    "persistent": false
+  },
+  "devtools_page": "devtools.html",
+  "permissions": ["debugger", "tabs"],
+  "manifest_version": 3
+}
