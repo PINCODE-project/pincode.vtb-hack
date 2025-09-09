@@ -94,7 +94,7 @@ export default function DatabaseQueriesPage() {
 					Создавайте и анализируйте SQL запросы для выбранной базы данных
 				</p>
 
-				<div className="flex items-center gap-4 mb-2">
+				<div className="flex items-center gap-4 mt-4">
 					<Button variant="ghost" size="sm" onClick={() => router.push("/queries")}>
 						<ArrowLeft className="h-4 w-4 mr-2" />
 						Все запросы

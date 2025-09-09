@@ -22,8 +22,8 @@ type Props = ComponentProps<typeof Sidebar> & {
 
 export function NavigationSidebar({ children, ...props }: Props) {
 	return (
-		<Sidebar collapsible="icon" className="overflow-hidden *:data-[sidebar=sidebar]:flex-row" {...props}>
-			<Sidebar collapsible="none" className="w-[calc(var(--sidebar-width-icon)+1px)]! border-r">
+		<Sidebar className="overflow-hidden *:data-[sidebar=sidebar]:flex-row" {...props}>
+			<Sidebar collapsible="none" className="w-[180px]! border-r">
 				<SidebarHeader>
 					<SidebarMenu>
 						<SidebarMenuItem>
@@ -39,8 +39,10 @@ export function NavigationSidebar({ children, ...props }: Props) {
 					</SidebarGroup>
 				</SidebarContent>
 				<SidebarFooter>
-					<OnboardingButton/>
-					<ThemeToggle />
+					<div className="flex gap-2 flex-row">
+						<OnboardingButton />
+						<ThemeToggle />
+					</div>
 				</SidebarFooter>
 			</Sidebar>
 

@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 				<SidebarProvider
 					style={
 						{
-							"--sidebar-width": "300px",
+							"--sidebar-width": "450px",
 						} as React.CSSProperties
 					}
 				>
@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 						{children}
 
 						<CreateDatabaseModal />
-						<Onboarding/>
+						<Onboarding />
 					</SidebarInset>
 				</SidebarProvider>
 			</Providers>

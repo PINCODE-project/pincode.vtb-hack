@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const SidebarLogo = () => {
 	return (
-		<SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
+		<SidebarMenuButton size="lg" asChild className="md:h-10 p-1">
 			<Link href="/databases">
 				<div className="bg-foreground text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
 					<svg
@@ -25,7 +25,6 @@ export const SidebarLogo = () => {
 				</div>
 				<div className="grid flex-1 text-left text-sm leading-tight">
 					<span className="truncate font-medium">DB Explorer</span>
-					<span className="truncate text-xs">Cloud</span>
 				</div>
 			</Link>
 		</SidebarMenuButton>

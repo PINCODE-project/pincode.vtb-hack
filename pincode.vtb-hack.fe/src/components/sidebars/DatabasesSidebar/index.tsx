@@ -29,10 +29,7 @@ export const DatabasesSidebar = () => {
 	const { data: databases } = useGetApiDbConnectionsFind({ Search: search });
 
 	return (
-		<Sidebar
-			collapsible="none"
-			className="hidden flex-1 md:flex w-[calc(var(--sidebar-width)-var(--sidebar-width-icon))]"
-		>
+		<Sidebar collapsible="none" className="hidden flex-1 md:flex w-[calc(var(--sidebar-width)-180px)]">
 			<SidebarHeader className="gap-3.5 border-b p-4">
 				<SidebarInput
 					placeholder="Поиск БД"
