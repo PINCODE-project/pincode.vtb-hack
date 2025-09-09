@@ -12,6 +12,7 @@ public sealed class LlmClient : ILlmClient
 {
     private readonly HttpClient _http;
     private readonly JsonSerializerOptions _json;
+    private readonly IConfiguration _configuration;
 
     private static readonly LlmMessage SystemMessage = new("system",
         "Ты эксперт по PostgreSQL и оптимизации SQL-запросов.\n" +
@@ -29,9 +30,11 @@ public sealed class LlmClient : ILlmClient
         "- Новый улучшенный SQL-запрос (поле \"newQuery\" - строка)\n" +
         "- Обоснование изменений (поле \"newQueryAbout\" - строка)");
 
-    public LlmClient(HttpClient httpClient)
+    public LlmClient(HttpClient httpClient,
+        IConfiguration configuration)
     {
         _http = httpClient;
+        _configuration = configuration;
         _json = new JsonSerializerOptions
         {
             PropertyNamingPolicy = null,
@@ -49,9 +52,10 @@ public sealed class LlmClient : ILlmClient
         bool stream = false,
         CancellationToken ct = default)
     {
+        var modelFromEnv = _configuration["Model"];
         var payload = new LlmChatRequest
         {
-            Model = model,
+            Model = modelFromEnv ?? model,
             Messages = messages.ToList(),
             Stream = stream,
             Temperature = temperature
