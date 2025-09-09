@@ -27,7 +27,7 @@ services:
       DB_DSN: ${DB_DSN}
       ASPNETCORE_ENVIRONMENT: Production
       LLM_BASE_URL: http://5.39.220.103:5009
-      Model: llama-3.3-70b-versatile
+      Model: openai/gpt-oss-20b
     ports:
       - "5023:8080"
     depends_on:
