@@ -1,1 +1,0 @@
-export { MetricsTooltip } from "./MetricsTooltip";

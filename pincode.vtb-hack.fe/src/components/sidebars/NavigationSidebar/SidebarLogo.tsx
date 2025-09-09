@@ -5,7 +5,7 @@ import Link from "next/link";
 export const SidebarLogo = () => {
 	return (
 		<SidebarMenuButton size="lg" asChild className="md:h-10 p-1">
-			<Link href="/databases">
+			<Link href="/">
 				<div className="bg-foreground text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
 					<svg
 						width="14"

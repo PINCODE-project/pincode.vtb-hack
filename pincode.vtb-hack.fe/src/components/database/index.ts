@@ -1,7 +1,7 @@
 // Экспорт компонентов анализа базы данных
 export * from "./AnalysisSections";
 export * from "./Metrics";
-export * from "./MetricsTooltip";
+export * from "./MetricsDetails";
 export * from "./Recommendations";
 
 // Экспорт утилит

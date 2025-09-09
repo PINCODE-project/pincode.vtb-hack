@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { CacheAnalysisResponse } from "@/generated/models/CacheAnalysisResponse";
 import { getStatusIcon } from "../utils/ui-helpers";
-import { MetricsTooltip } from "../MetricsTooltip";
+import { MetricsDetails } from "../MetricsDetails";
 import { CacheRecommendations } from "../Recommendations";
 
 interface CacheAnalysisSectionProps {
@@ -25,9 +25,6 @@ export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
 						<h3 className="text-lg font-semibold">Анализ кэша</h3>
 						<p className="text-sm text-muted-foreground">Эффективность работы кэша PostgreSQL</p>
 					</div>
-					{query.data?.metricsSummary && (
-						<MetricsTooltip data={query.data.metricsSummary} title="Метрики кэша" type="cache" />
-					)}
 				</div>
 			</AccordionTrigger>
 			<AccordionContent className="px-6 pb-6">
@@ -66,6 +63,14 @@ export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
 									</div>
 								</CardContent>
 							</Card>
+						)}
+
+						{query.data.metricsSummary && (
+							<MetricsDetails
+								data={query.data.metricsSummary}
+								title="Детальные метрики кэша"
+								type="cache"
+							/>
 						)}
 					</div>
 				)}

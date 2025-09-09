@@ -193,7 +193,7 @@
   }
 
   .metrics-tooltip {
-    @apply max-w-sm max-h-80 overflow-auto;
+    @apply max-w-4xl max-h-[80vh] overflow-auto bg-card border-border text-card-foreground;
   }
 
   .accordion-trigger-custom {

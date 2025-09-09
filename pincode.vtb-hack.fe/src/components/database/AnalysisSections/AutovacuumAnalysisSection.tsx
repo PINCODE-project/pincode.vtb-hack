@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { AutovacuumAnalysisResponse } from "@/generated/models/AutovacuumAnalysisResponse";
 import { getStatusIcon } from "../utils/ui-helpers";
-import { MetricsTooltip } from "../MetricsTooltip";
+import { MetricsDetails } from "../MetricsDetails";
 import { AutovacuumRecommendations } from "../Recommendations";
 
 interface AutovacuumAnalysisSectionProps {
@@ -27,9 +27,6 @@ export function AutovacuumAnalysisSection({ query }: AutovacuumAnalysisSectionPr
 							Рекомендации по настройке автоматической очистки
 						</p>
 					</div>
-					{query.data?.metricsSummary && (
-						<MetricsTooltip data={query.data.metricsSummary} title="Метрики Autovacuum" type="autovacuum" />
-					)}
 				</div>
 			</AccordionTrigger>
 			<AccordionContent className="px-6 pb-6">
@@ -68,6 +65,14 @@ export function AutovacuumAnalysisSection({ query }: AutovacuumAnalysisSectionPr
 									</div>
 								</CardContent>
 							</Card>
+						)}
+
+						{query.data.metricsSummary && (
+							<MetricsDetails
+								data={query.data.metricsSummary}
+								title="Детальные метрики Autovacuum"
+								type="autovacuum"
+							/>
 						)}
 					</div>
 				)}

@@ -82,7 +82,7 @@ export async function HeroSection() {
 							<div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
 								<AnimatedGroup variants={transitionVariants}>
 									<Link
-										href="#link"
+										href="/databases"
 										className="group mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-black/5 transition-all duration-300 hover:bg-background dark:border-t-white/5 dark:shadow-zinc-950 dark:hover:border-t-border"
 									>
 										<Brain width="16" className="stroke-blue-400" />

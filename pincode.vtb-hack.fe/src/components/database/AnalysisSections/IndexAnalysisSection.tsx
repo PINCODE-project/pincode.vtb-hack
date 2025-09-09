@@ -4,7 +4,7 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { Activity, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { IndexAnalysisResult } from "@/generated/models/IndexAnalysisResult";
-import { MetricsTooltip } from "../MetricsTooltip";
+import { MetricsDetails } from "../MetricsDetails";
 import { IndexRecommendations } from "../Recommendations";
 import { sortRecommendationsBySeverity } from "../utils/format";
 
@@ -25,13 +25,6 @@ export function IndexAnalysisSection({ query }: IndexAnalysisSectionProps) {
 						<h3 className="text-lg font-semibold">Анализ индексов</h3>
 						<p className="text-sm text-muted-foreground">Рекомендации по оптимизации индексов</p>
 					</div>
-					{query.data?.indexUsageStatistics && (
-						<MetricsTooltip
-							data={query.data.indexUsageStatistics}
-							title="Статистика использования индексов"
-							type="index"
-						/>
-					)}
 				</div>
 			</AccordionTrigger>
 			<AccordionContent className="px-6 pb-6">
@@ -101,6 +94,14 @@ export function IndexAnalysisSection({ query }: IndexAnalysisSectionProps) {
 									</CardContent>
 								</Card>
 							)}
+
+						{query.data.indexUsageStatistics && (
+							<MetricsDetails
+								data={query.data.indexUsageStatistics}
+								title="Детальная статистика использования индексов"
+								type="index"
+							/>
+						)}
 					</div>
 				)}
 			</AccordionContent>

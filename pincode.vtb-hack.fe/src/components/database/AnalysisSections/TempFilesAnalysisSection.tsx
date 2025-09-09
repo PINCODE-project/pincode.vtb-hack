@@ -4,7 +4,7 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock, HardDrive } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { TempFilesRecommendationResponse } from "@/generated/models/TempFilesRecommendationResponse";
-import { MetricsTooltip } from "../MetricsTooltip";
+import { MetricsDetails } from "../MetricsDetails";
 import { TempFilesRecommendations } from "../Recommendations";
 
 interface TempFilesAnalysisSectionProps {
@@ -24,13 +24,6 @@ export function TempFilesAnalysisSection({ query }: TempFilesAnalysisSectionProp
 						<h3 className="text-lg font-semibold">Анализ временных файлов</h3>
 						<p className="text-sm text-muted-foreground">Оптимизация работы с временными файлами</p>
 					</div>
-					{query.data?.metricsSummary && (
-						<MetricsTooltip
-							data={query.data.metricsSummary}
-							title="Метрики временных файлов"
-							type="tempFiles"
-						/>
-					)}
 				</div>
 			</AccordionTrigger>
 			<AccordionContent className="px-6 pb-6">
@@ -69,6 +62,14 @@ export function TempFilesAnalysisSection({ query }: TempFilesAnalysisSectionProp
 									</div>
 								</CardContent>
 							</Card>
+						)}
+
+						{query.data.metricsSummary && (
+							<MetricsDetails
+								data={query.data.metricsSummary}
+								title="Детальные метрики временных файлов"
+								type="tempFiles"
+							/>
 						)}
 					</div>
 				)}
