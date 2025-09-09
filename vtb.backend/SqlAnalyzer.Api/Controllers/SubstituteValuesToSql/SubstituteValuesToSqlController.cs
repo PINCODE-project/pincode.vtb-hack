@@ -16,6 +16,7 @@ public class SubstituteValuesToSqlController : ControllerBase
     }
 
     [HttpPost("substitute")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
     public async Task<ActionResult<string>> Substitute([FromBody] SubstituteValuesToSqlRequestDto request)
     {
         try

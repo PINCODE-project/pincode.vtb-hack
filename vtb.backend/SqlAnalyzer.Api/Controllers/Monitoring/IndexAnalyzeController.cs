@@ -15,7 +15,8 @@ public class IndexAnalyzeController  : ControllerBase
     }
 
     [HttpGet("recommendations")]
-    public async Task<IActionResult> GetRecommendationsAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IndexAnalysisResult))]
+    public async Task<ActionResult<IndexAnalysisResult>> GetRecommendationsAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var recommendations = await _analysisService.GetFullAnalysisAsync(dbConnectionId, startDate, endDate);
         return Ok(recommendations);

@@ -26,6 +26,7 @@ public class AutovacuumAnalysisController : ControllerBase
     /// Полный анализ состояния autovacuum
     /// </summary>
     [HttpGet("analysis")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AutovacuumAnalysisResponse))]
     public async Task<ActionResult<AutovacuumAnalysisResponse>> GetFullAnalysis([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try

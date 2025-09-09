@@ -25,6 +25,7 @@ public class CacheAnalysisController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("analysis")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CacheAnalysisResponse))]
     public async Task<ActionResult<CacheAnalysisResponse>> GetCacheAnalysis([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try

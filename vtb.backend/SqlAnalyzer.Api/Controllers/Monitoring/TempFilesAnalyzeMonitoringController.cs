@@ -24,6 +24,7 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("analysis")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TempFilesRecommendationResponse))]
     public async Task<ActionResult<TempFilesRecommendationResponse>> AnalyzeLastHour([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try

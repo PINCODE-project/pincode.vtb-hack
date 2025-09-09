@@ -19,6 +19,7 @@ public class PgStateAnalysisController : ControllerBase
     /// Возвращает анализ топ-N запросов из pg_stat_statements.
     /// </summary>
     [HttpGet("top")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AnalysisReportAdvanced))]
     public async Task<IActionResult> GetTop([FromQuery] Guid dbConnectionId)
     {
         try
