@@ -7,7 +7,7 @@
     "start": "next start",
     "dev": "next dev --experimental-https",
     "build": "next build",
-    "generate": "node scripts/generate-api.js",
+    "generate": "yarn kubb generate",
     "lint:types": "tsc --noEmit",
     "lint:styles": "yarn stylelint src/**/*.{css,scss}",
     "lint": "yarn lint:styles --fix && yarn next lint --max-warnings=0 --fix && yarn lint:types",

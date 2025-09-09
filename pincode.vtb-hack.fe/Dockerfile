@@ -5,7 +5,7 @@ FROM node:23-alpine AS base
 WORKDIR /app
 
 # Копируем package.json и yarn конфигурацию
-COPY package.json yarn.lock .yarnrc.yml public ./
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
 
 # Стадия установки зависимостей
@@ -36,7 +36,7 @@ RUN addgroup --system --gid 1001 nextjs \
     && adduser --system --uid 1001 nextjs
 
 # Копируем необходимые файлы из builder
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 
