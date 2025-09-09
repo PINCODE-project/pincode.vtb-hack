@@ -31,7 +31,6 @@ interface QueriesHistoryProps {
 	emptyStateMessage?: string;
 	className?: string;
 	gridCols?: string; // CSS классы для grid-cols
-	onQuerySelect?: (sql: string) => void; // Колбэк для выбора запроса
 }
 
 export function QueriesHistory({
