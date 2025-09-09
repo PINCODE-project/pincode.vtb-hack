@@ -12,7 +12,6 @@ public sealed class LlmClient : ILlmClient
 {
     private readonly HttpClient _http;
     private readonly JsonSerializerOptions _json;
-    private readonly IConfiguration _configuration;
 
     private static readonly LlmMessage SystemMessage = new("system",
         "Ты эксперт по PostgreSQL и оптимизации SQL-запросов.\n" +
@@ -30,11 +29,9 @@ public sealed class LlmClient : ILlmClient
         "- Новый улучшенный SQL-запрос (поле \"newQuery\" - строка)\n" +
         "- Обоснование изменений (поле \"newQueryAbout\" - строка)");
 
-    public LlmClient(HttpClient httpClient,
-        IConfiguration configuration)
+    public LlmClient(HttpClient httpClient)
     {
         _http = httpClient;
-        _configuration = configuration;
         _json = new JsonSerializerOptions
         {
             PropertyNamingPolicy = null,
@@ -52,10 +49,9 @@ public sealed class LlmClient : ILlmClient
         bool stream = false,
         CancellationToken ct = default)
     {
-        var modelFromEnv = _configuration["Model"];
         var payload = new LlmChatRequest
         {
-            Model = modelFromEnv ?? model,
+            Model = model,
             Messages = messages.ToList(),
             Stream = stream,
             Temperature = temperature
@@ -90,7 +86,6 @@ public sealed class LlmClient : ILlmClient
     }
 
     public Task<LlmAnswer> GetRecommendation(
-        string findings,
         string originalSql,
         string? explainJson = null,
         string model = "openai/gpt-oss-120b",
@@ -107,9 +102,6 @@ public sealed class LlmClient : ILlmClient
         userBuilder.AppendLine("```json");
         userBuilder.AppendLine(explainJson);
         userBuilder.AppendLine("```");
-        userBuilder.AppendLine();
-        userBuilder.AppendLine("Выявленные проблемы:");
-        userBuilder.AppendLine(findings);
         userBuilder.AppendLine();
 
         var user = new LlmMessage("user", userBuilder.ToString());
