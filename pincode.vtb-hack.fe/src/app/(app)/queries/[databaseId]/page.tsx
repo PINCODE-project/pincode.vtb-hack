@@ -1,12 +1,26 @@
 "use client";
 import React, { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, Button, Textarea, Alert, AlertDescription } from "@pin-code/ui-kit";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	Button,
+	Textarea,
+	Alert,
+	AlertDescription,
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@pin-code/ui-kit";
 import { format } from "sql-formatter";
 import { useGetApiQueriesFind, usePostApiQueriesCreate } from "@/generated/hooks/QueryAnalysis";
-import { Loader2, Play, FileText, Clock, ArrowLeft } from "lucide-react";
-import { QueriesHistory } from "@/components/queries";
+import { Loader2, Play, FileText, Clock, ArrowLeft, Database, Sparkles } from "lucide-react";
+import { QueriesHistory, DatabaseQueriesHistory } from "@/components/queries";
 import { useGetApiDbConnectionsFind } from "@generated";
+import { useSubstituteValues } from "@/components/queries/hooks";
 
 export default function DatabaseQueriesPage() {
 	const params = useParams();
@@ -27,6 +41,30 @@ export default function DatabaseQueriesPage() {
 				if (data.data && databaseId) {
 					router.push(`/queries/${databaseId}/${data.data}`);
 				}
+			},
+		},
+	});
+
+	// Мутация для подстановки значений в SQL
+	const substituteMutation = useSubstituteValues({
+		mutation: {
+			onSuccess: (data) => {
+				console.log("Подстановка значений успешна:", data);
+				if (data) {
+					const formatted = format(data, {
+						language: "postgresql",
+						tabWidth: 2,
+						useTabs: false,
+						keywordCase: "upper",
+						identifierCase: "lower",
+						functionCase: "upper",
+					});
+					setSqlQuery(formatted);
+				}
+			},
+			onError: (error) => {
+				console.error("Ошибка подстановки значений:", error);
+				// В случае ошибки просто вставляем оригинальный запрос
 			},
 		},
 	});
@@ -88,6 +126,37 @@ export default function DatabaseQueriesPage() {
 		});
 	}, [sqlQuery, databaseId, createQueryMutation]);
 
+	// Обработчик выбора запроса из истории БД
+	const handleDatabaseQuerySelect = useCallback(
+		(query: string) => {
+			if (!databaseId || !query.trim()) return;
+
+			// Пытаемся подставить значения через API
+			substituteMutation.mutate(
+				{
+					data: {
+						dbConnectionId: databaseId,
+						sql: query,
+					},
+				},
+				{
+					onSuccess: () => {
+						// Скроллим вверх к редактору после успешной подстановки
+						window.scrollTo({ top: 0, behavior: "smooth" });
+					},
+					onError: () => {
+						// В случае ошибки API, вставляем оригинальный запрос
+						console.log("Fallback: используем оригинальный запрос");
+						setSqlQuery(query);
+						// Скроллим вверх даже при ошибке
+						window.scrollTo({ top: 0, behavior: "smooth" });
+					},
+				},
+			);
+		},
+		[databaseId, substituteMutation, setSqlQuery],
+	);
+
 	return (
 		<div className="p-6 space-y-6">
 			<div className="mb-6">
@@ -124,6 +193,7 @@ export default function DatabaseQueriesPage() {
 
 					<div className="flex gap-2">
 						<Button variant="outline" onClick={handleFormatSql} disabled={!sqlQuery.trim() || isFormatting}>
+							<Sparkles />
 							{isFormatting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
 							Форматировать
 						</Button>
@@ -152,27 +222,54 @@ export default function DatabaseQueriesPage() {
 				</CardContent>
 			</Card>
 
-			{/* История запросов */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<Clock className="h-5 w-5" />
-						История запросов
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<QueriesHistory
-						queries={allQueries}
-						databases={databases}
-						isLoading={isLoadingQueries}
-						error={queriesError}
-						showDatabaseNames={false}
-						databaseFilter={databaseId}
-						emptyStateMessage="Нет сохраненных запросов"
-						gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-					/>
-				</CardContent>
-			</Card>
+			{/* Аккордеоны с историями */}
+			<Accordion type="multiple" className="space-y-4">
+				{/* История запросов из БД */}
+				<AccordionItem value="database-history" className="border rounded-lg">
+					<AccordionTrigger className="hover:no-underline px-6 py-4">
+						<div className="flex items-center gap-2">
+							<Database className="h-5 w-5" />
+							<div className="text-left">
+								<div className="text-lg font-semibold">История запросов из БД</div>
+								<div className="text-sm text-muted-foreground font-normal">
+									Запросы из pg_stat_statements с метриками и рекомендациями. Нажмите на запрос, чтобы
+									вставить его в редактор.
+								</div>
+							</div>
+						</div>
+					</AccordionTrigger>
+					<AccordionContent className="px-6 pb-6">
+						<DatabaseQueriesHistory databaseId={databaseId} onQuerySelect={handleDatabaseQuerySelect} />
+					</AccordionContent>
+				</AccordionItem>
+
+				{/* История проанализированных запросов */}
+				<AccordionItem value="analyzed-history" className="border rounded-lg">
+					<AccordionTrigger className="hover:no-underline px-6 py-4">
+						<div className="flex items-center gap-2">
+							<Clock className="h-5 w-5" />
+							<div className="text-left">
+								<div className="text-lg font-semibold">История проанализированных запросов</div>
+								<div className="text-sm text-muted-foreground font-normal">
+									Ранее созданные и проанализированные SQL запросы
+								</div>
+							</div>
+						</div>
+					</AccordionTrigger>
+					<AccordionContent className="px-6 pb-6">
+						<QueriesHistory
+							queries={allQueries}
+							databases={databases}
+							isLoading={isLoadingQueries}
+							error={queriesError}
+							showDatabaseNames={false}
+							databaseFilter={databaseId}
+							emptyStateMessage="Нет сохраненных запросов"
+							gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+						/>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
 		</div>
 	);
 }

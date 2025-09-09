@@ -1,2 +1,1 @@
-export { QueriesHistory } from "./QueriesHistory";
 export { DatabaseQueriesHistory } from "./DatabaseQueriesHistory";
