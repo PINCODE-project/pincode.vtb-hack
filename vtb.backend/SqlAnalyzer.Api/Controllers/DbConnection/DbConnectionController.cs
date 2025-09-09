@@ -52,7 +52,7 @@ public class DbConnectionController : ControllerBase
     /// Проверяет доступность подключения.
     /// </summary>
     [HttpPost("check")]
-    public async Task<ActionResult<DbConnectionCheckDto>> Check([FromRoute] DbConnectionCreateDto dto)
+    public async Task<ActionResult<DbConnectionCheckDto>> Check([FromBody] DbConnectionCreateDto dto)
     {
         var result = await _service.CheckAsync(dto);
         return Ok(result);
