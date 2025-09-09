@@ -1,7 +1,6 @@
 "use client";
 
 import { Dialog, DialogContent } from "@pin-code/ui-kit";
-import { X } from "lucide-react";
 
 type Props = {
 	isOpen: boolean;
