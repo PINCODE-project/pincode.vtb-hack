@@ -5,7 +5,7 @@ FROM node:23-alpine AS base
 WORKDIR /app
 
 # Копируем package.json и yarn конфигурацию
-COPY package.json .yarnrc.yml ./
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
 
 # Стадия установки зависимостей
