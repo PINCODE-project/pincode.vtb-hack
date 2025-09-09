@@ -1,6 +1,6 @@
 {
-  "name": "Swagger Provider - swagger-provider.com",
-  "description": "Chrome DevTools configuration for my-math.ru",
+  "name": "DB Explorer - db-explorer.pincode-infra.ru",
+  "description": "Chrome DevTools configuration for db-explorer.pincode-infra.ru",
   "version": "1.0.0",
   "background_page": {
     "persistent": false
