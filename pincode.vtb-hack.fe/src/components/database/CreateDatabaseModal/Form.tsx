@@ -47,14 +47,24 @@ type Props = {
 	isLoading?: boolean;
 };
 
-const convertFormDataToApiFormat = (formData: FormData): DbConnectionCreateDto => ({
-	name: formData.icon ? `${formData.icon} ${formData.name}` : formData.name,
-	host: formData.host,
-	port: formData.port,
-	database: formData.database,
-	username: formData.username,
-	password: formData.password,
-});
+const convertFormDataToApiFormat = (formData: FormData): DbConnectionCreateDto => {
+	// Очищаем название от любых эмодзи в начале
+	let cleanName = formData.name;
+	// Убираем все эмодзи с начала строки (включая составные эмодзи)
+	cleanName = cleanName.replace(/^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\u200D\s]+/u, "").trim();
+
+	// Формируем финальное название с выбранной иконкой
+	const finalName = formData.icon ? `${formData.icon} ${cleanName}` : cleanName;
+
+	return {
+		name: finalName,
+		host: formData.host,
+		port: formData.port,
+		database: formData.database,
+		username: formData.username,
+		password: formData.password || "",
+	};
+};
 
 export const Form = ({ defaultValues, submitButtonText, onSubmit, isLoading = false }: Props) => {
 	const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
@@ -249,9 +259,7 @@ export const Form = ({ defaultValues, submitButtonText, onSubmit, isLoading = fa
 
 				<Alert variant="default">
 					<TriangleAlert color="var(--color-amber-600)" width={14} height={14} />
-					<AlertDescription className="flex">
-						Должен быть установлен pg_stat_statements!
-					</AlertDescription>
+					<AlertDescription className="flex">Должен быть установлен pg_stat_statements!</AlertDescription>
 				</Alert>
 
 				<div className="pt-4 flex justify-between items-center gap-3">

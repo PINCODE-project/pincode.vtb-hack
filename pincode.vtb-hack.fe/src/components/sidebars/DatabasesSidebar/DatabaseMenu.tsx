@@ -11,8 +11,10 @@ import {
 } from "@pin-code/ui-kit";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 import { DeleteDatabaseModal } from "@components/database/DeleteDatabaseModal";
+import { EditDatabaseModal } from "@components/database/EditDatabaseModal";
 import type { DbConnectionDto } from "@generated";
 import { useDeleteDatabaseModalStore } from "@store/database/delete-modal.ts";
+import { useEditDatabaseModalStore } from "@store/database/edit-modal.ts";
 
 type Props = {
 	database: DbConnectionDto;
@@ -25,6 +27,7 @@ export const DatabaseMenu = ({ database }: Props) => {
 		open: openDeleteDatabaseModal,
 		close: closeDeleteDatabaseModal,
 	} = useDeleteDatabaseModalStore();
+	const { open: openEditDatabaseModal } = useEditDatabaseModalStore();
 
 	return (
 		<DropdownMenu>
@@ -39,7 +42,7 @@ export const DatabaseMenu = ({ database }: Props) => {
 				side={isMobile ? "bottom" : "right"}
 				align={isMobile ? "end" : "start"}
 			>
-				<DropdownMenuItem>
+				<DropdownMenuItem onClick={() => openEditDatabaseModal(database)}>
 					<Edit className="text-muted-foreground" />
 					<span>Редактировать</span>
 				</DropdownMenuItem>
@@ -56,6 +59,7 @@ export const DatabaseMenu = ({ database }: Props) => {
 				databaseId={database.id}
 				databaseName={database.name || "Без названия"}
 			/>
+			<EditDatabaseModal />
 		</DropdownMenu>
 	);
 };

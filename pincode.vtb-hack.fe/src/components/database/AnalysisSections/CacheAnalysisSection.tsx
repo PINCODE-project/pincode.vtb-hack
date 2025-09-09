@@ -59,7 +59,7 @@ export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
 							<CacheRecommendations recommendations={query.data.recommendations} />
 						) : (
 							<Card>
-								<CardContent className="pt-6">
+								<CardContent>
 									<div className="flex items-center gap-2 text-green-600">
 										<CheckCircle className="h-5 w-5" />
 										<span>Кэш работает эффективно</span>

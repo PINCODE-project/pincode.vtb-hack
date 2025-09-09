@@ -6,6 +6,7 @@ import { format } from "sql-formatter";
 import { useGetApiQueriesFind, usePostApiQueriesCreate } from "@/generated/hooks/QueryAnalysis";
 import { Loader2, Play, FileText, Clock, ArrowLeft } from "lucide-react";
 import { QueriesHistory } from "@/components/queries";
+import { useGetApiDbConnectionsFind } from "@generated";
 
 export default function DatabaseQueriesPage() {
 	const params = useParams();
@@ -17,6 +18,7 @@ export default function DatabaseQueriesPage() {
 
 	// Получаем список запросов
 	const { data: allQueries, isLoading: isLoadingQueries, error: queriesError } = useGetApiQueriesFind();
+	const { data: databases } = useGetApiDbConnectionsFind();
 
 	// Мутация для создания запроса
 	const createQueryMutation = usePostApiQueriesCreate({
@@ -161,7 +163,7 @@ export default function DatabaseQueriesPage() {
 				<CardContent>
 					<QueriesHistory
 						queries={allQueries}
-						databases={[]}
+						databases={databases}
 						isLoading={isLoadingQueries}
 						error={queriesError}
 						showDatabaseNames={false}

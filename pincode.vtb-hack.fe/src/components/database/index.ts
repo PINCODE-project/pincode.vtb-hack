@@ -11,3 +11,4 @@ export * from "./utils/ui-helpers";
 // Экспорт существующих модальных окон
 export { CreateDatabaseModal } from "./CreateDatabaseModal";
 export { DeleteDatabaseModal } from "./DeleteDatabaseModal";
+export { EditDatabaseModal } from "./EditDatabaseModal";

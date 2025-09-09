@@ -61,7 +61,7 @@ export function AutovacuumAnalysisSection({ query }: AutovacuumAnalysisSectionPr
 							<AutovacuumRecommendations recommendations={query.data.recommendations} />
 						) : (
 							<Card>
-								<CardContent className="pt-6">
+								<CardContent>
 									<div className="flex items-center gap-2 text-green-600 success-state">
 										<CheckCircle className="h-5 w-5" />
 										<span>Настройки autovacuum оптимальны</span>

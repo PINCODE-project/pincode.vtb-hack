@@ -62,7 +62,7 @@ export function TempFilesAnalysisSection({ query }: TempFilesAnalysisSectionProp
 							<TempFilesRecommendations recommendations={query.data.recommendations} />
 						) : (
 							<Card>
-								<CardContent className="pt-6">
+								<CardContent>
 									<div className="flex items-center gap-2 text-green-600">
 										<CheckCircle className="h-5 w-5" />
 										<span>Временные файлы используются оптимально</span>

@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import { Accordion } from "@pin-code/ui-kit";
-import { Badge } from "@pin-code/ui-kit";
 
 import { useGetApiAutovacuumAnalysis } from "@/generated/hooks/AutovacuumAnalysis/useGetApiAutovacuumAnalysis";
 import { useGetApiCacheAnalysis } from "@/generated/hooks/CacheAnalysis/useGetApiCacheAnalysis";
@@ -36,9 +35,6 @@ export default function DatabasePage() {
 					<h1 className="text-3xl font-bold tracking-tight">Анализ базы данных</h1>
 					<p className="text-muted-foreground">Рекомендации по оптимизации и улучшению производительности</p>
 				</div>
-				<Badge variant="outline" className="text-sm">
-					ID: {databaseId}
-				</Badge>
 			</div>
 
 			<Accordion type="multiple" className="space-y-4">

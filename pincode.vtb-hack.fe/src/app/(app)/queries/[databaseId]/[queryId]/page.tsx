@@ -133,20 +133,25 @@ export default function QueryDetailPage() {
 	const analysisData = analyzeQueryMutation.data;
 
 	return (
-		<div className="p-6 space-y-6">
-			{/* Заголовок */}
+		<div className="p-6 space-y-6 max-w-[calc(100vw-450px-var(--spacing)*6)]">
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-4">
-					<Button variant="ghost" size="sm" onClick={() => router.push(`/queries?databaseId=${databaseId}`)}>
-						<ArrowLeft className="h-4 w-4 mr-2" />
-						Назад к запросам
-					</Button>
+				<div className="flex flex-col gap-4">
 					<div>
-						<h1 className="text-2xl font-bold">Анализ SQL запроса</h1>
-						<p className="text-muted-foreground">
+						<h1 className="text-3xl font-bold">Анализ SQL запроса</h1>
+						<p className="text-muted-foreground mt-2">
 							Создан: {new Date(queryData.createdAt).toLocaleString()}
 						</p>
 					</div>
+
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => router.push(`/queries?databaseId=${databaseId}`)}
+						className="w-fit"
+					>
+						<ArrowLeft className="h-4 w-4 mr-2" />
+						Назад к запросам
+					</Button>
 				</div>
 			</div>
 
@@ -156,8 +161,7 @@ export default function QueryDetailPage() {
 				onValueChange={setOpenAccordions}
 				className="flex flex-col gap-4"
 			>
-				{/* SQL Запрос */}
-				<AccordionItem value="sql-query" className="border rounded-lg">
+				<AccordionItem value="sql-query" className="border rounded-lg bg-card">
 					<AccordionTrigger className="px-6 hover:no-underline">
 						<div className="flex items-center gap-3">
 							<Code2 className="h-5 w-5" />
@@ -178,14 +182,13 @@ export default function QueryDetailPage() {
 									fontSize: "14px",
 								}}
 								showLineNumbers={true}
+								wrapLines={true}
 							>
 								{formatSql(queryData.sql)}
 							</SyntaxHighlighter>
 						</div>
 					</AccordionContent>
 				</AccordionItem>
-
-				{/* EXPLAIN результат */}
 
 				<AccordionItem value="explain-result" className="border rounded-lg" disabled={!queryData.explainResult}>
 					<AccordionTrigger className="px-6 hover:no-underline">
@@ -197,29 +200,30 @@ export default function QueryDetailPage() {
 							</div>
 						</div>
 					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
-							<CodeCopyButton
-								code={queryData.explainResult ?? ""}
-								copyId={`explain-${queryId}`}
-								language="json"
-							/>
-							<SyntaxHighlighter
-								language="json"
-								style={oneDark}
-								customStyle={{
-									margin: 0,
-									fontSize: "12px",
-								}}
-								showLineNumbers={true}
-							>
-								{queryData.explainResult!}
-							</SyntaxHighlighter>
-						</div>
-					</AccordionContent>
+					{queryData.explainResult && (
+						<AccordionContent className="px-6 pb-6">
+							<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
+								<CodeCopyButton
+									code={queryData.explainResult ?? ""}
+									copyId={`explain-${queryId}`}
+									language="json"
+								/>
+								<SyntaxHighlighter
+									language="json"
+									style={oneDark}
+									customStyle={{
+										margin: 0,
+										fontSize: "12px",
+									}}
+									showLineNumbers={true}
+								>
+									{queryData.explainResult!}
+								</SyntaxHighlighter>
+							</div>
+						</AccordionContent>
+					)}
 				</AccordionItem>
 
-				{/* Алгоритмические рекомендации */}
 				<AccordionItem
 					value="algorithm-recommendations"
 					className="border rounded-lg"
@@ -236,35 +240,36 @@ export default function QueryDetailPage() {
 							</div>
 						</div>
 					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<div className="space-y-4">
-							{analysisData?.algorithmRecommendation?.map((rec, idx) => (
-								<div key={idx} className="border rounded-lg p-4">
-									<div className="flex items-center gap-2 mb-2">
-										{getSeverityIcon(rec.severity)}
-										<Badge variant={getSeverityVariant(rec.severity)}>
-											{getSeverityText(rec.severity)}
-										</Badge>
+					{analysisData?.algorithmRecommendation?.length && (
+						<AccordionContent className="px-6 pb-6">
+							<div className="space-y-4">
+								{analysisData?.algorithmRecommendation?.map((rec, idx) => (
+									<div key={idx} className="border rounded-lg p-4">
+										<div className="flex items-center gap-2 mb-2">
+											{getSeverityIcon(rec.severity)}
+											<Badge variant={getSeverityVariant(rec.severity)}>
+												{getSeverityText(rec.severity)}
+											</Badge>
+										</div>
+										{rec.message && (
+											<div className="mb-2">
+												<h4 className="font-medium">Проблема:</h4>
+												<p className="text-sm text-muted-foreground">{rec.message}</p>
+											</div>
+										)}
+										{rec.suggestion && (
+											<div>
+												<h4 className="font-medium">Рекомендация:</h4>
+												<p className="text-sm text-muted-foreground">{rec.suggestion}</p>
+											</div>
+										)}
 									</div>
-									{rec.message && (
-										<div className="mb-2">
-											<h4 className="font-medium">Проблема:</h4>
-											<p className="text-sm text-muted-foreground">{rec.message}</p>
-										</div>
-									)}
-									{rec.suggestion && (
-										<div>
-											<h4 className="font-medium">Рекомендация:</h4>
-											<p className="text-sm text-muted-foreground">{rec.suggestion}</p>
-										</div>
-									)}
-								</div>
-							))}
-						</div>
-					</AccordionContent>
+								))}
+							</div>
+						</AccordionContent>
+					)}
 				</AccordionItem>
 
-				{/* ИИ рекомендации */}
 				<AccordionItem
 					value="ai-recommendations"
 					className="border rounded-lg"
@@ -318,7 +323,6 @@ export default function QueryDetailPage() {
 					)}
 				</AccordionItem>
 
-				{/* Оптимизированный запрос */}
 				<AccordionItem
 					value="optimized-query"
 					className="border rounded-lg"
