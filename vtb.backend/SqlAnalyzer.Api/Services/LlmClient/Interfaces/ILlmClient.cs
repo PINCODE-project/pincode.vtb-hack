@@ -5,7 +5,6 @@ namespace SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 public interface ILlmClient
 {
     Task<LlmAnswer> GetRecommendation(
-        string findings,
         string originalSql,
         string? explainJson = null,
         string model = "openai/gpt-oss-120b",

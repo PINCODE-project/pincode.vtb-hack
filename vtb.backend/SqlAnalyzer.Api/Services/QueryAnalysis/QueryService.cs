@@ -4,7 +4,6 @@ using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Base;
 using SqlAnalyzer.Api.Dal.Extensions;
 using SqlAnalyzer.Api.Dto.QueryAnalysis;
-using SqlAnalyzer.Api.Services.LlmClient.Data;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 using SqlAnalyzerLib.Facade.Interfaces;
@@ -32,13 +31,13 @@ public class QueryService : IQueryService
     public async Task<IReadOnlyCollection<QueryDto>> Find(QueriesFindDto dto)
     {
         var queries = await _db
-            .QueryAnalysis.AsNoTracking()
+            .Queries.AsNoTracking()
             .UseLimiter(dto.Skip, dto.Take)
             .Select(query => new QueryDto
             {
                 Id = query.Id,
-                Sql = query.Query,
-                ExplainResult = query.AnalyzeResult ?? "",
+                Sql = query.Sql,
+                ExplainResult = query.ExplainResult ?? "",
                 DbConnectionId = query.DbConnectionId,
                 CreatedAt = query.CreateAt
             })
@@ -76,11 +75,11 @@ public class QueryService : IQueryService
         var analysis = new QueryAnalysis
         {
             DbConnectionId = dto.DbConnectionId,
-            Query = dto.Sql,
-            AnalyzeResult = analyzeResult
+            Sql = dto.Sql,
+            ExplainResult = analyzeResult
         };
 
-        _db.QueryAnalysis.Add(analysis);
+        _db.Queries.Add(analysis);
         await _db.SaveChangesAsync();
 
         return analysis.Id;
@@ -89,7 +88,7 @@ public class QueryService : IQueryService
     /// <inheritdoc />
     public async Task<QueryDto> Get(Guid id)
     {
-        var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == id);
+        var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == id);
 
         if (query == null)
         {
@@ -99,8 +98,8 @@ public class QueryService : IQueryService
         return new QueryDto
         {
             Id = query.Id,
-            Sql = query.Query,
-            ExplainResult = query.AnalyzeResult ?? "",
+            Sql = query.Sql,
+            ExplainResult = query.ExplainResult ?? "",
             DbConnectionId = query.DbConnectionId,
             CreatedAt = query.CreateAt
         };
@@ -109,32 +108,65 @@ public class QueryService : IQueryService
     /// <inheritdoc />
     public async Task<QueryAnalysisResultDto> AnalyzeAsync(Guid queryId, bool useLlm)
     {
-        var query = await _db.QueryAnalysis.FirstOrDefaultAsync(x => x.Id == queryId);
+        var queryAnalysisResult = await _db
+            .QueryAnalysisResults.Where(x => x.QueryId == queryId)
+            .Select(x => new
+            {
+                x.Query,
+                AnalysisResult = x
+            }).FirstOrDefaultAsync();
+
+        if (queryAnalysisResult != null)
+        {
+            var llmRecommendations = useLlm && queryAnalysisResult.AnalysisResult.LlmRecommendations == null
+                ? await _llm.GetRecommendation(
+                    queryAnalysisResult.Query.Sql,
+                    queryAnalysisResult.Query.ExplainResult)
+                : null;
+            
+            return new QueryAnalysisResultDto
+            {
+                Id = queryAnalysisResult.Query.Id,
+                DbConnectionId = queryAnalysisResult.Query.DbConnectionId,
+                Query = queryAnalysisResult.Query.Sql,
+                ExplainResult = queryAnalysisResult.Query.ExplainResult ?? string.Empty,
+                AlgorithmRecommendation = queryAnalysisResult.AnalysisResult.Recommendations,
+                LlmRecommendations = queryAnalysisResult.AnalysisResult.LlmRecommendations ?? llmRecommendations
+            };
+        }
+        
+        var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == queryId);
 
         if (query == null)
         {
             throw new InvalidOperationException("Query not found");
         }
 
-        var analysisResult = await _analyzer.GetRecommendations(query.Query, query.AnalyzeResult ?? string.Empty);
+        var analysisResult = await _analyzer.GetRecommendations(query.Sql, query.ExplainResult ?? string.Empty);
+        var llmAnswer = useLlm
+            ? await _llm.GetRecommendation(
+                query.Sql,
+                query.ExplainResult
+            )
+            : null;
 
-        LlmAnswer? llmAnswer = null;
-        if (useLlm)
+        var result = new QueryAnalysisResult
         {
-            var analysisRecommendationsString = string.Join(',', analysisResult.Select(x => x.Message));
-            llmAnswer = await _llm.GetRecommendation(
-                analysisRecommendationsString,
-                query.Query,
-                query.AnalyzeResult
-            );
-        }
+            QueryId = query.Id,
+            Recommendations = analysisResult,
+            LlmRecommendations = llmAnswer
+        };
+        
+        _db.QueryAnalysisResults.Add(result);
+        await _db.SaveChangesAsync();
+
 
         return new QueryAnalysisResultDto
         {
             Id = query.Id,
             DbConnectionId = query.DbConnectionId,
-            Query = query.Query,
-            ExplainResult = query.AnalyzeResult ?? string.Empty,
+            Query = query.Sql,
+            ExplainResult = query.ExplainResult ?? string.Empty,
             AlgorithmRecommendation = analysisResult,
             LlmRecommendations = llmAnswer
         };
