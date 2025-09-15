@@ -51,7 +51,7 @@ public class TempFilesAnalyzeMonitoringController : ControllerBase
     /// Получение метрик для отображения графиков по периоду
     /// </summary>
     [HttpGet("metrics")]
-    [ProducesResponseType<List<TempFilesStatsDal>>(StatusCodes.Status200OK, Type = typeof(CacheAnalysisResponse))]
+    [ProducesResponseType<List<TempFilesStatsDal>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMetricsForPeriodAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _dataContext.TempFilesStats

@@ -52,7 +52,7 @@ public class CacheAnalysisController : ControllerBase
     /// Получение метрик для отображения графиков по периоду
     /// </summary>
     [HttpGet("metrics")]
-    [ProducesResponseType<List<CacheHitStats>>(StatusCodes.Status200OK, Type = typeof(CacheAnalysisResponse))]
+    [ProducesResponseType<List<CacheHitStats>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMetricsForPeriodAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _dataContext.CacheHitStats
