@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SqlAnalyzer.Api.Controllers.Monitoring.Dto.Response;
+using SqlAnalyzer.Api.Dal;
+using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.Monitoring;
@@ -13,11 +16,15 @@ public class CacheAnalysisController : ControllerBase
 {
     private readonly ICacheAnalyzeService _cacheAnalysisService;
     private readonly ILogger<CacheAnalysisController> _logger;
+    private readonly DataContext _dataContext;
 
-    public CacheAnalysisController(ICacheAnalyzeService cacheAnalysisService, ILogger<CacheAnalysisController> logger)
+    public CacheAnalysisController(ICacheAnalyzeService cacheAnalysisService,
+        ILogger<CacheAnalysisController> logger,
+        DataContext dataContext)
     {
         _cacheAnalysisService = cacheAnalysisService;
         _logger = logger;
+        _dataContext = dataContext;
     }
 
     /// <summary>
@@ -40,5 +47,19 @@ public class CacheAnalysisController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-    
+
+    /// <summary>
+    /// Получение метрик для отображения графиков по периоду
+    /// </summary>
+    [HttpGet("metrics")]
+    [ProducesResponseType<List<CacheHitStats>>(StatusCodes.Status200OK, Type = typeof(CacheAnalysisResponse))]
+    public async Task<IActionResult> GetMetricsForPeriodAsync([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var result = await _dataContext.CacheHitStats
+            .Where(x => x.DbConnectionId == dbConnectionId 
+                && x.CreateAt >= startDate 
+                && x.CreateAt <= endDate)
+            .ToListAsync();
+        return Ok(result);
+    }
 }
