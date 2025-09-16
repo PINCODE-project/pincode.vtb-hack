@@ -14,5 +14,7 @@ public enum RecommendationCategory
     Cardinality,
     Statistics,
     ExecutionPlan,
-    General
+    General,
+    Parallelism,
+    Memory
 }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -12,7 +13,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
     public sealed class IndexFilterMismatchRule : IPlanRule
     {
         /// <inheritdoc />
-        public string Code => "P11";
+        public ExplainIssueRule Code => ExplainIssueRule.IndexFilterMismatch;
 
         /// <inheritdoc />
         public string Category => "Index";

@@ -1,4 +1,5 @@
 using System.Globalization;
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -11,7 +12,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
     public sealed class ParallelismRule : IPlanRule
     {
         /// <inheritdoc />
-        public string Code => "P40";
+        public ExplainIssueRule Code => ExplainIssueRule.Parallelism;
 
         /// <inheritdoc />
         public string Category => "Parallelism";

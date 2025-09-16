@@ -1,3 +1,4 @@
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -9,7 +10,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules
     /// </summary>
     public sealed class SortExternalRule : IPlanRule
     {
-        public string Code => "P30";
+        public ExplainIssueRule Code => ExplainIssueRule.SortExternal;
         public string Category => "Sort";
         public Severity DefaultSeverity => Severity.High;
 

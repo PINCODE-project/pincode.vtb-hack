@@ -1,3 +1,4 @@
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -11,7 +12,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class CardinalityMismatchRule : IPlanRule
 {
     /// <inheritdoc />
-    public string Code => "P50";
+    public ExplainIssueRule Code => ExplainIssueRule.CardinalityMismatch;
 
     /// <inheritdoc />
     public string Category => "Cardinality";

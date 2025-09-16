@@ -1,4 +1,5 @@
 using System.Globalization;
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -11,7 +12,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules
     /// </summary>
     public sealed class SeqScanSelectiveRule : IPlanRule
     {
-        public string Code => "P10";
+        public ExplainIssueRule Code => ExplainIssueRule.SeqScanSelective;
         public string Category => "Scan";
         public Severity DefaultSeverity => Severity.High;
 

@@ -33,22 +33,47 @@ using Models;
             yield break;
         }
 
-        private RecommendationCategory MapCategory(ExplainIssueRule rule)
-        {
-            return rule switch
-            {
-                ExplainIssueRule.SeqScanOnLargeTable => RecommendationCategory.Indexing,
-                ExplainIssueRule.NestedLoopOnLargeTables => RecommendationCategory.Joins,
-                ExplainIssueRule.MissingIndex => RecommendationCategory.Indexing,
-                ExplainIssueRule.MisestimatedRows => RecommendationCategory.Cardinality,
-                ExplainIssueRule.SortWithoutIndex => RecommendationCategory.Sorting,
-                ExplainIssueRule.HashAggOnLargeTable => RecommendationCategory.Aggregations,
-                ExplainIssueRule.FunctionScan => RecommendationCategory.General,
-                ExplainIssueRule.MaterializeNode => RecommendationCategory.ExecutionPlan,
-                ExplainIssueRule.UnexpectedParallelism => RecommendationCategory.ExecutionPlan,
-                _ => RecommendationCategory.General
-            };
-        }
+      private RecommendationCategory MapCategory(ExplainIssueRule rule)
+{
+    return rule switch
+    {
+        ExplainIssueRule.SeqScanOnLargeTable => RecommendationCategory.Indexing,
+        ExplainIssueRule.NestedLoopOnLargeTables => RecommendationCategory.Joins,
+        ExplainIssueRule.MissingIndex => RecommendationCategory.Indexing,
+        ExplainIssueRule.MisestimatedRows => RecommendationCategory.Cardinality,
+        ExplainIssueRule.SortWithoutIndex => RecommendationCategory.Sorting,
+        ExplainIssueRule.HashAggOnLargeTable => RecommendationCategory.Aggregations,
+        ExplainIssueRule.FunctionScan => RecommendationCategory.General,
+        ExplainIssueRule.MaterializeNode => RecommendationCategory.ExecutionPlan,
+        ExplainIssueRule.UnexpectedParallelism => RecommendationCategory.ExecutionPlan,
+
+        ExplainIssueRule.BitmapHeapOverfetch => RecommendationCategory.Indexing,
+        ExplainIssueRule.IndexOnlyScanButBitmap => RecommendationCategory.Indexing,
+        ExplainIssueRule.HashJoinWithSkew => RecommendationCategory.Joins,
+        ExplainIssueRule.ParallelSeqScanIneffective => RecommendationCategory.Parallelism,
+        ExplainIssueRule.SortSpillToDisk => RecommendationCategory.Sorting,
+        ExplainIssueRule.ExcessiveTempFiles => RecommendationCategory.Memory,
+        ExplainIssueRule.MissingStatistics => RecommendationCategory.Statistics,
+        ExplainIssueRule.CorrelatedSubqueryExec => RecommendationCategory.Subqueries,
+        ExplainIssueRule.SlowStartupTime => RecommendationCategory.ExecutionPlan,
+        ExplainIssueRule.ActualVsEstimatedLargeDiff => RecommendationCategory.Cardinality,
+        ExplainIssueRule.FilterAfterAggregate => RecommendationCategory.Aggregations,
+        ExplainIssueRule.WorkMemExceededEstimate => RecommendationCategory.Memory,
+        ExplainIssueRule.LargeAggregateMemory => RecommendationCategory.Memory,
+        ExplainIssueRule.SortMethodExternal => RecommendationCategory.Sorting,
+        ExplainIssueRule.BitmapIndexScanOnSmallTable => RecommendationCategory.Indexing,
+        ExplainIssueRule.IndexScanWithFilterOnNonIndexedCol => RecommendationCategory.Indexing,
+        ExplainIssueRule.SeqScanOnRecentlyUpdatedTable => RecommendationCategory.Indexing,
+        ExplainIssueRule.SeqScanWithHighTempWrites => RecommendationCategory.Memory,
+        ExplainIssueRule.IndexScanButBitmapRecheck => RecommendationCategory.Indexing,
+        ExplainIssueRule.ParallelWorkersTooMany => RecommendationCategory.Parallelism,
+        ExplainIssueRule.HashAggWithoutHashableKey => RecommendationCategory.Aggregations,
+        ExplainIssueRule.CrossProductDetected => RecommendationCategory.Joins,
+
+        _ => RecommendationCategory.General
+    };
+}
+
 
         private RecommendationSeverity MapSeverity(AnalysisSeverity severity)
         {

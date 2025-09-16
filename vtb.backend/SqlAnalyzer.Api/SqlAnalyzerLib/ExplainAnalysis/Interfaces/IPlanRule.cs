@@ -1,3 +1,4 @@
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 
@@ -11,7 +12,7 @@ public interface IPlanRule
     /// <summary>
     /// Уникальный код правила (например, P10).
     /// </summary>
-    string Code { get; }
+    ExplainIssueRule Code { get; }
 
     /// <summary>
     /// Категория (человеко-читаемая).

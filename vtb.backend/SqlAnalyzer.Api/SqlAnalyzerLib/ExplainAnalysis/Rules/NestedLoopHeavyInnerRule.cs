@@ -1,3 +1,4 @@
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -10,7 +11,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class NestedLoopHeavyInnerRule : IPlanRule
 {
     /// <inheritdoc />
-    public string Code => "P22";
+    public ExplainIssueRule Code => ExplainIssueRule.NestedLoopHeavyInner;
 
     /// <inheritdoc />
     public string Category => "Join";

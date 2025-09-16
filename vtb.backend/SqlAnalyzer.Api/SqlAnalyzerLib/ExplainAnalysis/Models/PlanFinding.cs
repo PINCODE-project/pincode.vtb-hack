@@ -1,3 +1,4 @@
+using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 
 namespace SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -6,7 +7,7 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Models;
 /// Описание одного найденного "находки" (issue) по плану.
 /// </summary>
 public record PlanFinding(
-    string Code,
+    ExplainIssueRule Code,
     string Message,
     string Category,
     Severity Severity,

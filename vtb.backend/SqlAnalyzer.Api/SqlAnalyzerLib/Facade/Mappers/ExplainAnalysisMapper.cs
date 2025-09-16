@@ -18,28 +18,14 @@ public static class ExplainAnalysisMapper
             Sql = sql,
             Issues = findings.Select(f => new ExplainIssue
             {
-                Rule = MapRule(f.Code),
+                Rule = f.Code,
                 Severity = MapSeverity(f.Severity),
                 Description = f.Message,
                 Recommendation = $"Category: {f.Category}, Objects: {string.Join(", ", f.AffectedObjects)}"
             }).ToList()
         };
     }
-
-    private static ExplainIssueRule MapRule(string code) => code switch
-    {
-        "SeqScan" => ExplainIssueRule.SeqScanOnLargeTable,
-        "NestedLoop" => ExplainIssueRule.NestedLoopOnLargeTables,
-        "MissingIndex" => ExplainIssueRule.MissingIndex,
-        "MisestimatedRows" => ExplainIssueRule.MisestimatedRows,
-        "Sort" => ExplainIssueRule.SortWithoutIndex,
-        "HashAgg" => ExplainIssueRule.HashAggOnLargeTable,
-        "FunctionScan" => ExplainIssueRule.FunctionScan,
-        "Materialize" => ExplainIssueRule.MaterializeNode,
-        "Parallel" => ExplainIssueRule.UnexpectedParallelism,
-        _ => ExplainIssueRule.SeqScanOnLargeTable
-    };
-
+    
     private static AnalysisSeverity MapSeverity(Severity s) => s switch
     {
         Severity.Low => AnalysisSeverity.Info,
