@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Brain } from "lucide-react";
@@ -6,6 +8,7 @@ import { AnimatedGroup } from "@/components/ui/animated-group";
 import Noise from "@/components/ui/noise";
 import { Button } from "@pin-code/ui-kit";
 import { Variants } from "framer-motion";
+import { VideoModal } from "./VideoModal";
 
 const transitionVariants = {
 	item: {
@@ -27,7 +30,9 @@ const transitionVariants = {
 	} as Variants,
 };
 
-export async function HeroSection() {
+export function HeroSection() {
+	const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
 	return (
 		<>
 			<main className="overflow-hidden dark">
@@ -131,10 +136,14 @@ export async function HeroSection() {
 											</Link>
 										</Button>
 									</div>
-									<Button key={2} asChild size="lg" variant="ghost" className="rounded-xl px-5">
-										<Link href="/documentation">
-											<span className="text-nowrap">Документация</span>
-										</Link>
+									<Button
+										key={2}
+										size="lg"
+										variant="ghost"
+										className="rounded-xl px-5"
+										onClick={() => setIsVideoModalOpen(true)}
+									>
+										<span className="text-nowrap">Видео-обзор</span>
 									</Button>
 								</AnimatedGroup>
 							</div>
@@ -172,6 +181,9 @@ export async function HeroSection() {
 					</div>
 				</section>
 			</main>
+
+			{/* Модальное окно с видео */}
+			<VideoModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
 		</>
 	);
 }

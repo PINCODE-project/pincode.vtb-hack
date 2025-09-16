@@ -1,7 +1,7 @@
 import type { AutovacuumMetricsSummary } from "@/generated/models/AutovacuumMetricsSummary";
 import { formatNumber } from "../utils/format";
 import { Card, CardContent } from "@pin-code/ui-kit";
-import { Database, AlertTriangle, AlertCircle, TrendingUp } from "lucide-react";
+import { Database, AlertTriangle, AlertCircle, TrendingUp, Activity, BarChart3, Gauge } from "lucide-react";
 
 interface AutovacuumMetricsProps {
 	metrics: AutovacuumMetricsSummary;
@@ -94,7 +94,107 @@ export function AutovacuumMetrics({ metrics }: AutovacuumMetricsProps) {
 					<p className="text-lg font-bold status-critical break-all" title={metrics.worstTable || ""}>
 						{metrics.worstTable || "N/A"}
 					</p>
-					<p className="text-xs text-muted-foreground">с наихудшим показателем</p>
+					<p className="text-xs text-muted-foreground">
+						{metrics.worstTableRatio?.toFixed(1)}% мертвых строк
+					</p>
+				</CardContent>
+			</Card>
+
+			{/* Общий системный процент мертвых строк */}
+			<Card className="border-l-4 border-l-indigo-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<Gauge className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Системный процент
+						</p>
+					</div>
+					<p className="text-2xl font-bold">{metrics.systemWideDeadTupleRatio?.toFixed(1)}%</p>
+					<p className="text-xs text-muted-foreground">мертвых строк в кластере</p>
+				</CardContent>
+			</Card>
+
+			{/* Общие живые строки */}
+			<Card className="border-l-4 border-l-green-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<Activity className="h-4 w-4 text-green-600 dark:text-green-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Живые строки
+						</p>
+					</div>
+					<p className="text-2xl font-bold">{formatNumber(metrics.totalLiveTuples)}</p>
+					<p className="text-xs text-muted-foreground">всего в базе</p>
+				</CardContent>
+			</Card>
+
+			{/* Общие мертвые строки */}
+			<Card className="border-l-4 border-l-gray-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Мертвые строки
+						</p>
+					</div>
+					<p className="text-2xl font-bold status-warning">{formatNumber(metrics.totalDeadTuples)}</p>
+					<p className="text-xs text-muted-foreground">всего в базе</p>
+				</CardContent>
+			</Card>
+
+			{/* Таблицы > 10% */}
+			<Card className="border-l-4 border-l-yellow-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<BarChart3 className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Таблицы &gt; 10%
+						</p>
+					</div>
+					<p className="text-2xl font-bold status-warning">{formatNumber(metrics.tablesAbove10Percent)}</p>
+					<p className="text-xs text-muted-foreground">мертвых строк</p>
+				</CardContent>
+			</Card>
+
+			{/* Таблицы > 20% */}
+			<Card className="border-l-4 border-l-orange-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<BarChart3 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Таблицы &gt; 20%
+						</p>
+					</div>
+					<p className="text-2xl font-bold status-critical">{formatNumber(metrics.tablesAbove20Percent)}</p>
+					<p className="text-xs text-muted-foreground">мертвых строк</p>
+				</CardContent>
+			</Card>
+
+			{/* Таблицы > 30% */}
+			<Card className="border-l-4 border-l-red-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<BarChart3 className="h-4 w-4 text-red-600 dark:text-red-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Таблицы &gt; 30%
+						</p>
+					</div>
+					<p className="text-2xl font-bold status-critical">{formatNumber(metrics.tablesAbove30Percent)}</p>
+					<p className="text-xs text-muted-foreground">мертвых строк</p>
+				</CardContent>
+			</Card>
+
+			{/* Средняя скорость изменений */}
+			<Card className="border-l-4 border-l-cyan-500 py-3">
+				<CardContent className="py-1">
+					<div className="flex items-center space-x-2 mb-2">
+						<TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+						<p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+							Скорость изменений
+						</p>
+					</div>
+					<p className="text-2xl font-bold">{metrics.avgChangeRatePercent?.toFixed(1)}%</p>
+					<p className="text-xs text-muted-foreground">средняя по таблицам</p>
 				</CardContent>
 			</Card>
 		</div>
