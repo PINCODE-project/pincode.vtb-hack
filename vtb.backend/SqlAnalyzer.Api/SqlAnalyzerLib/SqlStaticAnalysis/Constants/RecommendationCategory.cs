@@ -11,5 +11,6 @@ public enum RecommendationCategory
     Safety,
     DML,
     Partitioning,
-    Other
+    Performance,
+    Correctness
 }

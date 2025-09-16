@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.DependencyInjection;
 using SqlAnalyzerLib.ExplainAnalysis;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
@@ -36,7 +37,8 @@ public static class SqlAnalyzerLibDIExtensions
         services.AddTransient<IStaticSqlAnalyzer, StaticSqlAnalyzer>();
         foreach (var staticRule in options.SqlStaticAnalysisRules)
         {
-            services.AddTransient<IStaticRule>(_ => staticRule);
+            var ruleInterfaceType = typeof(IStaticRule);
+            services.Add(new ServiceDescriptor(ruleInterfaceType, staticRule, ServiceLifetime.Transient));
         }
         
         // explain analyzer
@@ -45,13 +47,15 @@ public static class SqlAnalyzerLibDIExtensions
         services.AddTransient<IRuleEngine, RuleEngine>();
         foreach (var explainAnalysisRule in options.ExplainAnalysisRules)
         {
-            services.AddTransient<IPlanRule>(_ => explainAnalysisRule);
+            var ruleInterfaceType = typeof(IPlanRule);
+            services.Add(new ServiceDescriptor(ruleInterfaceType, explainAnalysisRule, ServiceLifetime.Transient));
         }
 
         services.AddTransient<RecommendationEngine>();
         foreach (var recommendationProvider in options.RecommendationProviders)
         {
-            services.AddTransient<IRecommendationProvider>(_ => recommendationProvider);
+            var recommendationInterfaceType = typeof(IRecommendationProvider);
+            services.Add(new ServiceDescriptor(recommendationInterfaceType, recommendationProvider, ServiceLifetime.Transient));
         }
         
         return services;

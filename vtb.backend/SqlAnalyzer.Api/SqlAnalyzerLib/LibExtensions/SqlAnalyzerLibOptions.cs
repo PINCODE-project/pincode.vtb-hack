@@ -6,9 +6,9 @@ namespace SqlAnalyzerLib.LibExtensions;
 
 public class SqlAnalyzerLibOptions
 {
-    public IReadOnlyCollection<IStaticRule> SqlStaticAnalysisRules { get; set; } = new List<IStaticRule>();
+    public IReadOnlyCollection<Type> SqlStaticAnalysisRules { get; set; } = new List<Type>();
 
-    public IReadOnlyCollection<IPlanRule> ExplainAnalysisRules { get; set; } = new List<IPlanRule>();
+    public IReadOnlyCollection<Type> ExplainAnalysisRules { get; set; } = new List<Type>();
 
-    public IReadOnlyCollection<IRecommendationProvider> RecommendationProviders { get; set; } = new List<IRecommendationProvider>();
+    public IReadOnlyCollection<Type> RecommendationProviders { get; set; } = new List<Type>();
 }

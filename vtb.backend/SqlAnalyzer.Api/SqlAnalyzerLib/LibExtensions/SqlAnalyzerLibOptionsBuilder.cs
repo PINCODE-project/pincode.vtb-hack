@@ -13,54 +13,27 @@ public class SqlAnalyzerLibOptionsBuilder
 
     public SqlAnalyzerLibOptionsBuilder WithAllSqlStaticAnalyzerRules()
     {
-        var staticRules = new IStaticRule[]
-        {
-            new FunctionOnColumnRule(),
-            new LeadingWildcardLikeRule(),
-            new SelectStarRule(),
-            new OffsetPaginationRule(),
-            new TypeMismatchComparisonRule(),
-            new NotInNullsRule(),
-            new CartesianJoinRule(),
-            new NonSargableExpressionRule(),
-            new SubqueryInsteadOfJoinRule(),
-            new MissingWhereDeleteRule()
-        };
-
-        _options.SqlStaticAnalysisRules = staticRules;
+        var ruleType = typeof(IStaticRule);
+        var staticRules = ruleType.Assembly.GetTypes().Where(t => ruleType.IsClass && ruleType.IsAssignableFrom(t));
+        _options.SqlStaticAnalysisRules = staticRules.ToList();
 
         return this;
     }
     
     public SqlAnalyzerLibOptionsBuilder WithAllExplainAnalyzerRules()
     {
-        var planRules = new IPlanRule[]
-        {
-            new SeqScanSelectiveRule(removedFractionThreshold: 0.3),
-            new SortExternalRule(),
-            new TempFilesRule(),
-            new CardinalityMismatchRule(),
-            new HashSpillRule(),
-            new IndexFilterMismatchRule(),
-            new IndexOnlyHeapFetchRule(),
-            new ParallelismRule(),
-            new NestedLoopHeavyInnerRule()
-        };
-
-        _options.ExplainAnalysisRules = planRules;
+        var ruleType = typeof(IPlanRule);
+        var planRules = ruleType.Assembly.GetTypes().Where(t => ruleType.IsClass && ruleType.IsAssignableFrom(t));
+        _options.ExplainAnalysisRules = planRules.ToList();
 
         return this;
     }
     
     public SqlAnalyzerLibOptionsBuilder WithAllRecommendationProviders()
     {
-        var recommendationProviders = new IRecommendationProvider[]
-        {
-            new StaticQueryRecommendationProvider(),
-            new ExplainRecommendationProvider()
-        };
-
-        _options.RecommendationProviders = recommendationProviders;
+        var recommendationType = typeof(IRecommendationProvider);
+        var planRules = recommendationType.Assembly.GetTypes().Where(t => recommendationType.IsClass && recommendationType.IsAssignableFrom(t));
+        _options.ExplainAnalysisRules = planRules.ToList();
 
         return this;
     }
