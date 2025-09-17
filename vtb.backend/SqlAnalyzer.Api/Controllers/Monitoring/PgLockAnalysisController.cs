@@ -38,13 +38,13 @@ public class PgLockAnalysisController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Запрос полного анализа autovacuum");
+            _logger.LogInformation("Запрос полного анализа lock");
             var result = await _analysisService.AnalyzeLocksAsync(dbConnectionId, startDate, endDate);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при выполнении полного анализа autovacuum");
+            _logger.LogError(ex, "Ошибка при выполнении полного анализа lock");
             return StatusCode(500, new { error = "Произошла ошибка", details = ex.Message });
         }
     }
