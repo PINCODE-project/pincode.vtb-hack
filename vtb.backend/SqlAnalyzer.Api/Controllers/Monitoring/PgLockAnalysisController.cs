@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SqlAnalyzer.Api.Controllers.Monitoring.Dto.Response;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
+using SqlAnalyzer.Api.Monitoring.Services;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.Monitoring;
@@ -32,8 +33,8 @@ public class PgLockAnalysisController : ControllerBase
     /// Полный анализ состояния autovacuum
     /// </summary>
     [HttpGet("analysis")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AutovacuumAnalysisResponse))]
-    public async Task<ActionResult<AutovacuumAnalysisResponse>> GetFullAnalysis([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(LockAnalysisResult))]
+    public async Task<ActionResult<LockAnalysisResult>> GetFullAnalysis([FromQuery] Guid dbConnectionId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try
         {
