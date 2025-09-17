@@ -22,6 +22,7 @@ public class DataContext: DbContext
     public DbSet<TempFilesStatsDal> TempFilesStats { get; set; }
     public DbSet<IndexMetric> IndexMetrics { get; set; }
     public DbSet<TableStatictics> TableStatictics { get; set; }
+    public DbSet<PgLock> PgLocks { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
