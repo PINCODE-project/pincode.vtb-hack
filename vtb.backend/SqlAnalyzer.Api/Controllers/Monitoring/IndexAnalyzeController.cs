@@ -55,7 +55,7 @@ public class IndexAnalyzeController  : ControllerBase
             result = result.Where(t => t.TableName == tableName);
         }
         
-        return Ok(result);
+        return Ok(await result.ToListAsync());
     }
     
     /// <summary>

@@ -52,17 +52,15 @@ public class PgLockAnalysisController : ControllerBase
     /// Получение метрик для отображения графиков по периоду
     /// </summary>
     [HttpGet("metrics")]
-    [ProducesResponseType<List<AutovacuumStat>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<List<PgLock>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMetricsForPeriodAsync([FromQuery] Guid dbConnectionId, 
         [FromQuery] DateTime startDate, 
-        [FromQuery] DateTime endDate,
-        [FromQuery] string? schemaName,
-        [FromQuery] string? tableName)
+        [FromQuery] DateTime endDate)
     {
-        var result = _dataContext.PgLocks
+        var result = await _dataContext.PgLocks
             .Where(x => x.DbConnectionId == dbConnectionId 
                         && x.CreateAt >= startDate 
-                        && x.CreateAt <= endDate);
+                        && x.CreateAt <= endDate).ToListAsync();
         
         return Ok(result);
     }
