@@ -184,40 +184,4 @@ internal class CacheAnalyzeService : ICacheAnalyzeService
             _ => "critical"
         };
     }
-
-    private string GetHealthStatusMessage(string status, double cacheHitRatio)
-    {
-        return status switch
-        {
-            "healthy" => $"Кэш работает отлично: {cacheHitRatio:F2}%",
-            "warning" => $"Требуется внимание: {cacheHitRatio:F2}%",
-            "critical" => $"Критическое состояние: {cacheHitRatio:F2}%",
-            _ => "Неизвестный статус"
-        };
-    }
-
-    private List<string> GetHealthSuggestions(string status, CacheMetricsSummary metrics)
-    {
-        var suggestions = new List<string>();
-
-        if (status == "critical")
-        {
-            suggestions.Add("Увеличьте shared_buffers (25-40% от общей памяти)");
-            suggestions.Add("Проанализируйте запросы с последовательным сканированием");
-            suggestions.Add("Добавьте индексы для часто используемых запросов");
-        }
-        else if (status == "warning")
-        {
-            suggestions.Add("Рассмотрите увеличение shared_buffers");
-            suggestions.Add("Оптимизируйте самые частые запросы");
-            suggestions.Add("Добавьте индексы для медленных запросов");
-        }
-        else
-        {
-            suggestions.Add("Продолжайте текущую конфигурацию");
-            suggestions.Add("Регулярно мониторьте производительность");
-        }
-
-        return suggestions;
-    }
 }
