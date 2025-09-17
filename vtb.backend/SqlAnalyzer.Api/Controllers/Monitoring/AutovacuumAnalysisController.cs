@@ -102,4 +102,24 @@ public class AutovacuumAnalysisController : ControllerBase
             .ThenBy(x => x.TableName)
             .ToListAsync();
     }
+    
+    /// <summary>
+    /// Получение уникального времени в записях
+    /// </summary>
+    [HttpGet("time")]
+    [ProducesResponseType<List<DateTime>>(StatusCodes.Status200OK)]
+    public async Task<List<DateTime>> GetUniqueTimeAsync(Guid? dbConnectionId = null)
+    {
+        var query = _dataContext.AutovacuumStats.AsQueryable();
+
+        if (dbConnectionId.HasValue)
+        {
+            query = query.Where(a => a.DbConnectionId == dbConnectionId.Value);
+        }
+
+        return await query
+            .Select(a => a.CreateAt)
+            .Distinct()
+            .ToListAsync();
+    }
 }
