@@ -101,6 +101,7 @@ public class IndexAnalyzeController  : ControllerBase
         return await query
             .Select(a => a.CreateAt)
             .Distinct()
+            .OrderByDescending(date => date)
             .ToListAsync();
     }
 }

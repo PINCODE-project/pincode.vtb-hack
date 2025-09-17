@@ -82,6 +82,7 @@ public class PgLockAnalysisController : ControllerBase
         return await query
             .Select(a => a.CreateAt)
             .Distinct()
+            .OrderByDescending(date => date)
             .ToListAsync();
     }
 }
