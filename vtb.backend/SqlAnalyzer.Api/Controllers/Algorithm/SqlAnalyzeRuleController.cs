@@ -6,6 +6,7 @@ using SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.Algorithm;
 
+[Route("api/sql-analyzer")]
 public class SqlAnalyzeRuleController : ControllerBase
 {
     private readonly ISqlAnalyzeRuleService _service;
@@ -23,10 +24,10 @@ public class SqlAnalyzeRuleController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<SimpleDto<Guid>> Create([FromBody] [Required] SqlAnalyzeRuleCreateDto dto)
+    public async Task<IActionResult> Create([FromBody] [Required] SqlAnalyzeRuleCreateDto dto)
     {
         var id = await _service.Create(dto);
-        return new SimpleDto<Guid>(id);
+        return Ok(new SimpleDto<Guid>(id));
     }
 
     [HttpPatch]
