@@ -18,15 +18,18 @@ public class PgLockAnalysisController : ControllerBase
     private readonly ILockAnalyzer _analysisService;
     private readonly ILogger<AutovacuumAnalysisController> _logger;
     private readonly DataContext _dataContext;
+    private readonly IMonitoringService _monitoringService;
 
     public PgLockAnalysisController(
         ILockAnalyzer analysisService,
         ILogger<AutovacuumAnalysisController> logger,
-        DataContext dataContext)
+        DataContext dataContext,
+        IMonitoringService monitoringService)
     {
         _analysisService = analysisService;
         _logger = logger;
         _dataContext = dataContext;
+        _monitoringService = monitoringService;
     }
 
     /// <summary>
@@ -85,5 +88,22 @@ public class PgLockAnalysisController : ControllerBase
             .Distinct()
             .OrderByDescending(date => date)
             .ToListAsync();
+    }
+    
+    /// <summary>
+    /// Принудительно собрать метрики
+    /// </summary>
+    [HttpPost("collect")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CollectAsync([FromBody] Guid dbConnectionId)
+    {
+        var dbConnection = await _dataContext.DbConnections.FirstOrDefaultAsync(x => x.Id == dbConnectionId);
+        if (dbConnection == null)
+        {
+            return BadRequest("dbConnection not found");
+        }
+
+        await _monitoringService.CollectLockDataAsync(dbConnection);
+        return Ok();
     }
 }

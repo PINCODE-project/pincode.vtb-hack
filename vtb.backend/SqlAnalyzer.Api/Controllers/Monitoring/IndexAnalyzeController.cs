@@ -13,12 +13,15 @@ public class IndexAnalyzeController  : ControllerBase
 {
     private readonly IIndexAnalysisService _analysisService;
     private readonly DataContext _dataContext;
+    private readonly IMonitoringService _monitoringService;
 
     public IndexAnalyzeController(IIndexAnalysisService analysisService,
-        DataContext dataContext)
+        DataContext dataContext,
+        IMonitoringService monitoringService)
     {
         _analysisService = analysisService;
         _dataContext = dataContext;
+        _monitoringService = monitoringService;
     }
 
     [HttpGet("recommendations")]
@@ -103,5 +106,22 @@ public class IndexAnalyzeController  : ControllerBase
             .Distinct()
             .OrderByDescending(date => date)
             .ToListAsync();
+    }
+    
+    /// <summary>
+    /// Принудительно собрать метрики
+    /// </summary>
+    [HttpPost("collect")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CollectAsync([FromBody] Guid dbConnectionId)
+    {
+        var dbConnection = await _dataContext.DbConnections.FirstOrDefaultAsync(x => x.Id == dbConnectionId);
+        if (dbConnection == null)
+        {
+            return BadRequest("dbConnection not found");
+        }
+
+        await _monitoringService.SaveEfficiencyIndexListAsync(dbConnection);
+        return Ok();
     }
 }
