@@ -5,6 +5,8 @@ using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Monitoring.BackgroundServices;
 using SqlAnalyzer.Api.Monitoring.Services;
 using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzer.Api.Services.Algorithm;
+using SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 using SqlAnalyzer.Api.Services.DbConnection;
 using SqlAnalyzer.Api.Services.DbConnection.Interfaces;
 using SqlAnalyzer.Api.Services.LlmClient;
@@ -68,6 +70,7 @@ builder.Services.AddScoped<IAutovacuumMonitoringService, AutovacuumMonitoringSer
 builder.Services.AddScoped<IAutovacuumAnalysisService, AutovacuumAnalysisService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
 builder.Services.AddScoped<IQueryService, QueryService>();
+builder.Services.AddScoped<ISqlAnalyzeRuleService, SqlAnalyzeRuleService>();
 builder.Services.AddSqlAnalyzer();
 
 builder.Services.AddCors(options =>
