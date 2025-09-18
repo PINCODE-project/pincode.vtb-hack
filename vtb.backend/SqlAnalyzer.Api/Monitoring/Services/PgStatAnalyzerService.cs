@@ -9,7 +9,9 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using SqlAnalyzer.Api.Dal;
 using SqlAnalyzer.Api.Dal.Extensions;
-using SqlAnalyzer.Api.Monitoring.Services.Interfaces; // DataContext и модель DbConnections
+using SqlAnalyzer.Api.Monitoring.Services.Interfaces;
+using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
+using SqlAnalyzerLib.SqlStaticAnalysis.Models; // DataContext и модель DbConnections
 
 /// <summary>
 /// Анализатор pg_stat_statements — упрощённая версия:
@@ -22,15 +24,19 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
 {
     private readonly DataContext _db; // содержит список DbConnections
     private readonly ILogger<PgStatAnalyzerService> _log;
+    private readonly IStaticSqlAnalyzer _staticSqlAnalyzer;
 
     // Кеш карт колонок на целевую БД (ключ — hash connection string)
     private readonly Dictionary<string, (Dictionary<string, string> map, DateTime loadedAt)> _columnMaps = new();
     private readonly TimeSpan _columnMapTtl = TimeSpan.FromMinutes(5);
 
-    public PgStatAnalyzerService(DataContext db, ILogger<PgStatAnalyzerService> log)
+    public PgStatAnalyzerService(DataContext db, 
+        ILogger<PgStatAnalyzerService> log, 
+        IStaticSqlAnalyzer staticSqlAnalyzer)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _staticSqlAnalyzer = staticSqlAnalyzer;
     }
 
     /// <summary>
@@ -66,7 +72,7 @@ public class PgStatAnalyzerService : IPgStatAnalyzerService
         foreach (var s in stats)
         {
             s.Score = ComputeScore(s, maxTotal, maxMean, maxCalls, maxShared, maxTemp, maxRows);
-            var suggestions = GenerateSuggestionsInRussian(s).ToList();
+            var suggestions = (await GenerateSuggestionsInRussianAsync(s)).ToList();
 
             // если предложений нет (т.е. явных проблем не выявлено) — добавляем "Нет замечаний"
             if (!suggestions.Any())
@@ -324,7 +330,7 @@ WHERE COALESCE(query, '') <> '<insufficient privilege>' AND COALESCE(query, '') 
         return Criticality.Info;
     }
 
-    private IEnumerable<Suggestion> GenerateSuggestionsInRussian(QueryStatAdvanced s)
+    private async Task<IEnumerable<Suggestion>> GenerateSuggestionsInRussianAsync(QueryStatAdvanced s)
     {
         var list = new List<Suggestion>();
         var q = (s.Query ?? "").ToLowerInvariant();
@@ -346,6 +352,8 @@ WHERE COALESCE(query, '') <> '<insufficient privilege>' AND COALESCE(query, '') 
         if (!string.IsNullOrEmpty(idx))
             list.Add(new Suggestion { Title = "Возможный индекс (эвристика)", Description = "Проверьте селективность и сравните план выполнения до/после.", Priority = 80, ExampleSql = idx });
 
+        var a = await _staticSqlAnalyzer.AnalyzeAsync(new SqlQuery(s.Query));
+        list.AddRange(a.Findings.Select(finding => new Suggestion { Title = finding.Problem, Description = finding.Recommendations, Priority = (int)finding.Severity }));
         return list;
     }
 
