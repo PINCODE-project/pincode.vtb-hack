@@ -77,18 +77,6 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules
                 ));
             }
 
-            if (planRows >= LargeTableRowsThreshold ||
-                actualRows >= LargeTableRowsThreshold)
-            {
-                return Task.FromResult<PlanFinding?>(new PlanFinding(
-                    Code,
-                    Severity,
-                    string.Format(ExplainRulePromblemDescriptions.SeqScanOnLargeTable, node.NodeType,
-                        LargeTableRowsThreshold.ToString("N0")),
-                    ExplainRuleRecommendations.SeqScanOnLargeTable
-                ));
-            }
-
             return Task.FromResult<PlanFinding?>(null);
         }
 
