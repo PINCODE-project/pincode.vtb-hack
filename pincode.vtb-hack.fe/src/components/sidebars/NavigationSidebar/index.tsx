@@ -23,7 +23,7 @@ type Props = ComponentProps<typeof Sidebar> & {
 export function NavigationSidebar({ children, ...props }: Props) {
 	return (
 		<Sidebar className="overflow-hidden *:data-[sidebar=sidebar]:flex-row" {...props}>
-			<Sidebar collapsible="none" className="w-[180px]! border-r">
+			<Sidebar collapsible="none" className="w-[180px]!">
 				<SidebarHeader>
 					<SidebarMenu>
 						<SidebarMenuItem>
