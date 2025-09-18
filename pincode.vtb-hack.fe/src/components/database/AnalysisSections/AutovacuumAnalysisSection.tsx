@@ -4,18 +4,20 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { AutovacuumAnalysisResponse } from "@/generated/models/AutovacuumAnalysisResponse";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { getStatusIcon } from "../utils/ui-helpers";
 import { MetricsDetails } from "../MetricsDetails";
 import { AutovacuumRecommendations } from "../Recommendations";
 
 interface AutovacuumAnalysisSectionProps {
 	query: UseQueryResult<AutovacuumAnalysisResponse>;
+	selectedPeriod: DateRange;
 }
 
 /**
  * Секция анализа Autovacuum
  */
-export function AutovacuumAnalysisSection({ query }: AutovacuumAnalysisSectionProps) {
+export function AutovacuumAnalysisSection({ query, selectedPeriod }: AutovacuumAnalysisSectionProps) {
 	return (
 		<AccordionItem value="autovacuum" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
@@ -72,6 +74,7 @@ export function AutovacuumAnalysisSection({ query }: AutovacuumAnalysisSectionPr
 								data={query.data.metricsSummary}
 								title="Детальные метрики Autovacuum"
 								type="autovacuum"
+								selectedPeriod={selectedPeriod}
 							/>
 						)}
 					</div>

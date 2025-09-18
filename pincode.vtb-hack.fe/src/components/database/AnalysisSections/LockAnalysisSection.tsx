@@ -9,11 +9,13 @@ import {
 import { AlertCircle, CheckCircle, Clock, Lock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { LockAnalysisResult } from "@/generated/models/LockAnalysisResult";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { MetricsDetails } from "../MetricsDetails";
 import { LockRecommendations } from "../Recommendations";
 
 interface LockAnalysisSectionProps {
 	query: UseQueryResult<LockAnalysisResult>;
+	selectedPeriod: DateRange;
 }
 
 /**
@@ -40,7 +42,7 @@ function getLockStatusIcon(data?: LockAnalysisResult) {
 /**
  * Секция анализа блокировок
  */
-export function LockAnalysisSection({ query }: LockAnalysisSectionProps) {
+export function LockAnalysisSection({ query, selectedPeriod }: LockAnalysisSectionProps) {
 	return (
 		<AccordionItem value="locks" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
@@ -88,7 +90,12 @@ export function LockAnalysisSection({ query }: LockAnalysisSectionProps) {
 						<LockRecommendations analysis={query.data} />
 
 						{/* Детальные метрики блокировок */}
-						<MetricsDetails data={query.data} title="Детальные метрики блокировок" type="locks" />
+						<MetricsDetails
+							data={query.data}
+							title="Детальные метрики блокировок"
+							type="locks"
+							selectedPeriod={selectedPeriod}
+						/>
 					</div>
 				)}
 			</AccordionContent>

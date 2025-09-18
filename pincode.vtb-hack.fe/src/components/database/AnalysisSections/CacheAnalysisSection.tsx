@@ -4,18 +4,20 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { CacheAnalysisResponse } from "@/generated/models/CacheAnalysisResponse";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { getStatusIcon } from "../utils/ui-helpers";
 import { MetricsDetails } from "../MetricsDetails";
 import { CacheRecommendations } from "../Recommendations";
 
 interface CacheAnalysisSectionProps {
 	query: UseQueryResult<CacheAnalysisResponse>;
+	selectedPeriod: DateRange;
 }
 
 /**
  * Секция анализа кэша
  */
-export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
+export function CacheAnalysisSection({ query, selectedPeriod }: CacheAnalysisSectionProps) {
 	return (
 		<AccordionItem value="cache" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
@@ -70,6 +72,7 @@ export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
 								data={query.data.metricsSummary}
 								title="Детальные метрики кэша"
 								type="cache"
+								selectedPeriod={selectedPeriod}
 							/>
 						)}
 					</div>

@@ -4,18 +4,20 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { Activity, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { IndexAnalysisResult } from "@/generated/models/IndexAnalysisResult";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { MetricsDetails } from "../MetricsDetails";
 import { IndexRecommendations } from "../Recommendations";
 import { sortRecommendationsBySeverity } from "../utils/format";
 
 interface IndexAnalysisSectionProps {
 	query: UseQueryResult<IndexAnalysisResult>;
+	selectedPeriod: DateRange;
 }
 
 /**
  * Секция анализа индексов
  */
-export function IndexAnalysisSection({ query }: IndexAnalysisSectionProps) {
+export function IndexAnalysisSection({ query, selectedPeriod }: IndexAnalysisSectionProps) {
 	return (
 		<AccordionItem value="indexes" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
@@ -100,6 +102,7 @@ export function IndexAnalysisSection({ query }: IndexAnalysisSectionProps) {
 								data={query.data.indexUsageStatistics}
 								title="Детальная статистика использования индексов"
 								type="index"
+								selectedPeriod={selectedPeriod}
 							/>
 						)}
 					</div>

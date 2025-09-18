@@ -4,17 +4,19 @@ import { Card, CardContent } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock, HardDrive } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
 import type { TempFilesRecommendationResponse } from "@/generated/models/TempFilesRecommendationResponse";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { MetricsDetails } from "../MetricsDetails";
 import { TempFilesRecommendations } from "../Recommendations";
 
 interface TempFilesAnalysisSectionProps {
 	query: UseQueryResult<TempFilesRecommendationResponse>;
+	selectedPeriod: DateRange;
 }
 
 /**
  * Секция анализа временных файлов
  */
-export function TempFilesAnalysisSection({ query }: TempFilesAnalysisSectionProps) {
+export function TempFilesAnalysisSection({ query, selectedPeriod }: TempFilesAnalysisSectionProps) {
 	return (
 		<AccordionItem value="temp-files" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
@@ -69,6 +71,7 @@ export function TempFilesAnalysisSection({ query }: TempFilesAnalysisSectionProp
 								data={query.data.metricsSummary}
 								title="Детальные метрики временных файлов"
 								type="tempFiles"
+								selectedPeriod={selectedPeriod}
 							/>
 						)}
 					</div>
