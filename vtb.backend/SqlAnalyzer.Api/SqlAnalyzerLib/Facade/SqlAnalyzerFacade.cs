@@ -1,4 +1,5 @@
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
+using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.Facade.Interfaces;
 using SqlAnalyzerLib.Facade.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
@@ -21,7 +22,11 @@ public class SqlAnalyzerFacade : ISqlAnalyzerFacade
     public async Task<SqlAlgorithmAnalysisResult> GetRecommendations(string query, string explainResult)
     {
         var staticAnalysisResult = await _staticSqlAnalyzer.AnalyzeAsync(new SqlQuery(query));
-        var explainAnalysisResult = await _explainAnalyzer.AnalyzeAsync(query, explainResult);
+        ExplainAnalysisResult? explainAnalysisResult = null;
+        if (!string.IsNullOrEmpty(explainResult))
+        {
+            explainAnalysisResult = await _explainAnalyzer.AnalyzeAsync(query, explainResult);
+        }
 
         return new SqlAlgorithmAnalysisResult
         {
