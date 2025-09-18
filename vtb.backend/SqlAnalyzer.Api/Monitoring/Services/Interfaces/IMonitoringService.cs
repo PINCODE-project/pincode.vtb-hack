@@ -28,4 +28,9 @@ public interface IMonitoringService
     /// сохранить статистику индексов по таблицам
     /// </summary>
     Task SaveEfficiencyIndexListAsync(DbConnection connectionString);
+
+    /// <summary>
+    /// Собирает данные о заблокированных lock'ах из PostgreSQL
+    /// </summary>
+    Task CollectLockDataAsync(DbConnection connectionString);
 }

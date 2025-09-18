@@ -5,12 +5,18 @@ import type { AutovacuumMetricsSummary } from "@/generated/models/AutovacuumMetr
 import type { CacheMetricsSummary } from "@/generated/models/CacheMetricsSummary";
 import type { TempFilesMetricsSummary } from "@/generated/models/TempFilesMetricsSummary";
 import type { IndexUsageStatistics } from "@/generated/models/IndexUsageStatistics";
-import { AutovacuumMetrics, CacheMetrics, TempFilesMetrics, IndexMetrics } from "../Metrics";
+import type { LockAnalysisResult } from "@/generated/models/LockAnalysisResult";
+import { AutovacuumMetrics, CacheMetrics, TempFilesMetrics, IndexMetrics, LockMetrics } from "../Metrics";
 
 interface MetricsDetailsProps {
-	data: AutovacuumMetricsSummary | CacheMetricsSummary | TempFilesMetricsSummary | IndexUsageStatistics;
+	data:
+		| AutovacuumMetricsSummary
+		| CacheMetricsSummary
+		| TempFilesMetricsSummary
+		| IndexUsageStatistics
+		| LockAnalysisResult;
 	title: string;
-	type: "autovacuum" | "cache" | "tempFiles" | "index";
+	type: "autovacuum" | "cache" | "tempFiles" | "index" | "locks";
 }
 
 /**
@@ -29,6 +35,8 @@ export function MetricsDetails({ data, title, type }: MetricsDetailsProps) {
 				return <TempFilesMetrics metrics={data as TempFilesMetricsSummary} />;
 			case "index":
 				return <IndexMetrics metrics={data as IndexUsageStatistics} />;
+			case "locks":
+				return <LockMetrics metrics={data as LockAnalysisResult} />;
 			default:
 				return <pre className="text-xs overflow-auto max-h-48">{JSON.stringify(data, null, 2)}</pre>;
 		}

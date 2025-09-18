@@ -62,4 +62,25 @@ public class CacheAnalysisController : ControllerBase
             .ToListAsync();
         return Ok(result);
     }
+    
+    /// <summary>
+    /// Получение уникального времени в записях
+    /// </summary>
+    [HttpGet("time")]
+    [ProducesResponseType<List<DateTime>>(StatusCodes.Status200OK)]
+    public async Task<List<DateTime>> GetUniqueTimeAsync(Guid? dbConnectionId = null)
+    {
+        var query = _dataContext.CacheHitStats.AsQueryable();
+
+        if (dbConnectionId.HasValue)
+        {
+            query = query.Where(a => a.DbConnectionId == dbConnectionId.Value);
+        }
+
+        return await query
+            .Select(a => a.CreateAt)
+            .Distinct()
+            .OrderByDescending(date => date)
+            .ToListAsync();
+    }
 }

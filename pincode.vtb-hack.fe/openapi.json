@@ -62,6 +62,186 @@
         }
       }
     },
+    "/api/autovacuum/metrics": {
+      "get": {
+        "tags": [
+          "AutovacuumAnalysis"
+        ],
+        "summary": "Получение метрик для отображения графиков по периоду",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "schemaName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutovacuumStat"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutovacuumStat"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutovacuumStat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/autovacuum/all-schema-and-table-name": {
+      "get": {
+        "tags": [
+          "AutovacuumAnalysis"
+        ],
+        "summary": "Получение всех уникальных комбинаций схема-таблица",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/autovacuum/time": {
+      "get": {
+        "tags": [
+          "AutovacuumAnalysis"
+        ],
+        "summary": "Получение уникального времени в записях",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/cache/analysis": {
       "get": {
         "tags": [
@@ -111,6 +291,123 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CacheAnalysisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/metrics": {
+      "get": {
+        "tags": [
+          "CacheAnalysis"
+        ],
+        "summary": "Получение метрик для отображения графиков по периоду",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CacheHitStats"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CacheHitStats"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CacheHitStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/time": {
+      "get": {
+        "tags": [
+          "CacheAnalysis"
+        ],
+        "summary": "Получение уникального времени в записях",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
                 }
               }
             }
@@ -385,6 +682,359 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IndexAnalysisResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/index/metrics": {
+      "get": {
+        "tags": [
+          "IndexAnalyze"
+        ],
+        "summary": "Получение метрик для отображения графиков по периоду",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "schemaName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IndexMetric"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IndexMetric"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IndexMetric"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/index/all-schema-and-table-name": {
+      "get": {
+        "tags": [
+          "IndexAnalyze"
+        ],
+        "summary": "Получение всех уникальных комбинаций схема-таблица",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaTableDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/index/time": {
+      "get": {
+        "tags": [
+          "IndexAnalyze"
+        ],
+        "summary": "Получение уникального времени в записях",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lock/analysis": {
+      "get": {
+        "tags": [
+          "PgLockAnalysis"
+        ],
+        "summary": "Полный анализ состояния autovacuum",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockAnalysisResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockAnalysisResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockAnalysisResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lock/metrics": {
+      "get": {
+        "tags": [
+          "PgLockAnalysis"
+        ],
+        "summary": "Получение метрик для отображения графиков по периоду",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PgLock"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PgLock"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PgLock"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lock/time": {
+      "get": {
+        "tags": [
+          "PgLockAnalysis"
+        ],
+        "summary": "Получение уникального времени в записях",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
                 }
               }
             }
@@ -732,6 +1382,123 @@
           }
         }
       }
+    },
+    "/temp-file/metrics": {
+      "get": {
+        "tags": [
+          "TempFilesAnalyzeMonitoring"
+        ],
+        "summary": "Получение метрик для отображения графиков по периоду",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TempFilesStatsDal"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TempFilesStatsDal"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TempFilesStatsDal"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temp-file/time": {
+      "get": {
+        "tags": [
+          "TempFilesAnalyzeMonitoring"
+        ],
+        "summary": "Получение уникального времени в записях",
+        "parameters": [
+          {
+            "name": "dbConnectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -923,6 +1690,81 @@
         "additionalProperties": false,
         "description": "Рекомендация по настройке автовакуума для оптимизации работы базы данных"
       },
+      "AutovacuumStat": {
+        "required": [
+          "createAt",
+          "schemaName",
+          "tableName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createAt": {
+            "type": "string",
+            "description": "Дата и время сбора статистики\nИспользуется для построения временных рядов и анализа тенденций",
+            "format": "date-time"
+          },
+          "schemaName": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "description": "Имя схемы базы данных\nСхема представляет собой пространство имен для организации таблиц"
+          },
+          "tableName": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Имя таблицы в схеме\nТаблица содержит фактические данные и является основной единицей хранения"
+          },
+          "liveTuples": {
+            "type": "integer",
+            "description": "Количество \"живых\" tuple'ов (строк) в таблице\nАктуальные данные, доступные для операций SELECT, UPDATE, DELETE",
+            "format": "int64"
+          },
+          "deadTuples": {
+            "type": "integer",
+            "description": "Количество \"мертвых\" tuple'ов (строк) в таблице\nУдаленные или обновленные строки, которые должны быть очищены автовакуумом\nВысокое значение указывает на необходимость vacuum обработки",
+            "format": "int64"
+          },
+          "deadTupleRatio": {
+            "type": "number",
+            "description": "Процентное соотношение мертвых tuple'ов к общему количеству\nРассчитывается как: DeadTuples / (LiveTuples + DeadTuples) * 100%\nКритическое значение: обычно выше 20-30% требует внимания",
+            "format": "double"
+          },
+          "tableSize": {
+            "type": "integer",
+            "description": "Общий размер таблицы в байтах\nВключает данные, индексы и служебную информацию\nПолезно для мониторинга роста таблиц и планирования ресурсов",
+            "format": "int64"
+          },
+          "lastVacuum": {
+            "type": "string",
+            "description": "Дата и время последнего ручного VACUUM\nРучная очистка обычно выполняется администратором для конкретных таблиц",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastAutoVacuum": {
+            "type": "string",
+            "description": "Дата и время последнего автоматического VACUUM\nАвтовакуум запускается PostgreSQL автоматически по расписанию\nNULL означает, что автовакуум никогда не выполнялся для этой таблицы",
+            "format": "date-time",
+            "nullable": true
+          },
+          "changeRatePercent": {
+            "type": "number",
+            "description": "Процент изменения размера таблицы за период\nПоказывает скорость роста/уменьшения таблицы\nПоложительные значения - рост, отрицательные - уменьшение\nИспользуется для прогнозирования места на диске",
+            "format": "double"
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Идентификатор подключения к базе данных\nСвязывает статистику с конкретным подключением в системе мониторинга\nПозволяет различать данные от разных серверов/баз данных",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Статистика автовакуума PostgreSQL\nСодержит метрики для мониторинга и анализа процесса автоматической очистки базы данных\nАвтовакуум удаляет \"мертвые\" tuple'ы и обновляет статистику для оптимизатора запросов"
+      },
       "CacheAnalysisResponse": {
         "type": "object",
         "properties": {
@@ -955,6 +1797,42 @@
         },
         "additionalProperties": false,
         "description": "Модель ответа для анализа кэша базы данных\nСодержит результаты анализа эффективности работы кэша PostgreSQL за определенный период"
+      },
+      "CacheHitStats": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "blksHit": {
+            "type": "integer",
+            "description": "Количество блоков, прочитанных из кэша (буферного кэша PostgreSQL)\nБлоки, которые были найдены в shared_buffers без необходимости дискового I/O\nВысокое значение указывает на хорошую производительность кэширования",
+            "format": "int64"
+          },
+          "blksRead": {
+            "type": "integer",
+            "description": "Количество блоков, прочитанных с диска\nБлоки, которые не были найдены в кэше и потребовали физического чтения с диска\nВысокое значение может указывать на нехватку оперативной памяти или неэффективные запросы",
+            "format": "int64"
+          },
+          "cacheHitRatio": {
+            "type": "number",
+            "description": "Коэффициент попадания в кэш (Cache Hit Ratio)\nРассчитывается как: BlksHit / (BlksHit + BlksRead) * 100%\nПоказывает процент запросов, которые были обслужены из кэша\nОптимальное значение: выше 99% для production-систем\nЗначение ниже 90% может указывать на проблемы с производительностью",
+            "format": "double"
+          },
+          "createAt": {
+            "type": "string",
+            "description": "Дата и время сбора статистики\nПозволяет отслеживать изменения эффективности кэширования во времени",
+            "format": "date-time"
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Идентификатор подключения к базе данных\nСвязывает статистику с конкретным подключением/базой данных в системе мониторинга",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Статистика попаданий в кэш PostgreSQL\nОтслеживает эффективность использования кэша базы данных"
       },
       "CacheMetricsSummary": {
         "type": "object",
@@ -1273,6 +2151,66 @@
         },
         "additionalProperties": false
       },
+      "IndexMetric": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schemaName": {
+            "type": "string",
+            "description": "Имя схемы базы данных\nСхема содержит namespace для организации таблиц и индексов",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "description": "Имя таблицы, к которой относится индекс\nТаблица является целевым объектом для индексирования",
+            "nullable": true
+          },
+          "indexName": {
+            "type": "string",
+            "description": "Имя индекса в базе данных\nУникальный идентификатор индекса в пределах схемы",
+            "nullable": true
+          },
+          "indexScans": {
+            "type": "integer",
+            "description": "Количество сканирований индекса\nПоказывает, сколько раз индекс был использован для выполнения запросов\nНизкое значение может указывать на неиспользуемый индекс",
+            "format": "int64"
+          },
+          "indexSize": {
+            "type": "integer",
+            "description": "Размер индекса в байтах\nВключает все страницы индекса, занимаемые на диске\nБольшие индексы требуют больше ресурсов для обслуживания",
+            "format": "int64"
+          },
+          "tuplesRead": {
+            "type": "integer",
+            "description": "Количество tuple'ов (строк), прочитанных из индекса\nПоказывает объем данных, обработанных через индекс",
+            "format": "int64"
+          },
+          "tuplesFetched": {
+            "type": "integer",
+            "description": "Количество tuple'ов (строк), фактически возвращенных индексом\nМожет отличаться от TuplesRead из-за фильтрации и условий",
+            "format": "int64"
+          },
+          "efficiency": {
+            "type": "number",
+            "format": "double"
+          },
+          "createAt": {
+            "type": "string",
+            "description": "Дата и время сбора метрик индекса\nПозволяет отслеживать изменения в использовании индексов во времени",
+            "format": "date-time"
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Идентификатор подключения к базе данных\nСвязывает метрики с конкретным экземпляром БД в системе мониторинга",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Метрики эффективности индексов PostgreSQL\nСодержит статистику использования и производительности индексов для оптимизации запросов"
+      },
       "IndexRecommendation": {
         "type": "object",
         "properties": {
@@ -1437,6 +2375,202 @@
           }
         },
         "additionalProperties": false
+      },
+      "LockAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "analysisTime": {
+            "type": "string",
+            "description": "Время проведения анализа",
+            "format": "date-time"
+          },
+          "totalBlockedLocks": {
+            "type": "integer",
+            "description": "Общее количество заблокированных lock'ов",
+            "format": "int32"
+          },
+          "blockedProcesses": {
+            "type": "integer",
+            "description": "Количество уникальных заблокированных процессов",
+            "format": "int32"
+          },
+          "criticalIssues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Критические блокировки (требуют немедленного вмешательства)",
+            "nullable": true
+          },
+          "warningIssues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Проблемные блокировки (требуют внимания)",
+            "nullable": true
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Рекомендации по устранению",
+            "nullable": true
+          },
+          "topBlockingPids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Наиболее проблемные PID процессов",
+            "nullable": true
+          },
+          "topBlockedTables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Наиболее блокируемые таблицы",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат анализа блокировок с рекомендациями"
+      },
+      "PgLock": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createAt": {
+            "type": "string",
+            "description": "Время сбора метрики",
+            "format": "date-time"
+          },
+          "lockType": {
+            "type": "string",
+            "description": "Тип блокировки (relation, tuple, transactionid, etc.)",
+            "nullable": true
+          },
+          "databaseOid": {
+            "type": "integer",
+            "description": "OID базы данных, к которой относится блокировка",
+            "format": "int32"
+          },
+          "relationOid": {
+            "type": "integer",
+            "description": "OID отношения (таблицы), к которой относится блокировка",
+            "format": "int32",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Номер страницы в отношении (для tuple locks)",
+            "format": "int32",
+            "nullable": true
+          },
+          "tuple": {
+            "type": "integer",
+            "description": "Номер tuple в странице (для tuple locks)",
+            "format": "int32",
+            "nullable": true
+          },
+          "virtualXid": {
+            "type": "string",
+            "description": "Виртуальный ID транзакции",
+            "nullable": true
+          },
+          "transactionId": {
+            "type": "integer",
+            "description": "ID транзакции",
+            "format": "int32",
+            "nullable": true
+          },
+          "classId": {
+            "type": "integer",
+            "description": "OID системного класса",
+            "format": "int32",
+            "nullable": true
+          },
+          "objectId": {
+            "type": "integer",
+            "description": "OID объекта внутри класса",
+            "format": "int32",
+            "nullable": true
+          },
+          "objectSubId": {
+            "type": "integer",
+            "description": "Номер под-object'а",
+            "format": "int32",
+            "nullable": true
+          },
+          "virtualTransaction": {
+            "type": "string",
+            "description": "Виртуальная транзакция backend'а",
+            "nullable": true
+          },
+          "pid": {
+            "type": "integer",
+            "description": "Process ID backend'а, удерживающего блокировку",
+            "format": "int32"
+          },
+          "granted": {
+            "type": "boolean",
+            "description": "Флаг, указывающий получена ли блокировка"
+          },
+          "mode": {
+            "type": "string",
+            "description": "Режим блокировки (ShareLock, ExclusiveLock, etc.)",
+            "nullable": true
+          },
+          "fastPath": {
+            "type": "boolean",
+            "description": "Флаг быстрого пути блокировки"
+          },
+          "query": {
+            "type": "string",
+            "description": "Текущий запрос backend'а",
+            "nullable": true
+          },
+          "applicationName": {
+            "type": "string",
+            "description": "Имя приложения, выполняющего запрос",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "description": "Имя пользователя, выполняющего запрос",
+            "nullable": true
+          },
+          "queryStart": {
+            "type": "string",
+            "description": "Время начала выполнения запроса",
+            "format": "date-time",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "description": "Состояние backend'а (active, idle, etc.)",
+            "nullable": true
+          },
+          "waitTimeMs": {
+            "type": "integer",
+            "description": "Время ожидания блокировки (в миллисекундах)",
+            "format": "int64",
+            "nullable": true
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Идентификатор подключения",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Модель для хранения информации о заблокированных lock'ах PostgreSQL"
       },
       "ProblematicTable": {
         "type": "object",
@@ -1673,7 +2807,9 @@
               6,
               7,
               8,
-              9
+              9,
+              10,
+              11
             ],
             "type": "integer",
             "description": "Категории рекомендаций по оптимизации SQL-запросов",
@@ -1700,6 +2836,23 @@
         },
         "additionalProperties": false,
         "description": "Модель рекомендации по оптимизации"
+      },
+      "SchemaTableDto": {
+        "type": "object",
+        "properties": {
+          "schemaName": {
+            "type": "string",
+            "description": "Название схемы",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "description": "Название таблицы",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Связь схема - таблица"
       },
       "SubstituteValuesToSqlRequestDto": {
         "type": "object",
@@ -1828,6 +2981,37 @@
         },
         "additionalProperties": false,
         "description": "Модель ответа для анализа временных файлов базы данных\nСодержит результаты анализа использования временных файлов PostgreSQL за определенный период\nИспользуется для выявления проблем с производительностью, связанных с временными файлами"
+      },
+      "TempFilesStatsDal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tempFiles": {
+            "type": "integer",
+            "description": "Количество созданных временных файлов\nВременные файлы создаются когда операция не помещается в оперативной памяти (work_mem)\nВысокое значение может указывать на:\n- Недостаточный размер work_mem\n- Большие операции сортировки, хэширования или агрегации\n- Неоптимальные запросы, требующие временного хранения данных",
+            "format": "int64"
+          },
+          "tempBytes": {
+            "type": "integer",
+            "description": "Общий объем данных во временных файлах (в байтах)\nПоказывает сколько данных было выгружено на диск из-за нехватки оперативной памяти\nБольшие значения могут значительно снижать производительность из-за дискового I/O\nРекомендуется мониторить этот показатель для выявления \"тяжелых\" запросов",
+            "format": "int64"
+          },
+          "createAt": {
+            "type": "string",
+            "description": "Дата и время сбора статистики\nПозволяет отслеживать пиковые нагрузки и коррелировать с выполнением конкретных запросов",
+            "format": "date-time"
+          },
+          "dbConnectionId": {
+            "type": "string",
+            "description": "Идентификатор подключения к базе данных\nСвязывает статистику временных файлов с конкретным экземпляром БД\nПолезно для кластерных окружений с несколькими базами данных",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Статистика использования временных файлов PostgreSQL\nМониторинг временных файлов помогает выявить проблемы с производительностью и настройкой БД"
       }
     }
   },
@@ -1839,6 +3023,10 @@
     {
       "name": "CacheAnalysis",
       "description": "контроллер для отслеживания состояния кеша"
+    },
+    {
+      "name": "PgLockAnalysis",
+      "description": "Контроллер для работы с метриками работы автовакуума"
     },
     {
       "name": "TempFilesAnalyzeMonitoring",

@@ -194,6 +194,81 @@ ORDER BY index_efficiency ASC;", connection);
         await _db.IndexMetrics.AddRangeAsync(results);
         await _db.SaveChangesAsync();
     }
+    
+    /// <inheritdoc />
+    public async Task CollectLockDataAsync(DbConnection connectionString)
+    {
+        var connectionS = connectionString.GetConnectionString();
+        await using var connection = new NpgsqlConnection(connectionS);
+        await connection.OpenAsync();
+        var locks = new List<PgLock>();
+
+        using var cmd = new NpgsqlCommand(@"
+            SELECT 
+                l.locktype,
+                l.database,
+                l.relation,
+                l.page,
+                l.tuple,
+                l.virtualxid,
+                l.transactionid,
+                l.classid,
+                l.objid,
+                l.objsubid,
+                l.virtualtransaction,
+                l.pid,
+                l.granted,
+                l.mode,
+                l.fastpath,
+                a.query,
+                a.application_name,
+                a.usename,
+                a.query_start,
+                a.state,
+                EXTRACT(EPOCH FROM (NOW() - a.query_start)) * 1000 as wait_time_ms
+            FROM pg_locks l
+            LEFT JOIN pg_stat_activity a ON l.pid = a.pid
+            WHERE NOT l.granted
+            ORDER BY l.pid, l.locktype", connection);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        
+        while (await reader.ReadAsync())
+        {
+            var pgLock = new PgLock
+            {
+                Id = Guid.NewGuid(),
+                CreateAt = DateTime.UtcNow,
+                LockType = reader.GetString(0),
+                DatabaseOid = reader.GetFieldValue<uint>(1),
+                RelationOid = reader.IsDBNull(2) ? null : reader.GetFieldValue<uint>(2),
+                Page = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                Tuple = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+                VirtualXid = reader.IsDBNull(5) ? null : reader.GetString(5),
+                TransactionId = reader.IsDBNull(6) ? null : reader.GetFieldValue<uint>(6),
+                ClassId = reader.IsDBNull(7) ? null : reader.GetFieldValue<uint>(7),
+                ObjectId = reader.IsDBNull(8) ? null : reader.GetFieldValue<uint>(8),
+                ObjectSubId = reader.IsDBNull(9) ? null : reader.GetInt32(9),
+                VirtualTransaction = reader.GetString(10),
+                Pid = reader.GetInt32(11),
+                Granted = reader.GetBoolean(12),
+                Mode = reader.GetString(13),
+                FastPath = reader.GetBoolean(14),
+                Query = reader.IsDBNull(15) ? null : reader.GetString(15),
+                ApplicationName = reader.IsDBNull(16) ? null : reader.GetString(16),
+                UserName = reader.IsDBNull(17) ? null : reader.GetString(17),
+                QueryStart = reader.IsDBNull(18) ? null : reader.GetDateTime(18),
+                State = reader.IsDBNull(19) ? null : reader.GetString(19),
+                WaitTimeMs = reader.IsDBNull(20) ? null : (long)reader.GetDouble(20),
+                DbConnectionId = connectionString.Id
+            };
+
+            locks.Add(pgLock);
+        }
+
+        await _db.PgLocks.AddRangeAsync(locks);        
+        await _db.SaveChangesAsync();
+    }
 
     private async Task SaveCacheHitStatsToMonitoringDb(CacheHitStats stats, Guid dbConnectionId)
     {

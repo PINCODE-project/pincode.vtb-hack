@@ -1,0 +1,115 @@
+/* Стили для компонента DatabasePeriodSelector - компактная версия */
+
+.database-period-selector {
+  /* Компактный дизайн на всю ширину */
+  border-radius: 0;
+
+  .card-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .card-content {
+    padding: 1rem;
+  }
+
+  .timeline-container {
+    /* Базовые стили для контейнера таймлайна */
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+
+    svg {
+      border-radius: 6px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: hsl(var(--primary));
+      }
+    }
+
+    /* Стили для интерактивных элементов */
+    .metric-point {
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      cursor: pointer;
+
+      &:hover {
+        transform: scale(1.2);
+        opacity: 0.8;
+      }
+    }
+
+    .timeline-selection {
+      transition: all 0.2s ease;
+    }
+
+    /* Стили для меток времени */
+    .time-label {
+      font-size: 10px;
+      fill: hsl(var(--muted-foreground));
+      user-select: none;
+      pointer-events: none;
+    }
+  }
+
+  /* Стили для легенды */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  /* Адаптивные стили */
+  @media (max-width: 768px) {
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+
+      .range-selector {
+        width: 100%;
+      }
+
+      .presets {
+        justify-content: center;
+      }
+    }
+  }
+}
+
+/* Анимации для загрузки */
+.loading-timeline {
+  .skeleton-bar {
+    background: linear-gradient(90deg,
+            hsl(var(--muted)) 25%,
+            hsl(var(--background)) 50%,
+            hsl(var(--muted)) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
