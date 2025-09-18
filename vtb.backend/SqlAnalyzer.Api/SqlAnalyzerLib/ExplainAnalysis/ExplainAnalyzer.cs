@@ -28,17 +28,8 @@ public sealed class ExplainAnalyzer : IExplainAnalyzer
         var rootPlan = _parser.Parse(explainJson);
         var findings = await _ruleEngine.EvaluateAllAsync(rootPlan).ConfigureAwait(false);
         return new ExplainAnalysisResult(
-            QueryHash: HashQuery(queryText),
-            RootPlan: rootPlan,
             Findings: findings.ToList(),
             AnalyzedAt: DateTime.UtcNow
         );
-    }
-
-    private static string HashQuery(string sql)
-    {
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(sql.Trim().ToLowerInvariant());
-        return Convert.ToHexString(sha.ComputeHash(bytes));
     }
 }
