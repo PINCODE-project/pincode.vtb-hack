@@ -18,6 +18,16 @@ import { AlertTriangle, ArrowLeft, Brain, CheckCircle, Code2, FileText, Lightbul
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { CodeCopyButton } from "@/components/ui/code-copy-button";
+import { ExplainPlanVisualizer } from "@/components/query/ExplainPlanVisualizer";
+import { TextWithSqlSnippets } from "@/components/ui/text-with-sql-snippets";
+
+// Универсальный тип для всех рекомендаций
+type UnifiedRecommendation = {
+	severity?: number;
+	problem?: string | null;
+	recommendation?: string | null;
+	source: "static" | "explain";
+};
 
 export default function QueryDetailPage() {
 	const params = useParams();
@@ -132,6 +142,37 @@ export default function QueryDetailPage() {
 
 	const analysisData = analyzeQueryMutation.data;
 
+	// Объединяем рекомендации из обеих частей анализа
+	const getCombinedRecommendations = (): UnifiedRecommendation[] => {
+		const combined: UnifiedRecommendation[] = [];
+
+		// Добавляем статический анализ
+		const staticFindings = analysisData?.algorithmRecommendation?.queryAnalysisResult?.findings || [];
+		staticFindings.forEach((finding) => {
+			combined.push({
+				severity: finding.severity,
+				problem: finding.problem,
+				recommendation: finding.recommendations, // recommendations во множественном числе
+				source: "static",
+			});
+		});
+
+		// Добавляем анализ плана выполнения
+		const explainFindings = analysisData?.algorithmRecommendation?.explainAnalysisResult?.findings || [];
+		explainFindings.forEach((finding) => {
+			combined.push({
+				severity: finding.severity,
+				problem: finding.problem,
+				recommendation: finding.recommendation, // recommendation в единственном числе
+				source: "explain",
+			});
+		});
+
+		return combined;
+	};
+
+	const combinedRecommendations = getCombinedRecommendations();
+
 	return (
 		<div className="p-6 space-y-6 max-w-[calc(100vw-450px-var(--spacing)*6)]">
 			<div className="flex items-center justify-between">
@@ -190,186 +231,202 @@ export default function QueryDetailPage() {
 					</AccordionContent>
 				</AccordionItem>
 
-				<AccordionItem value="explain-result" className="border rounded-lg" disabled={!queryData.explainResult}>
-					<AccordionTrigger className="px-6 hover:no-underline">
-						<div className="flex items-center gap-3">
-							<FileText className="h-5 w-5" />
-							<div className="text-left">
-								<h3 className="text-lg font-semibold">EXPLAIN результат</h3>
-								<p className="text-sm text-muted-foreground">План выполнения запроса</p>
-							</div>
-						</div>
-					</AccordionTrigger>
-					{queryData.explainResult && (
-						<AccordionContent className="px-6 pb-6">
-							<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
-								<CodeCopyButton
-									code={queryData.explainResult ?? ""}
-									copyId={`explain-${queryId}`}
-									language="json"
-								/>
-								<SyntaxHighlighter
-									language="json"
-									style={oneDark}
-									customStyle={{
-										margin: 0,
-										fontSize: "12px",
-									}}
-									showLineNumbers={true}
-								>
-									{queryData.explainResult!}
-								</SyntaxHighlighter>
-							</div>
-						</AccordionContent>
-					)}
-				</AccordionItem>
-
-				<AccordionItem
-					value="algorithm-recommendations"
-					className="border rounded-lg"
-					disabled={!analysisData?.algorithmRecommendation?.length}
-				>
-					<AccordionTrigger className="px-6 hover:no-underline">
-						<div className="flex items-center gap-3">
-							<Zap className="h-5 w-5" />
-							<div className="text-left">
-								<h3 className="text-lg font-semibold">Алгоритмические рекомендации</h3>
-								<p className="text-sm text-muted-foreground">
-									Рекомендации на основе статического анализа
-								</p>
-							</div>
-						</div>
-					</AccordionTrigger>
-					{analysisData?.algorithmRecommendation?.length && (
-						<AccordionContent className="px-6 pb-6">
-							<div className="space-y-4">
-								{analysisData?.algorithmRecommendation?.map((rec, idx) => (
-									<div key={idx} className="border rounded-lg p-4">
-										<div className="flex items-center gap-2 mb-2">
-											{getSeverityIcon(rec.severity)}
-											<Badge variant={getSeverityVariant(rec.severity)}>
-												{getSeverityText(rec.severity)}
-											</Badge>
-										</div>
-										{rec.message && (
-											<div className="mb-2">
-												<h4 className="font-medium">Проблема:</h4>
-												<p className="text-sm text-muted-foreground">{rec.message}</p>
-											</div>
-										)}
-										{rec.suggestion && (
-											<div>
-												<h4 className="font-medium">Рекомендация:</h4>
-												<p className="text-sm text-muted-foreground">{rec.suggestion}</p>
-											</div>
-										)}
-									</div>
-								))}
-							</div>
-						</AccordionContent>
-					)}
-				</AccordionItem>
-
-				<AccordionItem
-					value="ai-recommendations"
-					className="border rounded-lg"
-					disabled={!analysisData?.llmRecommendations}
-				>
-					<AccordionTrigger className="px-6 hover:no-underline">
-						<div className="flex items-center gap-3">
-							<Brain className="h-5 w-5" />
-							<div className="text-left">
-								<h3 className="text-lg font-semibold">ИИ рекомендации</h3>
-								<p className="text-sm text-muted-foreground">Анализ и рекомендации на основе ИИ</p>
-							</div>
-						</div>
-					</AccordionTrigger>
-					{analysisData?.llmRecommendations && (
-						<AccordionContent className="px-6 pb-6">
-							<div className="space-y-6">
-								{analysisData?.llmRecommendations?.problems?.length ? (
-									<div>
-										<h4 className="font-medium mb-3 flex items-center gap-2">
-											<AlertTriangle className="h-4 w-4 text-red-500" />
-											Обнаруженные проблемы
-										</h4>
-										<div className="space-y-3">
-											{analysisData?.llmRecommendations?.problems.map((problem, idx) => (
-												<div key={idx} className="border-l-4 border-red-500 pl-4">
-													<p className="text-sm text-muted-foreground">{problem.message}</p>
-												</div>
-											))}
-										</div>
-									</div>
-								) : null}
-
-								{analysisData?.llmRecommendations?.recommendations?.length ? (
-									<div>
-										<h4 className="font-medium mb-3 flex items-center gap-2">
-											<CheckCircle className="h-4 w-4 text-green-500" />
-											Рекомендации по улучшению
-										</h4>
-										<div className="space-y-3">
-											{analysisData?.llmRecommendations?.recommendations.map((rec, idx) => (
-												<div key={idx} className="border-l-4 border-green-500 pl-4">
-													<p className="text-sm text-muted-foreground">{rec.message}</p>
-												</div>
-											))}
-										</div>
-									</div>
-								) : null}
-							</div>
-						</AccordionContent>
-					)}
-				</AccordionItem>
-
-				<AccordionItem
-					value="optimized-query"
-					className="border rounded-lg"
-					disabled={!analysisData?.llmRecommendations?.newQuery}
-				>
-					<AccordionTrigger className="px-6 hover:no-underline">
-						<div className="flex items-center gap-3">
-							<Zap className="h-5 w-5" />
-							<div className="text-left">
-								<h3 className="text-lg font-semibold">Оптимизированный запрос</h3>
-								<p className="text-sm text-muted-foreground">Улучшенная версия запроса</p>
-							</div>
-						</div>
-					</AccordionTrigger>
-					{analysisData?.llmRecommendations?.newQuery && (
-						<AccordionContent className="px-6 pb-6">
-							<div className="space-y-4">
-								{analysisData?.llmRecommendations?.newQueryAbout && (
-									<Alert>
-										<Lightbulb className="h-4 w-4" />
-										<AlertDescription>
-											{analysisData.llmRecommendations.newQueryAbout}
-										</AlertDescription>
-									</Alert>
-								)}
-								<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
-									<CodeCopyButton
-										code={analysisData.llmRecommendations.newQuery ?? ""}
-										copyId={`optimized-${queryId}`}
-										language="sql"
-									/>
-									<SyntaxHighlighter
-										language="sql"
-										style={oneDark}
-										customStyle={{
-											margin: 0,
-											fontSize: "14px",
-										}}
-										showLineNumbers={true}
-									>
-										{formatSql(analysisData.llmRecommendations.newQuery)}
-									</SyntaxHighlighter>
+				{/* Показываем секцию EXPLAIN только если есть результат */}
+				{queryData.explainResult && (
+					<AccordionItem value="explain-result" className="border rounded-lg">
+						<AccordionTrigger className="px-6 hover:no-underline">
+							<div className="flex items-center gap-3">
+								<FileText className="h-5 w-5" />
+								<div className="text-left">
+									<h3 className="text-lg font-semibold">EXPLAIN результат</h3>
+									<p className="text-sm text-muted-foreground">План выполнения запроса</p>
 								</div>
 							</div>
+						</AccordionTrigger>
+						<AccordionContent className="px-6 pb-6">
+							<ExplainPlanVisualizer explainResult={queryData.explainResult} />
 						</AccordionContent>
-					)}
-				</AccordionItem>
+					</AccordionItem>
+				)}
+
+				{/* Показываем секцию только если есть рекомендации или данные загружаются */}
+				{(analyzeQueryMutation.isPending || combinedRecommendations.length > 0) && (
+					<AccordionItem
+						value="algorithm-recommendations"
+						className="border rounded-lg"
+						disabled={analyzeQueryMutation.isPending}
+					>
+						<AccordionTrigger className="px-6 hover:no-underline">
+							<div className="flex items-center gap-3">
+								<Zap className="h-5 w-5" />
+								<div className="text-left">
+									<h3 className="text-lg font-semibold">Алгоритмические рекомендации</h3>
+									<p className="text-sm text-muted-foreground">
+										{analyzeQueryMutation.isPending
+											? "Анализируем запрос..."
+											: "Рекомендации на основе статического анализа и плана выполнения"}
+									</p>
+								</div>
+							</div>
+						</AccordionTrigger>
+						{!analyzeQueryMutation.isPending && combinedRecommendations.length > 0 && (
+							<AccordionContent className="px-6 pb-6">
+								<div className="space-y-4">
+									{combinedRecommendations.map((rec, idx: number) => (
+										<div key={idx} className="border rounded-lg p-4">
+											<div className="flex items-center gap-2 mb-2">
+												{getSeverityIcon(rec.severity)}
+												<Badge variant={getSeverityVariant(rec.severity)}>
+													{getSeverityText(rec.severity)}
+												</Badge>
+												<Badge variant="outline" className="text-xs">
+													{rec.source === "static" ? "Статический анализ" : "Анализ плана"}
+												</Badge>
+											</div>
+											{rec.problem && (
+												<div className="mb-2">
+													<h4 className="font-medium">Проблема:</h4>
+													<div className="text-sm text-muted-foreground">
+														<TextWithSqlSnippets text={rec.problem} />
+													</div>
+												</div>
+											)}
+											{rec.recommendation && (
+												<div>
+													<h4 className="font-medium">Рекомендация:</h4>
+													<div className="text-sm text-muted-foreground">
+														<TextWithSqlSnippets text={rec.recommendation} />
+													</div>
+												</div>
+											)}
+										</div>
+									))}
+								</div>
+							</AccordionContent>
+						)}
+					</AccordionItem>
+				)}
+
+				{/* Показываем ИИ секцию только если есть рекомендации или данные загружаются */}
+				{(analyzeQueryMutation.isPending || analysisData?.llmRecommendations) && (
+					<AccordionItem
+						value="ai-recommendations"
+						className="border rounded-lg"
+						disabled={analyzeQueryMutation.isPending}
+					>
+						<AccordionTrigger className="px-6 hover:no-underline">
+							<div className="flex items-center gap-3">
+								<Brain className="h-5 w-5" />
+								<div className="text-left">
+									<h3 className="text-lg font-semibold">ИИ рекомендации</h3>
+									<p className="text-sm text-muted-foreground">
+										{analyzeQueryMutation.isPending
+											? "Генерируем рекомендации..."
+											: "Анализ и рекомендации на основе ИИ"}
+									</p>
+								</div>
+							</div>
+						</AccordionTrigger>
+						{!analyzeQueryMutation.isPending && analysisData?.llmRecommendations && (
+							<AccordionContent className="px-6 pb-6">
+								<div className="space-y-6">
+									{analysisData?.llmRecommendations?.problems?.length ? (
+										<div>
+											<h4 className="font-medium mb-3 flex items-center gap-2">
+												<AlertTriangle className="h-4 w-4 text-red-500" />
+												Обнаруженные проблемы
+											</h4>
+											<div className="space-y-3">
+												{analysisData?.llmRecommendations?.problems.map((problem, idx) => (
+													<div key={idx} className="border-l-4 border-red-500 pl-4">
+														<div className="text-sm text-muted-foreground">
+															<TextWithSqlSnippets text={problem.message || ""} />
+														</div>
+													</div>
+												))}
+											</div>
+										</div>
+									) : null}
+
+									{analysisData?.llmRecommendations?.recommendations?.length ? (
+										<div>
+											<h4 className="font-medium mb-3 flex items-center gap-2">
+												<CheckCircle className="h-4 w-4 text-green-500" />
+												Рекомендации по улучшению
+											</h4>
+											<div className="space-y-3">
+												{analysisData?.llmRecommendations?.recommendations.map((rec, idx) => (
+													<div key={idx} className="border-l-4 border-green-500 pl-4">
+														<div className="text-sm text-muted-foreground">
+															<TextWithSqlSnippets text={rec.message || ""} />
+														</div>
+													</div>
+												))}
+											</div>
+										</div>
+									) : null}
+								</div>
+							</AccordionContent>
+						)}
+					</AccordionItem>
+				)}
+
+				{/* Показываем секцию оптимизированного запроса только если есть запрос или данные загружаются */}
+				{(analyzeQueryMutation.isPending || analysisData?.llmRecommendations?.newQuery) && (
+					<AccordionItem
+						value="optimized-query"
+						className="border rounded-lg"
+						disabled={analyzeQueryMutation.isPending}
+					>
+						<AccordionTrigger className="px-6 hover:no-underline">
+							<div className="flex items-center gap-3">
+								<Zap className="h-5 w-5" />
+								<div className="text-left">
+									<h3 className="text-lg font-semibold">Оптимизированный запрос</h3>
+									<p className="text-sm text-muted-foreground">
+										{analyzeQueryMutation.isPending
+											? "Оптимизируем запрос..."
+											: "Улучшенная версия запроса"}
+									</p>
+								</div>
+							</div>
+						</AccordionTrigger>
+						{!analyzeQueryMutation.isPending && analysisData?.llmRecommendations?.newQuery && (
+							<AccordionContent className="px-6 pb-6">
+								<div className="space-y-4">
+									{analysisData?.llmRecommendations?.newQueryAbout && (
+										<Alert>
+											<Lightbulb className="h-4 w-4" />
+											<AlertDescription className="whitespace-pre-wrap">
+												<TextWithSqlSnippets
+													text={analysisData.llmRecommendations.newQueryAbout}
+												/>
+											</AlertDescription>
+										</Alert>
+									)}
+									<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
+										<CodeCopyButton
+											code={analysisData.llmRecommendations.newQuery ?? ""}
+											copyId={`optimized-${queryId}`}
+											language="sql"
+										/>
+										<SyntaxHighlighter
+											language="sql"
+											style={oneDark}
+											customStyle={{
+												margin: 0,
+												fontSize: "14px",
+											}}
+											showLineNumbers={true}
+										>
+											{formatSql(analysisData.llmRecommendations.newQuery)}
+										</SyntaxHighlighter>
+									</div>
+								</div>
+							</AccordionContent>
+						)}
+					</AccordionItem>
+				)}
 			</Accordion>
 
 			{analyzeQueryMutation.error && (

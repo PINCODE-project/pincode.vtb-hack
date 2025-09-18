@@ -1,9 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "@pin-code/ui-kit";
-import { ChartContainer } from "@pin-code/ui-kit";
-import { cn } from "@pin-code/ui-kit";
+import { Card, CardContent, ChartContainer, cn } from "@pin-code/ui-kit";
 import { Area, AreaChart, XAxis } from "recharts";
 import { useParams } from "next/navigation";
 
@@ -113,6 +111,12 @@ export function MetricsDetails({ data, title, type, selectedPeriod }: MetricsDet
 				const timeData = autovacuumMetricsQuery.data || [];
 
 				// Группируем данные по схемам и таблицам для визуализации
+				type AutovacuumTimeData = {
+					date: string;
+					deadTupleRatio: number;
+					deadTuples: number;
+					liveTuples: number;
+				};
 				const groupedData = timeData.reduce(
 					(acc, item) => {
 						const key = `${item.schemaName}.${item.tableName}`;
@@ -125,7 +129,7 @@ export function MetricsDetails({ data, title, type, selectedPeriod }: MetricsDet
 						});
 						return acc;
 					},
-					{} as Record<string, any[]>,
+					{} as Record<string, AutovacuumTimeData[]>,
 				);
 
 				// Берем топ-3 проблемные таблицы для отображения
@@ -278,6 +282,12 @@ export function MetricsDetails({ data, title, type, selectedPeriod }: MetricsDet
 				const timeData = indexMetricsQuery.data || [];
 
 				// Группируем данные по схемам и таблицам
+				type IndexTimeData = {
+					date: string;
+					efficiency: number;
+					scans: number;
+					size: number;
+				};
 				const groupedData = timeData.reduce(
 					(acc, item) => {
 						const key = `${item.schemaName}.${item.tableName}`;
@@ -290,7 +300,7 @@ export function MetricsDetails({ data, title, type, selectedPeriod }: MetricsDet
 						});
 						return acc;
 					},
-					{} as Record<string, any[]>,
+					{} as Record<string, IndexTimeData[]>,
 				);
 
 				// Берем топ индексы по сканированиям

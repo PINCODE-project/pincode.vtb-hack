@@ -3,11 +3,14 @@ import { Alert, AlertDescription, AlertTitle } from "@pin-code/ui-kit";
 import { Card, CardContent } from "@pin-code/ui-kit";
 import { Activity, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 import type { IndexAnalysisResult } from "@/generated/models/IndexAnalysisResult";
 import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { MetricsDetails } from "../MetricsDetails";
 import { IndexRecommendations } from "../Recommendations";
 import { sortRecommendationsBySeverity } from "../utils/format";
+import { CollectMetricsButton } from "../CollectMetricsButton";
+import { usePostApiIndexCollect } from "@/generated/hooks/IndexAnalyze/usePostApiIndexCollect";
 
 interface IndexAnalysisSectionProps {
 	query: UseQueryResult<IndexAnalysisResult>;
@@ -18,14 +21,44 @@ interface IndexAnalysisSectionProps {
  * Секция анализа индексов
  */
 export function IndexAnalysisSection({ query, selectedPeriod }: IndexAnalysisSectionProps) {
+	const params = useParams();
+	const databaseId = params.databaseId as string;
+
+	// Хук для принудительного сбора метрик
+	const collectMutation = usePostApiIndexCollect({
+		mutation: {
+			onSuccess: () => {
+				// Перезапрашиваем данные после успешного сбора
+				query.refetch();
+			},
+		},
+	});
+
+	const handleCollectMetrics = () => {
+		collectMutation.mutate({
+			data: databaseId,
+		});
+	};
+
 	return (
 		<AccordionItem value="indexes" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
-				<div className="flex items-center gap-3">
-					<Activity className="h-5 w-5 text-blue-500" />
-					<div className="text-left">
-						<h3 className="text-lg font-semibold">Анализ индексов</h3>
-						<p className="text-sm text-muted-foreground">Рекомендации по оптимизации индексов</p>
+				<div className="flex items-center justify-between w-full">
+					<div className="flex items-center gap-3">
+						<Activity className="h-5 w-5 text-blue-500" />
+						<div className="text-left">
+							<h3 className="text-lg font-semibold">Анализ индексов</h3>
+							<p className="text-sm text-muted-foreground">Рекомендации по оптимизации индексов</p>
+						</div>
+					</div>
+					<div onClick={(e) => e.stopPropagation()}>
+						<CollectMetricsButton
+							onCollect={handleCollectMetrics}
+							isLoading={collectMutation.isPending}
+							isSuccess={collectMutation.isSuccess}
+							error={collectMutation.error}
+							label="Собрать метрики"
+						/>
 					</div>
 				</div>
 			</AccordionTrigger>

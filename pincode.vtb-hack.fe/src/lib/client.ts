@@ -24,13 +24,56 @@ baseClient.setConfig({
 });
 
 const client = (async (...args: Parameters<typeof baseClient>): Promise<ResponseConfig> => {
-	const res = await baseClient(...args);
+	try {
+		const res = await baseClient(...args);
 
-	if (res.status < 200 || res.status >= 300) {
-		throw createApiError(res as ApiErrorResponse);
+		if (res.status < 200 || res.status >= 300) {
+			throw createApiError(res as ApiErrorResponse);
+		}
+
+		return res;
+	} catch (error: unknown) {
+		// Проверяем, если это ошибка парсинга JSON для пустого ответа с успешным статусом
+		if (
+			error instanceof Error &&
+			(error.message?.includes("JSON.parse: unexpected end of data") ||
+				error.message?.includes("Unexpected end of JSON input") ||
+				error.message?.includes("Unexpected token") ||
+				error.name === "SyntaxError")
+		) {
+			// Пытаемся сделать запрос снова, но с обработкой пустого ответа
+			const [config] = args;
+
+			if (!config.url) {
+				throw error; // Если нет URL, пробрасываем исходную ошибку
+			}
+
+			const response = await fetch(config.url, {
+				method: config.method,
+				headers: config.headers,
+				body: config.data ? JSON.stringify(config.data) : undefined,
+			});
+
+			// Если статус успешный, возвращаем пустой успешный ответ
+			if (response.status >= 200 && response.status < 300) {
+				return {
+					data: null,
+					status: response.status,
+					statusText: response.statusText,
+					headers: response.headers,
+				} as ResponseConfig;
+			}
+
+			// Если статус неуспешный, пробрасываем ошибку
+			throw createApiError({
+				status: response.status,
+				statusText: response.statusText,
+			} as ApiErrorResponse);
+		}
+
+		// Пробрасываем другие ошибки
+		throw error;
 	}
-
-	return res;
 }) as typeof baseClient;
 
 client.setConfig = baseClient.setConfig;

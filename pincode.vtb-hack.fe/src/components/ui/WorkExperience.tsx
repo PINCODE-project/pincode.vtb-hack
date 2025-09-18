@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 import { cn, Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pin-code/ui-kit";
 import { ChevronsDownUpIcon, ChevronsUpDownIcon, LucideIcon } from "lucide-react";
 
