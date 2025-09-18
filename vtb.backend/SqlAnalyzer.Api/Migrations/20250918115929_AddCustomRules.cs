@@ -16,7 +16,7 @@ namespace SqlAnalyzer.Api.Migrations
                 name: "FindindCustomRules",
                 table: "QueryAnalysisResults",
                 type: "uuid[]",
-                nullable: false);
+                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "SqlAnalyzeRules",

@@ -136,7 +136,7 @@ public class QueryService : IQueryService
                 ExplainResult = queryAnalysisResult.Query.ExplainResult ?? string.Empty,
                 AlgorithmRecommendation = queryAnalysisResult.AnalysisResult.Recommendations,
                 LlmRecommendations = queryAnalysisResult.AnalysisResult.LlmRecommendations ?? llmRecommendations,
-                FindindCustomRules = queryAnalysisResult.AnalysisResult.FindindCustomRules
+                FindindCustomRules = queryAnalysisResult.AnalysisResult.FindindCustomRules ?? []
             };
         }
         

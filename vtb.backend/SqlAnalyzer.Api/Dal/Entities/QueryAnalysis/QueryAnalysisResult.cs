@@ -12,6 +12,6 @@ public class QueryAnalysisResult : EntityBase, IEntityCreatedAt
     public SqlAlgorithmAnalysisResult Recommendations { get; init; }
     public LlmAnswer? LlmRecommendations { get; init; } = null;
     
-    public List<Guid> FindindCustomRules { get; init; } = [];
+    public List<Guid>? FindindCustomRules { get; init; } = [];
     public DateTime CreateAt { get; set; }
 }
