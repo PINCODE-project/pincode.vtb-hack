@@ -1,7 +1,7 @@
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
 
-namespace SqlAnalyzerLib.Facade.Models;
+namespace SqlAnalyzer.Api.Dal.ValueObjects;
 
 public class SqlAlgorithmAnalysisResult
 {

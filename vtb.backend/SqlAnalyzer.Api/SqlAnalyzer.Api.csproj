@@ -29,9 +29,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Dal\ValueObjects\" />
       <Folder Include="SqlAnalyzerLib\" />
       <Folder Include="SqlAnalyzerLib\ExplainAnalysis\Enums\" />
+      <Folder Include="SqlAnalyzerLib\Facade\Models\" />
     </ItemGroup>
 
 </Project>

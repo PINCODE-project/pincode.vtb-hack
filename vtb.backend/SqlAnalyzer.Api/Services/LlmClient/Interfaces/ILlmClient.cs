@@ -1,4 +1,4 @@
-using SqlAnalyzer.Api.Services.LlmClient.Data;
+using SqlAnalyzer.Api.Dal.ValueObjects;
 
 namespace SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 

@@ -10,7 +10,7 @@ public class SqlAnalyzerLibOptionsBuilder
     public SqlAnalyzerLibOptionsBuilder WithAllSqlStaticAnalyzerRules()
     {
         var ruleType = typeof(IStaticRule);
-        var staticRules = ruleType.Assembly.GetTypes().Where(t => ruleType.IsClass && ruleType.IsAssignableFrom(t));
+        var staticRules = ruleType.Assembly.GetTypes().Where(t => t.IsClass && ruleType.IsAssignableFrom(t));
         _options.SqlStaticAnalysisRules = staticRules.ToList();
 
         return this;
@@ -19,7 +19,7 @@ public class SqlAnalyzerLibOptionsBuilder
     public SqlAnalyzerLibOptionsBuilder WithAllExplainAnalyzerRules()
     {
         var ruleType = typeof(IPlanRule);
-        var planRules = ruleType.Assembly.GetTypes().Where(t => ruleType.IsClass && ruleType.IsAssignableFrom(t));
+        var planRules = ruleType.Assembly.GetTypes().Where(t => t.IsClass && ruleType.IsAssignableFrom(t));
         _options.ExplainAnalysisRules = planRules.ToList();
 
         return this;

@@ -1,4 +1,4 @@
-using SqlAnalyzerLib.Facade.Models;
+using SqlAnalyzer.Api.Dal.ValueObjects;
 
 namespace SqlAnalyzerLib.Facade.Interfaces;
 

@@ -1,5 +1,4 @@
-using SqlAnalyzer.Api.Services.LlmClient.Data;
-using SqlAnalyzerLib.Facade.Models;
+using SqlAnalyzer.Api.Dal.ValueObjects;
 
 namespace SqlAnalyzer.Api.Dto.QueryAnalysis;
 

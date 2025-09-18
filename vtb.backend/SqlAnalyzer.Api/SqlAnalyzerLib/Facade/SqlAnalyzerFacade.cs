@@ -1,7 +1,7 @@
+using SqlAnalyzer.Api.Dal.ValueObjects;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.Facade.Interfaces;
-using SqlAnalyzerLib.Facade.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
 

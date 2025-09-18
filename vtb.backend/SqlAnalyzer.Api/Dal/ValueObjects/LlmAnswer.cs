@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using SqlAnalyzer.Api.Services.LlmClient.Data;
 
-namespace SqlAnalyzer.Api.Services.LlmClient.Data;
+namespace SqlAnalyzer.Api.Dal.ValueObjects;
 
 public class LlmAnswer
 {

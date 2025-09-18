@@ -5,8 +5,7 @@ using SqlAnalyzer.Api.Dal.Entities.Algorithm;
 using SqlAnalyzer.Api.Dal.Entities.Base;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
-using SqlAnalyzer.Api.Services.LlmClient.Data;
-using SqlAnalyzerLib.Facade.Models;
+using SqlAnalyzer.Api.Dal.ValueObjects;
 
 namespace SqlAnalyzer.Api.Dal;
 

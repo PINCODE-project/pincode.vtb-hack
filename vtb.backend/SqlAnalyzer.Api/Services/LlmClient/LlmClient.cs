@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using SqlAnalyzer.Api.Dal.ValueObjects;
 using SqlAnalyzer.Api.Services.LlmClient.Data;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 
