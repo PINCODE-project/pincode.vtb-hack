@@ -394,7 +394,6 @@ namespace SqlAnalyzer.Api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.PrimitiveCollection<List<Guid>>("FindindCustomRules")
-                        .IsRequired()
                         .HasColumnType("uuid[]");
 
                     b.Property<string>("LlmRecommendations")

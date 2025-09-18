@@ -13,7 +13,7 @@ using SqlAnalyzer.Api.Dal;
 namespace SqlAnalyzer.Api.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250918115929_AddCustomRules")]
+    [Migration("20250918123638_AddCustomRules")]
     partial class AddCustomRules
     {
         /// <inheritdoc />
@@ -397,7 +397,6 @@ namespace SqlAnalyzer.Api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.PrimitiveCollection<List<Guid>>("FindindCustomRules")
-                        .IsRequired()
                         .HasColumnType("uuid[]");
 
                     b.Property<string>("LlmRecommendations")
