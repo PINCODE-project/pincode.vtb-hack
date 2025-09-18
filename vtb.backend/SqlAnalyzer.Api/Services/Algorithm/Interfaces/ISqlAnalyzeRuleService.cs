@@ -1,7 +1,8 @@
-using SqlAnalyzer.Api.Dto.Common;
 using SqlAnalyzer.Api.Dto.SqlAnalyzeRule;
 
 namespace SqlAnalyzer.Api.Services.Algorithm.Interfaces;
+
+using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
 
 public interface ISqlAnalyzeRuleService
 {
@@ -13,7 +14,7 @@ public interface ISqlAnalyzeRuleService
 
     Task Delete(Guid id);
 
-    Task<IReadOnlyCollection<Guid>> ApplyForQuery(Guid queryId, params IReadOnlyCollection<Guid> ruleIds);
+    Task<IReadOnlyCollection<Guid>> ApplyForQuery(QueryAnalysis query, params IReadOnlyCollection<Guid> ruleIds);
 
 
 }

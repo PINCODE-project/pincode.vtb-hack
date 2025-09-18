@@ -5,7 +5,6 @@ using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.QueryAnalysis;
 
-
 [ApiController]
 [Route("api/queries")]
 public class QueryAnalysisController : ControllerBase
@@ -47,7 +46,7 @@ public class QueryAnalysisController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-    
+
     /// <summary>
     /// По Id запроса выдает его содержимое и результат EXPLAIN
     /// </summary>
@@ -68,38 +67,21 @@ public class QueryAnalysisController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-    
+
     /// <summary>
     /// Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос
     /// </summary>
     [HttpPost("{queryId:guid}/analyze")]
-    public async Task<ActionResult<QueryAnalysisResultDto>> Analyze([FromRoute] Guid queryId, [FromQuery] bool useLlm = false)
+    public async Task<ActionResult<QueryAnalysisResultDto>> Analyze(
+        [FromRoute] Guid queryId,
+        [FromQuery] bool useLlm = false,
+        [FromQuery] IReadOnlyCollection<Guid>? ruleIds = null
+    )
     {
         try
         {
-            var result = await _service.Analyze(queryId, useLlm);
+            var result = await _service.Analyze(queryId, useLlm, ruleIds);
             return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-    
-    /// <summary>
-    /// Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос
-    /// </summary>
-    [HttpPost("{queryId:guid}/analyze-custom")]
-    public async Task<ActionResult<SimpleDto<IReadOnlyCollection<Guid>>>> AnalyzeCustom([FromRoute] Guid queryId, [FromQuery] IReadOnlyCollection<Guid> ruleIds)
-    {
-        try
-        {
-            var result = await _service.AnalyzeCustom(queryId, ruleIds);
-            return Ok(new SimpleDto<IReadOnlyCollection<Guid>>(result));
         }
         catch (InvalidOperationException ex)
         {

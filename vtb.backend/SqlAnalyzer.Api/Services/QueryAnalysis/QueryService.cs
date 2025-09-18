@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SqlAnalyzer.Api.Dal;
@@ -123,7 +122,7 @@ public class QueryService : IQueryService
     }
 
     /// <inheritdoc />
-    public async Task<QueryAnalysisResultDto> Analyze(Guid queryId, bool useLlm)
+    public async Task<QueryAnalysisResultDto> Analyze(Guid queryId, bool useLlm, IReadOnlyCollection<Guid>? ruleIds)
     {
         var queryAnalysisResult = await _db
             .QueryAnalysisResults.Where(x => x.QueryId == queryId)
@@ -135,11 +134,7 @@ public class QueryService : IQueryService
 
         if (queryAnalysisResult?.AnalysisResult is not null)
         {
-            var llmRecommendations = useLlm && queryAnalysisResult.AnalysisResult.LlmRecommendations == null
-                ? await _llm.GetRecommendation(
-                    queryAnalysisResult.Query.Sql,
-                    queryAnalysisResult.Query.ExplainResult)
-                : null;
+            await UpdateQueryAnalysisResult(useLlm, ruleIds, queryAnalysisResult.AnalysisResult);
 
             return new QueryAnalysisResultDto
             {
@@ -148,13 +143,12 @@ public class QueryService : IQueryService
                 Query = queryAnalysisResult.Query.Sql,
                 ExplainResult = queryAnalysisResult.Query.ExplainResult ?? string.Empty,
                 AlgorithmRecommendation = queryAnalysisResult.AnalysisResult.Recommendations,
-                LlmRecommendations = queryAnalysisResult.AnalysisResult.LlmRecommendations ?? llmRecommendations,
+                LlmRecommendations = queryAnalysisResult.AnalysisResult.LlmRecommendations,
                 FindindCustomRules = queryAnalysisResult.AnalysisResult.FindindCustomRules ?? []
             };
         }
 
         var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == queryId);
-
         if (query == null)
         {
             throw new InvalidOperationException("Query not found");
@@ -168,11 +162,13 @@ public class QueryService : IQueryService
             )
             : null;
 
+        var customFindings = await _customRulesService.ApplyForQuery(query, ruleIds ?? []);
         var result = new QueryAnalysisResult
         {
             QueryId = query.Id,
             Recommendations = analysisResult,
-            LlmRecommendations = llmAnswer
+            LlmRecommendations = llmAnswer,
+            FindindCustomRules = customFindings.ToList()
         };
 
         _db.QueryAnalysisResults.Add(result);
@@ -190,34 +186,37 @@ public class QueryService : IQueryService
         };
     }
 
-    /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Guid>> AnalyzeCustom(Guid queryId, params IReadOnlyCollection<Guid> ruleIds)
+    private async Task UpdateQueryAnalysisResult(bool useLlm, IReadOnlyCollection<Guid>? ruleIds, QueryAnalysisResult analysisResult)
     {
-        var queryAnalysisResult = await _db
-            .QueryAnalysisResults.Where(x => x.QueryId == queryId)
-            .Select(x => new
+        var isUpdated = false;
+        if (useLlm && analysisResult.LlmRecommendations == null)
+        {
+            var llmRecommendations = await _llm.GetRecommendation(
+                analysisResult.Query.Sql,
+                analysisResult.Query.ExplainResult);
+            analysisResult.LlmRecommendations = llmRecommendations;
+            isUpdated = true;
+        }
+
+        var newRules = ruleIds?.Except(analysisResult.FindindCustomRules ?? []).ToList();
+        if (newRules?.Count > 0)
+        {
+            var newFindings = await _customRulesService.ApplyForQuery(analysisResult.Query, newRules);
+            if (analysisResult.FindindCustomRules is null)
             {
-                x.Query,
-                AnalysisResult = x
-            }).FirstOrDefaultAsync();
+                analysisResult.FindindCustomRules = newFindings.ToList();
+            }
+            else
+            {
+                analysisResult.FindindCustomRules.AddRange(newFindings);
+            }
 
-        if (queryAnalysisResult?.AnalysisResult.FindindCustomRules is not null)
+            isUpdated = true;
+        }
+
+        if (isUpdated)
         {
-            var newRules = ruleIds.Except(queryAnalysisResult.AnalysisResult.FindindCustomRules).ToList();
-            var newFindings = await _customRulesService.ApplyForQuery(queryId, newRules);
-            queryAnalysisResult.AnalysisResult.FindindCustomRules.AddRange(newFindings);
             await _db.SaveChangesAsync();
-
-            return queryAnalysisResult.AnalysisResult.FindindCustomRules;
         }
-
-        var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == queryId);
-        if (query == null)
-        {
-            throw new InvalidOperationException("Query not found");
-        }
-
-        var customRuleFindings = await _customRulesService.ApplyForQuery(queryId, ruleIds);
-        return customRuleFindings;
     }
 }

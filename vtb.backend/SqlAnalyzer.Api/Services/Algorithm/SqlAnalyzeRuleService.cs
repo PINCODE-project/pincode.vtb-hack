@@ -9,6 +9,8 @@ using SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 
 namespace SqlAnalyzer.Api.Services.Algorithm;
 
+using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
+
 public class SqlAnalyzeRuleService : ISqlAnalyzeRuleService
 {
     private readonly DataContext _db;
@@ -108,10 +110,8 @@ public class SqlAnalyzeRuleService : ISqlAnalyzeRuleService
         await _db.SqlAnalyzeRules.Where(r => r.Id == id).ExecuteDeleteAsync();
     }
 
-    public async Task<IReadOnlyCollection<Guid>> ApplyForQuery(Guid queryId, params IReadOnlyCollection<Guid> ruleIds)
+    public async Task<IReadOnlyCollection<Guid>> ApplyForQuery(QueryAnalysis query, params IReadOnlyCollection<Guid> ruleIds)
     {
-        var query = await _db.Queries.FirstAsync(x => x.Id == queryId);
-
         var rulesQuery = _db.SqlAnalyzeRules.AsNoTracking().Where(x => x.IsActive);
         if (ruleIds.Count > 0)
         {
