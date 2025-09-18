@@ -2,8 +2,8 @@
 
 import React from "react";
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
-import { Badge, ScrollArea, Separator, cn } from "@pin-code/ui-kit";
-import { Database, Code, Archive, Zap, Lock, HardDrive, ChevronDown } from "lucide-react";
+import { Badge, cn, Separator } from "@pin-code/ui-kit";
+import { Archive, ChevronDown, Code, Database, HardDrive, Lock, Zap } from "lucide-react";
 
 interface SQLRule {
 	rule: string;

@@ -1,7 +1,7 @@
 import type { LockAnalysisResult } from "@/generated/models/LockAnalysisResult";
 import { formatNumber } from "../utils/format";
 import { Card, CardContent } from "@pin-code/ui-kit";
-import { Lock, AlertTriangle, Users, Database, TrendingUp, Clock, Activity } from "lucide-react";
+import { Activity, AlertTriangle, Clock, Database, Lock, Users } from "lucide-react";
 
 interface LockMetricsProps {
 	metrics: LockAnalysisResult;

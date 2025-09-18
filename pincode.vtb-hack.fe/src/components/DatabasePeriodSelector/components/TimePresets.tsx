@@ -52,7 +52,7 @@ export function TimePresets({
 				return (
 					<Button
 						key={preset.label}
-						variant={"ghost"}
+						variant={isActive ? "default" : "ghost"}
 						size="sm"
 						disabled={disabled}
 						onClick={() => handlePresetClick(preset)}

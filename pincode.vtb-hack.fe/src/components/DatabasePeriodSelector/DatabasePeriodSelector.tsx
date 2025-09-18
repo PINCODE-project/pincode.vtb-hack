@@ -1,13 +1,12 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "@pin-code/ui-kit";
+import type { DateRange } from "./components/RangeSelector";
 import { RangeSelector } from "./components/RangeSelector";
 import { TimePresets } from "./components/TimePresets";
 import { Timeline } from "./components/Timeline";
-import { combineMetricTimestamps, calculateTimelineRange } from "./utils/time";
-import type { DateRange } from "./components/RangeSelector";
 import type { GroupedTimeMetric } from "./utils/time";
+import { calculateTimelineRange, combineMetricTimestamps } from "./utils/time";
 
 import "./DatabasePeriodSelector.scss";
 
