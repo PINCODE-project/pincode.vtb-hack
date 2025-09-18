@@ -1,4 +1,6 @@
 using System.Globalization;
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,28 +14,35 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class IndexOnlyHeapFetchRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.IndexOnlyHeapFetch;
+    public ExplainRules Code => ExplainRules.IndexOnlyHeapFetch;
 
     /// <inheritdoc />
-    public string Category => "IndexOnly";
-
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node.ShortNodeType == null) return Task.FromResult<PlanFinding?>(null);
-        if (!node.ShortNodeType.Equals("IndexScan", StringComparison.OrdinalIgnoreCase) && !node.NodeType.Contains("Index Only Scan", StringComparison.OrdinalIgnoreCase)) return Task.FromResult<PlanFinding?>(null);
-
-        if (node.NodeSpecific != null && node.NodeSpecific.TryGetValue("Heap Fetches", out var hfObj))
+        if (node.ShortNodeType == null)
         {
-            if (TryParseDouble(hfObj, out var hf) && hf > 0)
-            {
-                var metadata = new Dictionary<string, object> { ["HeapFetches"] = hf };
-                var msg = "Index Only Scan выполняет heap fetches — visibility map вероятно не покрывает строки. Рекомендуется VACUUM/ANALYZE или CLUSTER для улучшения visibility.";
-                return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), metadata));
-            }
+            return Task.FromResult<PlanFinding?>(null);
+        }
+
+        if (!node.ShortNodeType.Equals("IndexScan", StringComparison.OrdinalIgnoreCase) &&
+            !node.NodeType.Contains("Index Only Scan", StringComparison.OrdinalIgnoreCase)
+           )
+        {
+            return Task.FromResult<PlanFinding?>(null);
+        }
+
+        var hfObj = node.TryGetNodeSpecificString("Heap Fetches");
+        if (hfObj is not null && TryParseDouble(hfObj, out var hf) && hf > 0)
+        {
+            return Task.FromResult<PlanFinding?>(new PlanFinding(
+                Code,
+                Severity,
+                ExplainRulePromblemDescriptions.IndexOnlyHeapFetch,
+                ExplainRuleRecommendations.IndexOnlyHeapFetch
+            ));
         }
 
         return Task.FromResult<PlanFinding?>(null);
@@ -42,8 +51,18 @@ public sealed class IndexOnlyHeapFetchRule : IPlanRule
         {
             d = 0;
             if (o == null) return false;
-            if (o is double dd) { d = dd; return true; }
-            if (o is long ll) { d = ll; return true; }
+            if (o is double dd)
+            {
+                d = dd;
+                return true;
+            }
+
+            if (o is long ll)
+            {
+                d = ll;
+                return true;
+            }
+
             return double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out d);
         }
     }

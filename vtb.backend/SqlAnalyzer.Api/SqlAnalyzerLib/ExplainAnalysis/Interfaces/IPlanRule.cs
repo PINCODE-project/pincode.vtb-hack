@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
@@ -12,17 +13,12 @@ public interface IPlanRule
     /// <summary>
     /// Уникальный код правила (например, P10).
     /// </summary>
-    ExplainIssueRule Code { get; }
-
-    /// <summary>
-    /// Категория (человеко-читаемая).
-    /// </summary>
-    string Category { get; }
+    ExplainRules Code { get; }
 
     /// <summary>
     /// Уровень серьёзности по умолчанию.
     /// </summary>
-    Severity DefaultSeverity { get; }
+    Severity Severity { get; }
 
     /// <summary>
     /// Проверить правило на заданном узле и контексте.

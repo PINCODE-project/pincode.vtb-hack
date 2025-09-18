@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,58 +13,46 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class HashJoinWithSkewRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.HashJoinWithSkew;
+    public ExplainRules Code => ExplainRules.HashJoinWithSkew;
+
     /// <inheritdoc />
-    public string Category => "Join";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Hash Join", StringComparison.OrdinalIgnoreCase))
+        if (!node.NodeType.Contains("Hash Join", StringComparison.OrdinalIgnoreCase))
+        {
             return Task.FromResult<PlanFinding?>(null);
+        }
 
         var left = node.Children?.FirstOrDefault();
         var right = node.Children?.Skip(1).FirstOrDefault();
 
-        if (left == null || right == null) return Task.FromResult<PlanFinding?>(null);
-
-        double leftRows = left.PlanRows ?? 0d;
-        double rightRows = right.PlanRows ?? 0d;
-
-        if (leftRows > 0 && rightRows > 0)
+        if (left == null || right == null)
         {
-            double ratio = Math.Max(leftRows, rightRows) / Math.Min(leftRows, rightRows);
-            if (ratio > 10) // skew >10x
-            {
-                var affected = new List<string>();
-                if (TryGetNodeSpecificString(left, "Relation Name") is string l) affected.Add(l);
-                if (TryGetNodeSpecificString(right, "Relation Name") is string r) affected.Add(r);
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-                var metadata = new Dictionary<string, object?>
-                {
-                    ["LeftPlanRows"] = leftRows,
-                    ["RightPlanRows"] = rightRows,
-                    ["Ratio"] = ratio
-                };
+        var leftRows = left.PlanRows ?? 0d;
+        var rightRows = right.PlanRows ?? 0d;
 
-                var message = $"Hash Join с сильным дисбалансом между таблицами (ratio {ratio:F1}x). Возможна неэффективная хэш-агрегация.";
+        if (leftRows < 0 || rightRows < 0)
+        {
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-                return Task.FromResult<PlanFinding?>(new PlanFinding(
-                    Code,
-                    message,
-                    Category,
-                    DefaultSeverity,
-                    affected,
-                    metadata
-                ));
-            }
+        var ratio = Math.Max(leftRows, rightRows) / Math.Min(leftRows, rightRows);
+        if (ratio > 10)
+        {
+            return Task.FromResult<PlanFinding?>(new PlanFinding(
+                Code,
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.HashJoinWithSkew, ratio.ToString("F1")),
+                ExplainRuleRecommendations.HashJoinWithSkew
+            ));
         }
 
         return Task.FromResult<PlanFinding?>(null);
     }
-
-    private static string? TryGetNodeSpecificString(PlanNode node, string key)
-        => node.NodeSpecific != null && node.NodeSpecific.TryGetValue(key, out var v) && v != null ? v.ToString() : null;
 }

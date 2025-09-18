@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,49 +13,29 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class SeqScanWithHighTempWritesRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.SeqScanWithHighTempWrites;
+    public ExplainRules Code => ExplainRules.SeqScanWithHighTempWrites;
 
     /// <inheritdoc />
-    public string Category => "Performance";
-
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        if (node.Buffers != null && node.Buffers.TempWritten > 50)
+        if (!node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
         {
-            var relation = TryGetNodeSpecificString(node, "Relation Name");
-            var metadata = new Dictionary<string, object?>
-            {
-                ["TempWritten"] = node.Buffers.TempWritten,
-                ["NodeType"] = node.NodeType
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var affected = relation != null ? new List<string> { relation } : [];
-            var message = relation != null
-                ? $"Seq Scan на таблице '{relation}' создает большое количество временных файлов ({node.Buffers.TempWritten}). Проверьте work_mem."
-                : $"Seq Scan создает большое количество временных файлов ({node.Buffers.TempWritten}). Проверьте work_mem.";
-
+        if (node.Buffers is { TempWritten: > 50 })
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                affected,
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.SeqScanWithHighTempWrites, node.GetRelationName(), node.Buffers.TempWritten),
+                ExplainRuleRecommendations.SeqScanWithHighTempWrites
             ));
         }
 
         return Task.FromResult<PlanFinding?>(null);
-    }
-
-    private static string? TryGetNodeSpecificString(PlanNode node, string key)
-        => node.NodeSpecific != null && node.NodeSpecific.TryGetValue(key, out var v) && v != null
-            ? v.ToString()
-            : null;
+    }           
 }

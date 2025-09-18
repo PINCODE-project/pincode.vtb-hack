@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,24 +13,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class FunctionOnColumnRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.FunctionOnColumn;
+    public StaticRules Code => StaticRules.FunctionOnColumn;
+    
 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     private static readonly Regex Pattern = new(@"\b(?:LOWER|UPPER|DATE_TRUNC|CAST|EXTRACT|TO_CHAR|TO_TIMESTAMP|COALESCE)\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Pattern.IsMatch(query.Text))
         {
-            var msg = "Функция применяется к колонке в выражении (WHERE/ON/Join), что делает индекс менее эффективным. Рассмотрите индекс по выражению или generated column.";
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(Code, msg, Category, DefaultSeverity, new List<string>()));
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
+                Code,
+                Severity,
+                StaticRuleProblemsDescriptions.FunctionOnColumnProblemDescription,
+                StaticRuleRecommendations.FunctionOnColumnRecommendation
+            ));
         }
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

@@ -1,21 +1,21 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace SqlAnalyzerLib.ExplainAnalysis.Enums;
+
 
 /// <summary>
 /// Типы проблем, выявляемых при анализе плана выполнения (EXPLAIN JSON)
 /// </summary>
-public enum ExplainIssueRule
+public enum ExplainRules
 {
     SeqScanOnLargeTable,
     NestedLoopOnLargeTables,
-    MissingIndex,
     MisestimatedRows,
-    SortWithoutIndex,
     HashAggOnLargeTable,
     FunctionScan,
     MaterializeNode,
     UnexpectedParallelism,
     CardinalityMismatch,
-    
     BitmapHeapOverfetch,
     HashSpill,
     IndexFilterMismatch,
@@ -24,7 +24,6 @@ public enum ExplainIssueRule
     Parallelism,
     SeqScanSelective,
     SortExternal,
-    
     TempFileSortSpill,
     HighBufferReads,
     LargeNumberOfLoops,

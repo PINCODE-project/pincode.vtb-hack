@@ -1,4 +1,4 @@
-namespace SqlAnalyzerLib.SqlStaticAnalysis.Constants;
+namespace SqlAnalyzer.Api.Dal.Constants;
 
 /// <summary>
 /// Уровень серьёзности найденной проблемы или рекомендации.
@@ -6,8 +6,6 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 public enum Severity
 {
     Info,
-    Low,
-    Medium,
-    High,
+    Warning,
     Critical
 }

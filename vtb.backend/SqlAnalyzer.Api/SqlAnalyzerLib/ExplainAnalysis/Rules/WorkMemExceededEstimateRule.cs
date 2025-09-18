@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,35 +13,24 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class WorkMemExceededEstimateRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.WorkMemExceededEstimate;
+    public ExplainRules Code => ExplainRules.WorkMemExceededEstimate;
+
     /// <inheritdoc />
-    public string Category => "Memory";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
         if (node?.NodeSpecific == null) return Task.FromResult<PlanFinding?>(null);
 
-        if (node.NodeSpecific.TryGetValue("TempFiles", out var tempFilesObj) &&
-            long.TryParse(tempFilesObj.ToString(), out var tempFiles) && tempFiles > 0)
+        var tempFilesObj = node.TryGetNodeSpecificString("TempFiles");
+        if (long.TryParse(tempFilesObj, out var tempFiles) && tempFiles > 0)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["TempFiles"] = tempFiles,
-                ["NodeType"] = node.NodeType
-            };
-
-            var message = $"Узел '{node.NodeType}' использует временные файлы ({tempFiles}), возможно превышение work_mem.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.WorkMemExceededEstimate, node.NodeType, tempFiles),
+                ExplainRuleRecommendations.WorkMemExceededEstimate
             ));
         }
 

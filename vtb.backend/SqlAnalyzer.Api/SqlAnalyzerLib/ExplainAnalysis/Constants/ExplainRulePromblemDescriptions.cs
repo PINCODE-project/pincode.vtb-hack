@@ -1,0 +1,53 @@
+namespace SqlAnalyzerLib.ExplainAnalysis.Enums;
+
+public static class ExplainRulePromblemDescriptions
+{
+    public const string SeqScanOnLargeTable = "Последовательное сканирование большой таблицы '{0}' (PlanRows={1}) может приводить к высоким затратам ввода-вывода и замедлению выполнения.";
+    public const string NestedLoopOnLargeTables = "Nested Loop Join между большими таблицами (PlanRows={0}) крайне неэффективен и может вызвать экспоненциальный рост времени выполнения.";
+    public const string MisestimatedRows = "Сильное расхождение между фактическим количеством строк ({0}) и оценкой планировщика ({1}) в таблице '{2}' указывает на неточные статистики.";
+    public const string HashAggOnLargeTable = "Hash Aggregate на большой таблице (PlanRows={0}) может вызвать значительное использование памяти или запись во временные файлы.";
+    public const string FunctionScan = "Вызов Function Scan по '{0}' может быть медленным из-за отсутствия индексов и оптимизации функций.";
+    public const string MaterializeNode = "Узел Materialize создаёт временные копии данных; если они не нужны повторно, это приводит к избыточным затратам памяти.";
+    public const string UnexpectedParallelism = "Узел '{0}' исполняется параллельно (loops={1}), хотя не предназначен для этого. Возможны накладные расходы без выигрыша в скорости.";
+    public const string CardinalityMismatch = "Кардинальное несоответствие: оценка планировщика сильно отличается от фактического числа строк.";
+    public const string BitmapHeapOverfetch = "Bitmap Heap Scan по таблице '{0}' возвращает гораздо больше строк, чем предполагалось Bitmap Index Scan — возможна низкая селективность индекса.";
+    public const string HashSpillBatches = "Hash оператор использует несколько батчей (Batches > 1), что указывает на нехватку памяти и запись промежуточных данных на диск.";
+    public const string HashSpillDisk = "Hash оператор выполняет запись данных на диск из-за переполнения памяти.";
+    public const string HashSpillTempFiles = "Hash оператор/Hash Join пишет временные файлы на диск (TempWritten) — явный индикатор спиллов.";
+    public const string IndexFilterMismatch = "Index Scan/Bitmap Heap Scan использует фильтр, который не покрывается Index Cond — часть работы выполняется без индекса.";
+    public const string IndexOnlyHeapFetch = "Index Only Scan требует heap fetch — видимость строк в visibility map неполная.";
+    public const string NestedLoopHeavyInner = "Nested Loop выполняет дорогостоящую внутреннюю операцию многократно, что сильно замедляет запрос.";
+    public const string Parallelism = "Запланированы параллельные воркеры, но они не запущены. Возможные причины: функции не parallel-safe, настройки сервера или параметры запроса.";
+    public const string SeqScanFractionRemoved = "Seq Scan по таблице '{0}' отбрасывает большую часть строк ({1}), что указывает на неэффективное чтение лишних данных.";
+    public const string SeqScanIOHeave = "Seq Scan по таблице '{0}' выполняет большое количество операций ввода-вывода (IO).";
+    public const string SortExternal = "Сортировка выполняется с использованием внешней памяти — вероятен spill на диск.";
+    public const string SortExternalTempFile = "Сортировка использует диск (Sort Space Type=Disk) — данные не помещаются в память.";
+    public const string SortExternalTempWritten = "Сортировка записывает временные блоки на диск (TempWritten > 0).";
+    public const string TempFileSortSpill = "Узел создаёт временные файлы для сортировок/хешей — это спиллы на диск.";
+    public const string HighBufferReads = "Узел '{0}' по таблице '{1}' выполняет чрезмерное количество чтений буферов ({2} блоков).";
+    public const string LargeNumberOfLoops = "Узел '{0}' по таблице '{1}' выполняется {2} раз (loops) — возможна неэффективная стратегия соединений.";
+    public const string RepeatedSeqScan = "Несколько Seq Scan повторяются для таблиц: {0}. Это может быть результатом неудачной декомпозиции запроса.";
+    public const string IndexOnlyScanButBitmap = "Index Only Scan по таблице '{0}' вынужденно использует Bitmap Heap Scan, что говорит о нехватке покрывающего индекса.";
+    public const string HashJoinWithSkew = "Hash Join испытывает дисбаланс данных (ratio {0}x), что снижает эффективность распараллеливания.";
+    public const string ParallelSeqScanIneffective = "Parallel Seq Scan по таблице '{0}' оказался неэффективным (ActualLoops={1}).";
+    public const string SortSpillToDisk = "Sort узел пишет данные во временные файлы (spill) — TempWritten={0}.";
+    public const string ExcessiveTempFiles = "Узел '{0}' создает чрезмерное количество временных файлов (TempRead+TempWritten={1}).";
+    public const string FunctionInWherePerformance = "Функция в WHERE для таблицы '{0}' делает условие неиндексируемым.";
+    public const string LeadingWildcardLike = "Условие LIKE с ведущим '%' по таблице '{0}' исключает использование индексов.";
+    public const string MissingStatistics = "Таблица '{0}' имеет неточные статистики: планировщик неверно оценивает число строк.";
+    public const string CorrelatedSubqueryExec = "Коррелированный подзапрос выполняется {0} раз, что приводит к многократным обращениям к данным.";
+    public const string SlowStartupTime = "Узел '{0}' имеет длительное стартовое время ({1} мс), что замедляет выдачу первых результатов.";
+    public const string ActualVsEstimatedLargeDiff = "Большое расхождение между фактическим и оценочным числом строк (Actual/Plan={0}).";
+    public const string FilterAfterAggregate = "Фильтрация выполняется после агрегирования на узле '{0}', что увеличивает нагрузку.";
+    public const string WorkMemExceededEstimate = "Узел '{0}' пишет временные файлы ({1}), что говорит о превышении work_mem.";
+    public const string LargeAggregateMemory = "Агрегатный узел '{0}' потребляет много памяти ({1} MB).";
+    public const string SortMethodExternal = "Sort узел '{0}' использует внешний метод сортировки (Sort Method={1}), что указывает на spill.";
+    public const string BitmapIndexScanOnSmallTable = "Bitmap Index Scan по маленькой таблице '{0}' (PlanRows={1}) может быть избыточным.";
+    public const string IndexScanWithFilterOnNonIndexedCol = "Index Scan использует фильтр '{0}', не покрытый индексом.";
+    public const string SeqScanOnRecentlyUpdatedTable = "Seq Scan по недавно обновлённой таблице '{0}' (updates={1}) может игнорировать индексы из-за неактуальных статистик.";
+    public const string SeqScanWithHighTempWrites = "Seq Scan по таблице '{0}' создаёт большое количество временных файлов ({1}).";
+    public const string IndexScanButBitmapRecheck = "Index Scan по таблице '{0}' требует Bitmap Heap Recheck — возможно, индекс не полностью оптимален.";
+    public const string ParallelWorkersTooMany = "Узел '{0}' запускает слишком много воркеров (Launched={1}, Planned={2}), что приводит к накладным расходам.";
+    public const string HashAggWithoutHashableKey = "Hash Aggregate узел '{0}' использует ключ '{1}', неподходящий для хэширования.";
+    public const string CrossProductDetected = "Nested Loop без условий соединения на узле '{0}' — это кросс-произведение, крайне неэффективное.";
+}

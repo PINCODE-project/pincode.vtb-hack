@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,37 +13,27 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class LargeAggregateMemoryRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.LargeAggregateMemory;
+    public ExplainRules Code => ExplainRules.LargeAggregateMemory;
+    
     /// <inheritdoc />
-    public string Category => "Memory";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Aggregate", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        if (node.NodeSpecific != null &&
-            node.NodeSpecific.TryGetValue("Memory Usage", out var memObj) &&
-            double.TryParse(memObj.ToString(), out var memMb) && memMb > 50) // порог памяти в МБ
+        if (!node.NodeType.Contains("Aggregate", StringComparison.OrdinalIgnoreCase))
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["MemoryUsageMB"] = memMb,
-                ["NodeType"] = node.NodeType
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var message = $"Агрегатный узел '{node.NodeType}' использует много памяти ({memMb:F1} MB). Рассмотрите оптимизацию агрегатов или увеличение work_mem.";
-
+        var memoryUsage = node.TryGetNodeSpecificString("Memory Usage");
+        if (double.TryParse(memoryUsage, out var memMb) && memMb > 50) 
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.LargeAggregateMemory, node.NodeType, memMb.ToString("F1")),
+                ExplainRuleRecommendations.LargeAggregateMemory
             ));
         }
 

@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,27 +12,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class CrossJoinWithoutConditionRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.CrossJoinWithoutCondition;
+    public StaticRules Code => StaticRules.CrossJoinWithoutCondition;
+  
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (query.Text.Contains("CROSS JOIN", StringComparison.OrdinalIgnoreCase) &&
             !query.Text.Contains("WHERE", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "CROSS JOIN без условия приводит к декартовому произведению.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "CROSS JOIN" }
+                Severity,
+                StaticRuleProblemsDescriptions.CrossJoinWithoutConditionProblemDescription,
+                StaticRuleRecommendations.CrossJoinWithoutConditionRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

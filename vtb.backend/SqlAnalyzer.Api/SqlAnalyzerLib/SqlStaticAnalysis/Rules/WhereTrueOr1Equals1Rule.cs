@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,26 +13,24 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class WhereTrueOr1Equals1Rule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.WhereTrueOr1Equals1;
-    /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Safety;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public StaticRules Code => StaticRules.WhereTrueOr1Equals1;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Severity Severity => Severity.Info;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"WHERE\s+(TRUE|1\s*=\s*1)", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Условие WHERE TRUE или WHERE 1=1 не имеет смысла и может быть ошибкой.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "WHERE TRUE", "WHERE 1=1" }
+                Severity,
+                StaticRuleProblemsDescriptions.WhereTrueOr1Equals1ProblemDescription,
+                StaticRuleRecommendations.WhereTrueOr1Equals1Recommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

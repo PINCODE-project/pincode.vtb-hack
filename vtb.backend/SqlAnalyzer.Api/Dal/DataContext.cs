@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SqlAnalyzer.Api.Dal.Entities.Algorithm;
 using SqlAnalyzer.Api.Dal.Entities.Base;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
 using SqlAnalyzer.Api.Services.LlmClient.Data;
-using SqlAnalyzerLib.Recommendation.Models;
+using SqlAnalyzerLib.Facade.Models;
 
 namespace SqlAnalyzer.Api.Dal;
 
@@ -16,6 +17,9 @@ public class DataContext: DbContext
     public DbSet<DbConnection> DbConnections { get; set; }
     public DbSet<QueryAnalysis> Queries { get; set; }
     public DbSet<QueryAnalysisResult> QueryAnalysisResults { get; set; }
+    
+    public DbSet<SqlAnalyzeRule> SqlAnalyzeRules { get; set; }
+    
     public DbSet<CacheHitStats> CacheHitStats { get; set; }
     public DbSet<AutovacuumStat> AutovacuumStats { get; set; }
     
@@ -39,7 +43,7 @@ public class DataContext: DbContext
             entity.Property(x => x.Recommendations)
                 .HasConversion(
                     w => JsonSerializer.Serialize(w, JsonSerializerOptions.Default),
-                    w => JsonSerializer.Deserialize<IReadOnlyCollection<Recommendation>>(w, JsonSerializerOptions.Default)!)
+                    w => JsonSerializer.Deserialize<SqlAlgorithmAnalysisResult>(w, JsonSerializerOptions.Default)!)
                 .HasColumnType("jsonb"));
         
         modelBuilder.Entity<QueryAnalysisResult>(entity =>

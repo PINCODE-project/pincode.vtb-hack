@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +13,9 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class IndexScanWithFilterOnNonIndexedColRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.IndexScanWithFilterOnNonIndexedCol;
+    public ExplainRules Code => ExplainRules.IndexScanWithFilterOnNonIndexedCol;
     /// <inheritdoc />
-    public string Category => "Index";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -23,24 +23,14 @@ public sealed class IndexScanWithFilterOnNonIndexedColRule : IPlanRule
         if (node?.NodeType == null || !node.NodeType.Contains("Index Scan", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult<PlanFinding?>(null);
 
-        if (node.NodeSpecific != null && node.NodeSpecific.TryGetValue("Filter", out var filter) &&
-            !string.IsNullOrEmpty(filter?.ToString()))
+        var filter = node.TryGetNodeSpecificString("Filter");
+        if (string.IsNullOrEmpty(filter) == false)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["Filter"] = filter,
-                ["NodeType"] = node.NodeType
-            };
-
-            var message = $"Index Scan использует фильтр '{filter}', который может быть по неиндексированной колонке. Рассмотрите добавление индекса.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.IndexScanWithFilterOnNonIndexedCol, filter),
+                ExplainRuleRecommendations.IndexScanWithFilterOnNonIndexedCol
             ));
         }
 

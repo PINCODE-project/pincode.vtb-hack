@@ -3,9 +3,8 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 /// <summary>
 /// Коды статических правил анализа SQL.
 /// </summary>
-public enum StaticRuleCodes
+public enum StaticRules
 {
-    // Базовые (твои)
     FunctionOnColumn,
     TypeMismatchComparison,
     LeadingWildcardLike,
@@ -17,8 +16,6 @@ public enum StaticRuleCodes
     NonSargableExpression,
     SubqueryInsteadOfJoin,
     OrderByWithoutLimit,
-
-    // Новые
     ImplicitCrossJoin,
     UnnecessaryDistinct,
     GroupByWithoutHavingOrAggregate,
@@ -27,7 +24,6 @@ public enum StaticRuleCodes
     UnnecessaryCast,
     UnionInsteadOfUnionAll,
     ExistsVsIn,
-    GroupByWithoutHaving,
     OrderByRandom,
     DistinctWithGroupBy,
     LimitWithoutOrderBy,

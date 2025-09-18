@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,33 +12,24 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class MaterializeNodeRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.MaterializeNode;
+    public ExplainRules Code => ExplainRules.MaterializeNode;
+    
     /// <inheritdoc />
-    public string Category => "Performance";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Materialize", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        var metadata = new Dictionary<string, object?>
+        if (!node.NodeType.Contains("Materialize", StringComparison.OrdinalIgnoreCase))
         {
-            ["PlanRows"] = node.PlanRows,
-            ["ActualRows"] = node.ActualRows
-        };
-
-        var message = $"Materialize узел может быть лишним и замедлять выполнение запроса. Рассмотрите использование прямого вычисления или CTE.";
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
         return Task.FromResult<PlanFinding?>(new PlanFinding(
             Code,
-            message,
-            Category,
-            DefaultSeverity,
-            Array.Empty<string>(),
-            metadata
+            Severity,
+            ExplainRulePromblemDescriptions.MaterializeNode,
+            ExplainRuleRecommendations.MaterializeNode
         ));
     }
 }

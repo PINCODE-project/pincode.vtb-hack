@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,28 +12,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class InefficientDistinctRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.InefficientDistinct;
+    public StaticRules Code => StaticRules.InefficientDistinct;
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("DISTINCT") && !sql.Contains("JOIN") && !sql.Contains("GROUP BY"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "DISTINCT используется без JOIN или GROUP BY — возможно, он лишний.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "DISTINCT" }
+                Severity,
+                StaticRuleProblemsDescriptions.InefficientDistinctProblemDescription,
+                StaticRuleRecommendations.InefficientDistinctRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

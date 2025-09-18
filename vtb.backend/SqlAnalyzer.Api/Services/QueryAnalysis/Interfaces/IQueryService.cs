@@ -9,5 +9,6 @@ public interface IQueryService
 
     Task<QueryDto> Get(Guid id);
     
-    Task<QueryAnalysisResultDto> AnalyzeAsync(Guid queryId, bool useLlm);
+    Task<QueryAnalysisResultDto> Analyze(Guid queryId, bool useLlm);
+    Task<QueryAnalysisResultDto> AnalyzeCustom(Guid queryId, params IReadOnlyCollection<Guid> ruleIds);
 }

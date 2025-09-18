@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,26 +13,24 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class CaseInWhereRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.CaseInWhere;
+    public StaticRules Code => StaticRules.CaseInWhere;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"WHERE.*CASE", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется CASE внутри WHERE — условие несаргируемое, индекс не применяется.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "CASE in WHERE" }
+                Severity,
+                StaticRuleProblemsDescriptions.CaseInWhereProblemDescription,
+                StaticRuleRecommendations.CaseInWhereRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,26 +13,24 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class FunctionInJoinConditionRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.FunctionInJoinCondition;
-    /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public StaticRules Code => StaticRules.FunctionInJoinCondition;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Severity Severity => Severity.Critical;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"JOIN\s+\w+.*ON.*\w+\(.*\)", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "В условии JOIN используются функции — индекс не будет применён.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "Function in JOIN" }
+                Severity,
+                StaticRuleProblemsDescriptions.FunctionInJoinConditionProblemDescription,
+                StaticRuleRecommendations.FunctionInJoinConditionRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

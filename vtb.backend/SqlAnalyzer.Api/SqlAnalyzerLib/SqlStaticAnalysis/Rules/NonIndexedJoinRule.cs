@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -6,25 +7,27 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 
 public sealed class NonIndexedJoinRule : IStaticRule
 {
-    public StaticRuleCodes Code => StaticRuleCodes.NonIndexedJoin;
-    public RecommendationCategory Category => RecommendationCategory.Index;
-    public Severity DefaultSeverity => Severity.Medium;
+    /// <inheritdoc />
+    public StaticRules Code => StaticRules.NonIndexedJoin;
 
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    /// <inheritdoc />
+    public Severity Severity => Severity.Warning;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("JOIN ON") && !sql.Contains("ID"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "JOIN выполняется не по ID — убедитесь, что в условии есть индексируемый столбец.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "JOIN condition" }
+                Severity,
+                StaticRuleProblemsDescriptions.NonIndexedJoinProblemDescription,
+                StaticRuleRecommendations.NonIndexedJoinRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

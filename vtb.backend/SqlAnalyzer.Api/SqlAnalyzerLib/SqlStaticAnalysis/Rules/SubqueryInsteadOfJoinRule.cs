@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,32 +13,35 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class SubqueryInsteadOfJoinRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.SubqueryInsteadOfJoin;
+    public StaticRules Code => StaticRules.SubqueryInsteadOfJoin;
 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Rewrite;
-
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     private static readonly Regex InSelectPattern = new(@"\bIN\s*\(\s*SELECT\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex ExistsSelectPattern = new(@"\bEXISTS\s*\(\s*SELECT\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (InSelectPattern.IsMatch(query.Text))
         {
-            var msg = "Найдено IN (SELECT ...). В некоторых случаях использование JOIN/LEFT JOIN экономичнее по производительности и понятнее по плану выполнения. Проверьте, можно ли переписать на JOIN.";
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(Code, msg, Category, DefaultSeverity, new List<string>()));
-        }
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
+                Code,
+                Severity,
+                StaticRuleProblemsDescriptions.SubqueryInInsteadOfJoinProblemDescription,
+                StaticRuleRecommendations.SubqueryInInsteadOfJoinRecommendation
+            ));}
 
         if (ExistsSelectPattern.IsMatch(query.Text))
         {
-            var msg = "Найдено EXISTS (SELECT ...). Это может быть оправдано, но если подзапрос не коррелирован, JOIN может быть эффективнее. Оцените возможность переписывания.";
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(Code, msg, Category, DefaultSeverity, new List<string>()));
-        }
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
+                Code,
+                Severity,
+                StaticRuleProblemsDescriptions.SubqueryExistsInsteadOfJoinProblemDescription,
+                StaticRuleRecommendations.SubqueryExistsInsteadOfJoinRecommendation
+            ));  }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

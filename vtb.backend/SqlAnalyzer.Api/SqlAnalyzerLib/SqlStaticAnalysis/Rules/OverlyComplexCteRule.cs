@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,26 +13,24 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class OverlyComplexCteRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.OverlyComplexCte;
-    /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public StaticRules Code => StaticRules.OverlyComplexCte;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Severity Severity => Severity.Warning;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"WITH\s+\w+\s+AS\s*\(\s*SELECT.*SELECT", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "CTE содержит вложенные SELECT — возможно, он слишком сложен и требует упрощения.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "CTE" }
+                Severity,
+                StaticRuleProblemsDescriptions.OverlyComplexCteProblemDescription,
+                StaticRuleRecommendations.OverlyComplexCteRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -10,42 +12,53 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules
     /// </summary>
     public sealed class SortExternalRule : IPlanRule
     {
-        public ExplainIssueRule Code => ExplainIssueRule.SortExternal;
-        public string Category => "Sort";
-        public Severity DefaultSeverity => Severity.High;
+        public ExplainRules Code => ExplainRules.SortExternal;
+
+        public Severity Severity => Severity.Critical;
 
         public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
         {
-            if (node == null || string.IsNullOrEmpty(node.NodeType)) return Task.FromResult<PlanFinding?>(null);
+            if (string.IsNullOrEmpty(node.NodeType)) return Task.FromResult<PlanFinding?>(null);
             if (!node.NodeType.Contains("Sort", StringComparison.OrdinalIgnoreCase) &&
                 !(node.ShortNodeType?.Contains("Sort", StringComparison.OrdinalIgnoreCase) ?? false))
                 return Task.FromResult<PlanFinding?>(null);
 
             if (node.NodeSpecific != null)
             {
-                var sortMethod = node.NodeSpecific.TryGetValue("Sort Method", out var sm) ? sm?.ToString() : null;
-                var sortSpaceType = node.NodeSpecific.TryGetValue("Sort Space Type", out var sst) ? sst?.ToString() : null;
+                var sortMethod = node.TryGetNodeSpecificString("Sort Method");
+                var sortSpaceType = node.TryGetNodeSpecificString("Sort Space Type");
 
-                if (!string.IsNullOrEmpty(sortMethod) && sortMethod.IndexOf("external", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(sortMethod) &&
+                    sortMethod.IndexOf("external", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    var meta = new Dictionary<string, object> { ["SortMethod"] = sortMethod! };
-                    var msg = "Сортировка использует внешнюю память (external) — возможен spill. Рассмотрите увеличение work_mem или создание индекса, покрывающего ORDER BY.";
-                    return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), meta));
+                    return Task.FromResult<PlanFinding?>(new PlanFinding(
+                        Code,
+                        Severity,
+                        ExplainRulePromblemDescriptions.SortExternal,
+                        ExplainRuleRecommendations.SortExternal
+                    ));
                 }
 
-                if (!string.IsNullOrEmpty(sortSpaceType) && sortSpaceType.IndexOf("disk", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(sortSpaceType) &&
+                    sortSpaceType.IndexOf("disk", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    var meta = new Dictionary<string, object> { ["SortSpaceType"] = sortSpaceType! };
-                    var msg = "Sort Space Type указывает на диск — сортировка выполняется с использованием временных файлов. Увеличьте work_mem или уменьшите объём сортируемых данных.";
-                    return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), meta));
+                    return Task.FromResult<PlanFinding?>(new PlanFinding(
+                        Code,
+                        Severity,
+                        ExplainRulePromblemDescriptions.SortExternalTempFile,
+                        ExplainRuleRecommendations.SortExternalTempFile
+                    ));
                 }
             }
 
             if (node.Buffers != null && node.Buffers.TempWritten > 0)
             {
-                var meta = new Dictionary<string, object> { ["TempWritten"] = node.Buffers.TempWritten };
-                var msg = "Сортировка записывает временные блоки на диск (TempWritten > 0). Увеличьте work_mem или уменьшите сортируемый набор; рассмотрите индекс для ORDER BY.";
-                return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), meta));
+                return Task.FromResult<PlanFinding?>(new PlanFinding(
+                    Code,
+                    Severity,
+                    ExplainRulePromblemDescriptions.SortExternalTempWritten,
+                    ExplainRuleRecommendations.SortExternalTempWritten
+                ));
             }
 
             return Task.FromResult<PlanFinding?>(null);

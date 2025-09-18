@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,11 +13,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class BitmapHeapOverfetchRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.BitmapHeapOverfetch;
+    public ExplainRules Code => ExplainRules.BitmapHeapOverfetch;
+
     /// <inheritdoc />
-    public string Category => "Index";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -26,32 +26,14 @@ public sealed class BitmapHeapOverfetchRule : IPlanRule
         if (!node.NodeType.Contains("Bitmap Heap Scan", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult<PlanFinding?>(null);
 
-        if (node.ActualRows.HasValue && node.PlanRows.HasValue && node.ActualRows.Value > node.PlanRows.Value * 3)
+        if (node is { ActualRows: not null, PlanRows: not null } && node.ActualRows.Value > node.PlanRows.Value * 3)
         {
             var relation = TryGetNodeSpecificString(node, "Relation Name");
-
-            var metadata = new Dictionary<string, object?>
-            {
-                ["NodeType"] = node.NodeType,
-                ["PlanRows"] = node.PlanRows,
-                ["ActualRows"] = node.ActualRows,
-                ["Buffers"] = node.Buffers,
-                ["IndexCond"] = node.NodeSpecific != null && node.NodeSpecific.TryGetValue("Index Cond", out var cond) ? cond : null
-            };
-
-            var affected = relation != null ? new List<string> { relation } : [];
-
-            var message = relation != null
-                ? $"Bitmap Heap Scan по таблице '{relation}' возвращает значительно больше строк, чем оценено по Bitmap Index Scan. Проверьте селективность индекса и фильтры."
-                : $"Bitmap Heap Scan возвращает значительно больше строк, чем оценено по Bitmap Index Scan. Проверьте селективность индекса и фильтры.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                affected,
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.BitmapHeapOverfetch, relation ?? "unknown"),
+                ExplainRuleRecommendations.BitmapHeapOverfetch
             ));
         }
 

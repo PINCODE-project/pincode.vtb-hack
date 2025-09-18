@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,28 +12,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class NestedSelectStarRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.NestedSelectStar;
+    public StaticRules Code => StaticRules.NestedSelectStar;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Rewrite;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("(SELECT *"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется SELECT * внутри подзапроса — укажите только необходимые колонки.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "*" }
+                Severity,
+                StaticRuleProblemsDescriptions.NestedSelectStarProblemDescription,
+                StaticRuleRecommendations.NestedSelectStarRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

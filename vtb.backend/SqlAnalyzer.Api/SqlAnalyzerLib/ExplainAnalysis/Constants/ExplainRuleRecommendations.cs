@@ -1,0 +1,53 @@
+namespace SqlAnalyzerLib.ExplainAnalysis.Enums;
+
+public class ExplainRuleRecommendations
+{ 
+    public const string SeqScanOnLargeTable = "Создайте индекс по фильтруемым колонкам или рассмотрите партиционирование таблицы.";
+    public const string NestedLoopOnLargeTables = "Замените Nested Loop на Hash Join или Merge Join при работе с большими таблицами.";
+    public const string MisestimatedRows = "Запустите ANALYZE для актуализации статистик; при необходимости используйте CREATE STATISTICS для зависимых колонок.";
+    public const string HashAggOnLargeTable = "Увеличьте work_mem или предварительно сократите набор данных (фильтрация/CTE).";
+    public const string FunctionScan = "Перепишите функцию так, чтобы она была IMMUTABLE/STABLE, либо материализуйте данные в таблице.";
+    public const string MaterializeNode = "Удалите избыточный Materialize или замените его на временные таблицы/CTE.";
+    public const string UnexpectedParallelism = "Проверьте parallel_setup_cost/parallel_tuple_cost и убедитесь, что узлы действительно parallel-safe.";
+    public const string CardinalityMismatch = "Обновите статистику (ANALYZE), настройте default_statistics_target или создайте многоколонные статистики.";
+    public const string BitmapHeapOverfetch = "Создайте более селективный индекс или добавьте INCLUDE колонки, чтобы сократить лишние чтения.";
+    public const string HashSpillBatches = "Увеличьте work_mem или уменьшите объём данных во входном потоке.";
+    public const string HashSpillDisk = "Поднимите work_mem или используйте Merge Join вместо Hash Join.";
+    public const string HashSpillTempFiles = "Повысьте work_mem, уменьшите количество обрабатываемых строк, либо используйте предагрегацию.";
+    public const string IndexFilterMismatch = "Создайте индекс с выражением или добавьте недостающие колонки в INCLUDE.";
+    public const string IndexOnlyHeapFetch = "Выполните VACUUM ANALYZE; рассмотрите CLUSTER или BRIN-индексы для улучшения покрытия visibility map.";
+    public const string NestedLoopHeavyInner = "Создайте индекс на колонках join-ключа или замените Nested Loop на Hash/Merge Join.";
+    public const string Parallelism = "Проверьте настройки max_parallel_workers, max_parallel_workers_per_gather и parallel_setup_cost.";
+    public const string SeqScanFractionRemoved = "Создайте частичный индекс по условию WHERE или рассмотрите денормализацию/предагрегацию.";
+    public const string SeqScanIOHeavy = "Создайте индексы по фильтрам и пересмотрите JOIN/WHERE.";
+    public const string SortExternal = "Увеличьте work_mem или создайте индекс по колонкам ORDER BY.";
+    public const string SortExternalTempFile = "Увеличьте work_mem; оптимизируйте сортируемый набор (LIMIT, предфильтрация).";
+    public const string SortExternalTempWritten = "Оптимизируйте ORDER BY, создайте индекс или повысьте work_mem.";
+    public const string TempFileSortSpill = "Поднимите work_mem и уменьшите размер сортировок/хешей.";
+    public const string HighBufferReads = "Создайте индексы и фильтры для уменьшения числа читаемых блоков.";
+    public const string LargeNumberOfLoops = "Избегайте многократных Nested Loop — используйте Hash/Merge Join или материализацию.";
+    public const string RepeatedSeqScan = "Оптимизируйте запрос с помощью CTE/подзапросов или кэширования промежуточных результатов.";
+    public const string IndexOnlyScanButBitmap = "Добавьте недостающие колонки в индекс, чтобы сделать его полностью покрывающим.";
+    public const string HashJoinWithSkew = "Используйте parallel hash join, перераспределение данных или random_page_cost для снижения дисбаланса.";
+    public const string ParallelSeqScanIneffective = "Снизьте parallel_setup_cost или настройте parallel_workers для адекватного распараллеливания.";
+    public const string SortSpillToDisk = "Создайте индекс под ORDER BY или увеличьте work_mem.";
+    public const string ExcessiveTempFiles = "Оптимизируйте запрос или увеличьте work_mem, чтобы сократить создание временных файлов.";
+    public const string FunctionInWherePerformance = "Перепишите условие так, чтобы использовать индекс (например, вычисляемое поле).";
+    public const string LeadingWildcardLike = "Используйте trigram-индексы (pg_trgm) или полнотекстовый поиск вместо LIKE с ведущим '%'.";
+    public const string MissingStatistics = "Выполните ANALYZE и настройте default_statistics_target для улучшения оценок.";
+    public const string CorrelatedSubqueryExec = "Перепишите подзапрос на JOIN или CTE для устранения множественных вызовов.";
+    public const string SlowStartupTime = "Оптимизируйте план — используйте индексы или материализованные представления для ускорения старта.";
+    public const string ActualVsEstimatedLargeDiff = "Обновите статистику и проверьте селективность предикатов.";
+    public const string FilterAfterAggregate = "Перенесите фильтр в WHERE/HAVING до агрегирования.";
+    public const string WorkMemExceededEstimate = "Увеличьте work_mem или перепишите запрос для снижения объема промежуточных данных.";
+    public const string LargeAggregateMemory = "Сократите набор входных строк перед агрегацией или увеличьте work_mem.";
+    public const string SortMethodExternal = "Увеличьте work_mem или уменьшите сортируемый набор (LIMIT, предагрегация).";
+    public const string BitmapIndexScanOnSmallTable = "Используйте Seq Scan вместо Bitmap Index Scan — он будет быстрее на малых таблицах.";
+    public const string IndexScanWithFilterOnNonIndexedCol = "Добавьте индекс по фильтруемой колонке.";
+    public const string SeqScanOnRecentlyUpdatedTable = "Выполните VACUUM ANALYZE или создайте индекс по актуальным фильтрам.";
+    public const string SeqScanWithHighTempWrites = "Увеличьте work_mem и оптимизируйте фильтры для снижения записи во временные файлы.";
+    public const string IndexScanButBitmapRecheck = "Создайте более точный индекс, чтобы исключить recheck.";
+    public const string ParallelWorkersTooMany = "Снизьте количество параллельных воркеров — настройте max_parallel_workers_per_gather.";
+    public const string HashAggWithoutHashableKey = "Используйте Sort Aggregate или преобразуйте ключ в хэшируемый тип.";
+    public const string CrossProductDetected = "Добавьте условия соединения (ON/USING), чтобы избежать кросс-произведения.";
+}

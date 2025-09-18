@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +12,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class ParallelWorkersTooManyRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.ParallelWorkersTooMany;
+    public ExplainRules Code => ExplainRules.ParallelWorkersTooMany;
+
     /// <inheritdoc />
-    public string Category => "Parallelism";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -28,22 +28,11 @@ public sealed class ParallelWorkersTooManyRule : IPlanRule
             int.TryParse(launchedObj.ToString(), out var launched) &&
             launched > planned + 4) // произвольное превышение
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["WorkersPlanned"] = planned,
-                ["WorkersLaunched"] = launched,
-                ["NodeType"] = node.NodeType
-            };
-
-            var message = $"Узел '{node.NodeType}' имеет слишком много воркеров (Launched={launched}, Planned={planned}). Может быть overhead.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.ParallelWorkersTooMany, node.NodeType, launched, planned),
+                ExplainRuleRecommendations.ParallelWorkersTooMany
             ));
         }
 

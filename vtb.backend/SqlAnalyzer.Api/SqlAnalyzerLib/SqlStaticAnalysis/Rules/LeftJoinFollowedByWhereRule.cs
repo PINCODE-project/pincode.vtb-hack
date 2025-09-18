@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -10,28 +11,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class LeftJoinFollowedByWhereRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.LeftJoinFollowedByWhere;
+    public StaticRules Code => StaticRules.LeftJoinFollowedByWhere;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Rewrite;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("LEFT JOIN") && sql.Contains(" WHERE ") && sql.Contains(" = "))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "LEFT JOIN используется вместе с условием в WHERE, что эквивалентно INNER JOIN.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "LEFT JOIN" }
+                Severity,
+                StaticRuleProblemsDescriptions.LeftJoinFollowedByWhereProblemDescription,
+                StaticRuleRecommendations.LeftJoinFollowedByWhereRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

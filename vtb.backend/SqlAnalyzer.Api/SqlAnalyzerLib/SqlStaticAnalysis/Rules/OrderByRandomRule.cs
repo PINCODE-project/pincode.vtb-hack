@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,26 +12,24 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class OrderByRandomRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.OrderByRandom;
+    public StaticRules Code => StaticRules.OrderByRandom;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (query.Text.Contains("ORDER BY RANDOM()", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется ORDER BY RANDOM() — крайне неэффективная операция, замените на выборку через TABLESAMPLE или индекс.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "ORDER BY RANDOM()" }
+                Severity,
+                StaticRuleProblemsDescriptions.OrderByRandomProblemDescription,
+                StaticRuleRecommendations.OrderByRandomRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

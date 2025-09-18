@@ -1,5 +1,5 @@
 using SqlAnalyzer.Api.Services.LlmClient.Data;
-using SqlAnalyzerLib.Recommendation.Models;
+using SqlAnalyzerLib.Facade.Models;
 
 namespace SqlAnalyzer.Api.Dto.QueryAnalysis;
 
@@ -31,10 +31,13 @@ public class QueryAnalysisResultDto
     /// <summary>
     /// Алгоритмически собранные рекомендации для запроса
     /// </summary>
-    public required IReadOnlyCollection<Recommendation> AlgorithmRecommendation { get; init; }
+    public SqlAlgorithmAnalysisResult? AlgorithmRecommendation { get; init; }
     
     /// <summary>
     /// Рекомендации выданные LLM моделью (если использовалась)
     /// </summary>
     public LlmAnswer? LlmRecommendations { get; init; }
+
+
+    public IReadOnlyCollection<Guid> FindindCustomRules { get; init; } = [];
 }

@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +12,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class CrossProductDetectedRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.CrossProductDetected;
+    public ExplainRules Code => ExplainRules.CrossProductDetected;
+
     /// <inheritdoc />
-    public string Category => "Rewrite";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Critical;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -25,21 +25,12 @@ public sealed class CrossProductDetectedRule : IPlanRule
 
         if (node.NodeSpecific != null && !node.NodeSpecific.ContainsKey("Join Filter"))
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["NodeType"] = node.NodeType
-            };
-
-            var message = $"Nested Loop без join condition обнаружен на узле '{node.NodeType}'. Это кросс-произведение, которое может резко замедлить выполнение.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
-            ));
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.CrossProductDetected, node.NodeType),
+                ExplainRuleRecommendations.CrossProductDetected
+            )); 
         }
 
         return Task.FromResult<PlanFinding?>(null);

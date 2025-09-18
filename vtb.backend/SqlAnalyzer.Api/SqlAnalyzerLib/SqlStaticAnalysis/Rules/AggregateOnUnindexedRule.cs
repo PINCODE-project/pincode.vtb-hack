@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,27 +13,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class AggregateOnUnindexedRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.AggregateOnUnindexed;
-    /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public StaticRules Code => StaticRules.AggregateOnUnindexed;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Severity Severity => Severity.Info;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"(MIN|MAX|COUNT)\s*\(", RegexOptions.IgnoreCase) &&
             !Regex.IsMatch(query.Text, @"USING\s+INDEX", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "MIN/MAX/COUNT могут работать быстрее с индексом, но индекс не найден.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "Aggregate" }
+                Severity,
+                StaticRuleProblemsDescriptions.AggregateOnUnindexedProblemDescription,
+                StaticRuleRecommendations.AggregateOnUnindexedRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

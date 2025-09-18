@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,11 +14,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class IndexOnlyScanButBitmapRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.IndexOnlyScanButBitmap;
+    public ExplainRules Code => ExplainRules.IndexOnlyScanButBitmap;
+
     /// <inheritdoc />
-    public string Category => "Index";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -27,33 +28,15 @@ public sealed class IndexOnlyScanButBitmapRule : IPlanRule
         {
             if (node.Children?.Any(c => c.NodeType.Contains("Bitmap Heap Scan", StringComparison.OrdinalIgnoreCase)) == true)
             {
-                var relation = TryGetNodeSpecificString(node, "Relation Name");
-                var metadata = new Dictionary<string, object?>
-                {
-                    ["NodeType"] = node.NodeType,
-                    ["PlanRows"] = node.PlanRows,
-                    ["ActualRows"] = node.ActualRows
-                };
-
-                var affected = relation != null ? new List<string> { relation } : [];
-                var message = relation != null
-                    ? $"Index Only Scan по таблице '{relation}' использует Bitmap Heap Scan, возможно индекс не покрывает все необходимые колонки."
-                    : $"Index Only Scan использует Bitmap Heap Scan, возможно индекс не покрывает все необходимые колонки.";
-
                 return Task.FromResult<PlanFinding?>(new PlanFinding(
                     Code,
-                    message,
-                    Category,
-                    DefaultSeverity,
-                    affected,
-                    metadata
+                    Severity,
+                    string.Format(ExplainRulePromblemDescriptions.IndexOnlyScanButBitmap, node.GetRelationName()),
+                    ExplainRuleRecommendations.IndexOnlyScanButBitmap
                 ));
             }
         }
 
         return Task.FromResult<PlanFinding?>(null);
     }
-
-    private static string? TryGetNodeSpecificString(PlanNode node, string key)
-        => node.NodeSpecific != null && node.NodeSpecific.TryGetValue(key, out var v) && v != null ? v.ToString() : null;
 }

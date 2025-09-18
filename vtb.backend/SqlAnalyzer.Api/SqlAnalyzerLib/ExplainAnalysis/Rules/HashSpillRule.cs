@@ -1,4 +1,5 @@
 using System.Globalization;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,42 +13,45 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
     public sealed class HashSpillRule : IPlanRule
     {
         /// <inheritdoc />
-        public ExplainIssueRule Code => ExplainIssueRule.HashSpill;
+        public ExplainRules Code => ExplainRules.HashSpill;
 
         /// <inheritdoc />
-        public string Category => "Hash";
-
-        /// <inheritdoc />
-        public Severity DefaultSeverity => Severity.High;
+        public Severity Severity => Severity.Critical;
 
         /// <inheritdoc />
         public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
         {
-            if (node.NodeType == null) return Task.FromResult<PlanFinding?>(null);
             if (!node.NodeType.Contains("Hash", StringComparison.OrdinalIgnoreCase) && !node.NodeType.Contains("Hash Join", StringComparison.OrdinalIgnoreCase)) return Task.FromResult<PlanFinding?>(null);
 
             if (node.NodeSpecific != null)
             {
                 if (node.NodeSpecific.TryGetValue("Batches", out var batchesObj) && TryGetLong(batchesObj, out var batches) && batches > 1)
                 {
-                    var metadata = new Dictionary<string, object> { ["Batches"] = batches };
-                    var msg = "Hash operator использует несколько батчей (Batches > 1), вероятен spill на диск. Рассмотрите увеличение work_mem или уменьшение размера build-side.";
-                    return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), metadata));
-                }
+                     return Task.FromResult<PlanFinding?>(new PlanFinding(
+                        Code,
+                        Severity,
+                        ExplainRulePromblemDescriptions.HashSpillBatches,
+                        ExplainRuleRecommendations.HashSpillBatches
+                    ));}
 
                 if (node.NodeSpecific.TryGetValue("Disk Usage", out var diskObj) && TryGetLong(diskObj, out var disk) && disk > 0)
                 {
-                    var metadata = new Dictionary<string, object> { ["DiskUsage"] = disk };
-                    var msg = "Hash operator использует диск для хранения промежуточных данных. Увеличение work_mem может помочь, либо изменение плана на Nested Loop/ Merge Join.";
-                    return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), metadata));
-                }
+                    return Task.FromResult<PlanFinding?>(new PlanFinding(
+                        Code,
+                        Severity,
+                        ExplainRulePromblemDescriptions.HashSpillDisk,
+                        ExplainRuleRecommendations.HashSpillDisk
+                    ));}
             }
 
-            if (node.Buffers != null && node.Buffers.TempWritten > 0)
+            if (node.Buffers is { TempWritten: > 0 })
             {
-                var metadata = new Dictionary<string, object> { ["TempWritten"] = node.Buffers.TempWritten };
-                var msg = "Hash operator/Hash Join записывает временные файлы на диск (TempWritten). Это индикатор spill'а.";
-                return Task.FromResult<PlanFinding?>(new PlanFinding(Code, msg, Category, DefaultSeverity, new List<string>(), metadata));
+                return Task.FromResult<PlanFinding?>(new PlanFinding(
+                    Code,
+                    Severity,
+                    ExplainRulePromblemDescriptions.HashSpillTempFiles,
+                    ExplainRuleRecommendations.HashSpillTempFiles
+                ));
             }
 
             return Task.FromResult<PlanFinding?>(null);

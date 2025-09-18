@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,27 +13,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class RedundantJoinRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.RedundantJoin;
+    public StaticRules Code => StaticRules.RedundantJoin;
     /// <inheritdoc />
     public RecommendationCategory Category => RecommendationCategory.Performance;
     /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"JOIN\s+\w+", RegexOptions.IgnoreCase) &&
             !Regex.IsMatch(query.Text, @"\w+\.", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "JOIN на таблицу, не используемую в SELECT или WHERE, является избыточным.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "JOIN" }
+                Severity,
+                StaticRuleProblemsDescriptions.RedundantJoinProblemDescription,
+                StaticRuleRecommendations.RedundantJoinRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

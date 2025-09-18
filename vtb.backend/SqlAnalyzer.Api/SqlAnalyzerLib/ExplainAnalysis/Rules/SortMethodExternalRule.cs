@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +13,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class SortMethodExternalRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.SortMethodExternal;
+    public ExplainRules Code => ExplainRules.SortMethodExternal;
+
     /// <inheritdoc />
-    public string Category => "Performance";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -23,25 +24,14 @@ public sealed class SortMethodExternalRule : IPlanRule
         if (node?.NodeType == null || !node.NodeType.Contains("Sort", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult<PlanFinding?>(null);
 
-        if (node.NodeSpecific != null &&
-            node.NodeSpecific.TryGetValue("Sort Method", out var methodObj) &&
-            methodObj?.ToString()?.Contains("external", StringComparison.OrdinalIgnoreCase) == true)
+        var methodObj = node.TryGetNodeSpecificString("Sort Method");
+        if (methodObj?.Contains("external", StringComparison.OrdinalIgnoreCase) == true)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["SortMethod"] = methodObj,
-                ["NodeType"] = node.NodeType
-            };
-
-            var message = $"Sort узел '{node.NodeType}' spill’ит на диск (Sort Method={methodObj}). Рассмотрите увеличение work_mem или оптимизацию запроса.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.SortMethodExternal, node.NodeType, methodObj),
+                ExplainRuleRecommendations.SortMethodExternal
             ));
         }
 

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,28 +13,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class MultipleOrConditionsRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.MultipleOrConditions;
+    public StaticRules Code => StaticRules.MultipleOrConditions;
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var count = Regex.Matches(query.Text, @"\bOR\b", RegexOptions.IgnoreCase).Count;
 
         if (count >= 3)
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                $"Обнаружено {count} условий OR — это может замедлить выполнение. Рассмотрите IN или UNION.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "OR" }
+                Severity,
+                StaticRuleProblemsDescriptions.MultipleOrConditionsProblemDescription,
+                StaticRuleRecommendations.MultipleOrConditionsRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

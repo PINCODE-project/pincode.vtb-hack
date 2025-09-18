@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,27 +13,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class ImplicitCastInJoinOrWhereRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.ImplicitCastInJoinOrWhere;
+    public StaticRules Code => StaticRules.ImplicitCastInJoinOrWhere;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"JOIN.*ON.*::", RegexOptions.IgnoreCase) ||
             Regex.IsMatch(query.Text, @"WHERE.*::", RegexOptions.IgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Обнаружено неявное приведение типов в JOIN или WHERE — индекс может не использоваться.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "Implicit cast" }
+                Severity,
+                StaticRuleProblemsDescriptions.ImplicitCastInJoinOrWhereProblemDescription,
+                StaticRuleRecommendations.ImplicitCastInJoinOrWhereRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
 
@@ -11,17 +12,12 @@ public interface IStaticRule
     /// <summary>
     /// Код правила (см. StaticRuleCodes).
     /// </summary>
-    StaticRuleCodes Code { get; }
-
-    /// <summary>
-    /// Категория рекомендации, к которой относится правило.
-    /// </summary>
-    RecommendationCategory Category { get; }
+    StaticRules Code { get; }
 
     /// <summary>
     /// Уровень серьёзности по умолчанию.
     /// </summary>
-    Severity DefaultSeverity { get; }
+    Severity Severity { get; }
 
     /// <summary>
     /// Оценить правило по тексту запроса.
@@ -29,5 +25,5 @@ public interface IStaticRule
     /// <param name="query">SQL-запрос.</param>
     /// <param name="ct">Токен отмены.</param>
     /// <returns>Нахождение (или null, если правило не сработало).</returns>
-    Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default);
+    Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default);
 }

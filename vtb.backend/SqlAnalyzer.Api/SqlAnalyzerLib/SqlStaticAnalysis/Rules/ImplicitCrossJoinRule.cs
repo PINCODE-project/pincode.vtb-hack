@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -6,25 +7,27 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 
 public sealed class ImplicitCrossJoinRule : IStaticRule
 {
-    public StaticRuleCodes Code => StaticRuleCodes.ImplicitCrossJoin;
-    public RecommendationCategory Category => RecommendationCategory.Correctness;
-    public Severity DefaultSeverity => Severity.High;
+    /// <inheritdoc />
+    public StaticRules Code => StaticRules.ImplicitCrossJoin;
 
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    /// <inheritdoc />
+    public Severity Severity => Severity.Critical;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("FROM") && sql.Contains(",") && !sql.Contains("JOIN"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется запятая в FROM — это неявный CROSS JOIN, лучше использовать явный JOIN.",
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>()
+                Severity,
+                StaticRuleProblemsDescriptions.ImplicitCrossJoinProblemDescription,
+                StaticRuleRecommendations.ImplicitCrossJoinRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

@@ -22,7 +22,7 @@ public sealed class StaticSqlAnalyzer : IStaticSqlAnalyzer
     /// <inheritdoc />
     public async Task<StaticAnalysisResult> AnalyzeAsync(SqlQuery query, CancellationToken ct = default)
     {
-        var findings = new List<StaticCheckFinding>();
+        var findings = new List<StaticAnalysisPoint>();
 
         foreach (var rule in _rules)
         {
@@ -33,18 +33,6 @@ public sealed class StaticSqlAnalyzer : IStaticSqlAnalyzer
             }
         }
 
-        return new StaticAnalysisResult(
-            QueryHash: HashQuery(query.Text),
-            Query: query,
-            Findings: findings,
-            AnalyzedAt: DateTime.UtcNow
-        );
-    }
-
-    private static string HashQuery(string sql)
-    {
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(sql.Trim().ToLowerInvariant());
-        return Convert.ToHexString(sha.ComputeHash(bytes));
+        return new StaticAnalysisResult(query.Text, findings, DateTime.UtcNow);
     }
 }

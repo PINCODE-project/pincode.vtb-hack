@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,28 +13,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class OrInWhereWithoutIndexRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.OrInWhereWithoutIndex;
-    /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public StaticRules Code => StaticRules.OrInWhereWithoutIndex;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Severity Severity => Severity.Warning;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var orCount = Regex.Matches(query.Text, @"WHERE.*\bOR\b", RegexOptions.IgnoreCase).Count;
 
         if (orCount > 0)
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Обнаружено использование OR в WHERE. При отсутствии составных индексов это приведёт к Seq Scan.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "OR in WHERE" }
+                Severity,
+                StaticRuleProblemsDescriptions.OrInWhereWithoutIndexProblemDescription,
+                StaticRuleRecommendations.OrInWhereWithoutIndexRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

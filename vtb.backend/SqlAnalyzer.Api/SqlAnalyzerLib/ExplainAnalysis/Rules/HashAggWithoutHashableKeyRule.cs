@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,36 +12,29 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class HashAggWithoutHashableKeyRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.HashAggWithoutHashableKey;
+    public ExplainRules Code => ExplainRules.HashAggWithoutHashableKey;
+
     /// <inheritdoc />
-    public string Category => "Aggregate";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
         if (node?.NodeType == null || !node.NodeType.Contains("HashAggregate", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        if (node.NodeSpecific != null && node.NodeSpecific.TryGetValue("Hash Key Type", out var keyTypeObj) &&
-            keyTypeObj?.ToString()?.Contains("non-hashable", StringComparison.OrdinalIgnoreCase) == true)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["HashKeyType"] = keyTypeObj,
-                ["NodeType"] = node.NodeType
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var message = $"Hash Aggregate узел '{node.NodeType}' использует неподдерживаемый для хэширования ключ ({keyTypeObj}). Рассмотрите Sort Aggregate или преобразование ключа.";
-
+        if (node.NodeSpecific != null &&
+            node.NodeSpecific.TryGetValue("Hash Key Type", out var keyTypeObj) &&
+            keyTypeObj.ToString()?.Contains("non-hashable", StringComparison.OrdinalIgnoreCase) == true
+           )
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.ExcessiveTempFiles, node.NodeType, keyTypeObj),
+                ExplainRuleRecommendations.ExcessiveTempFiles
             ));
         }
 

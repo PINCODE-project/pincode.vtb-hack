@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +12,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class UnexpectedParallelismRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.UnexpectedParallelism;
+    public ExplainRules Code => ExplainRules.UnexpectedParallelism;
+    
     /// <inheritdoc />
-    public string Category => "Parallelism";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -24,23 +24,11 @@ public sealed class UnexpectedParallelismRule : IPlanRule
 
         if (node.ActualLoops > 1 && node.NodeType?.Contains("Parallel") == false)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["NodeType"] = node.NodeType,
-                ["ActualLoops"] = node.ActualLoops,
-                ["PlanRows"] = node.PlanRows,
-                ["ActualRows"] = node.ActualRows
-            };
-
-            var message = $"Узел '{node.NodeType}' исполнялся параллельно (loops={node.ActualLoops}), но не является Parallel узлом. Возможно неэффективная параллельная обработка.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.UnexpectedParallelism, node.NodeType, node.ActualLoops),
+                ExplainRuleRecommendations.UnexpectedParallelism
             ));
         }
 

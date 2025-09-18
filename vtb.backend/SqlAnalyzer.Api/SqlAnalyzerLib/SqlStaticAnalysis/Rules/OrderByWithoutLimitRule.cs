@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -8,30 +9,27 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class OrderByWithoutLimitRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.OrderByWithoutLimit;
+    public StaticRules Code => StaticRules.OrderByWithoutLimit;
+    
 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Performance;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
-
-    /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("ORDER BY") && !sql.Contains("LIMIT"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется ORDER BY без LIMIT — сортировка может выполняться по всей таблице.",
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>()
+                Severity,
+                StaticRuleProblemsDescriptions.OrderByWithoutLimitProblemDescription,
+                StaticRuleRecommendations.OrderByWithoutLimitRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

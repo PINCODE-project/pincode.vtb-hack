@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,11 +12,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class CorrelatedSubqueryExecRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.CorrelatedSubqueryExec;
+    public ExplainRules Code => ExplainRules.CorrelatedSubqueryExec;
+    
     /// <inheritdoc />
-    public string Category => "Rewrite";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -25,23 +25,12 @@ public sealed class CorrelatedSubqueryExecRule : IPlanRule
         if (node.NodeType.Contains("Subquery Scan", StringComparison.OrdinalIgnoreCase) &&
             node.ActualLoops.HasValue && node.ActualLoops.Value > 1)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["NodeType"] = node.NodeType,
-                ["ActualLoops"] = node.ActualLoops,
-                ["ActualRows"] = node.ActualRows
-            };
-
-            var message = $"Коррелированный подзапрос выполняется {node.ActualLoops} раз, что может сильно замедлять выполнение. Рассмотрите JOIN или CTE.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
-            ));
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.CorrelatedSubqueryExec, node.ActualLoops),
+                ExplainRuleRecommendations.CorrelatedSubqueryExec
+            )); 
         }
 
         return Task.FromResult<PlanFinding?>(null);

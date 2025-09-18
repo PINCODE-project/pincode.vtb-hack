@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,25 +13,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class NonSargableExpressionRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.NonSargableExpression;
+    public StaticRules Code => StaticRules.NonSargableExpression;
 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Index;
-
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     private static readonly Regex ArithmeticOnColumn = new(@"\b\w+\.\w+\s*[\+\-\*\/%]\s*[\w'\""]|\b\w+\s*[\+\-\*\/%]\s*['""]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex IntervalArithmetic = new(@"\b\w+\s*[\+|\-]\s*INTERVAL\s+'[^']+'", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (ArithmeticOnColumn.IsMatch(query.Text) || IntervalArithmetic.IsMatch(query.Text))
         {
-            var msg = "В выражении используются арифметические операции над колонками (например, col + 1), что делает предикат non-sargable. Рассмотрите рефакторинг: вычисляемые столбцы/индексы по выражению или переписать условие.";
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(Code, msg, Category, DefaultSeverity, new List<string>()));
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
+                Code,
+                Severity,
+                StaticRuleProblemsDescriptions.NonSargableExpressionProblemDescription,
+                StaticRuleRecommendations.NonSargableExpressionRecommendation
+            ));
         }
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

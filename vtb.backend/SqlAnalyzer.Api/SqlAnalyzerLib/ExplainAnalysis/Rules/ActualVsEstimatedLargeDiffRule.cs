@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,36 +12,27 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class ActualVsEstimatedLargeDiffRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.ActualVsEstimatedLargeDiff;
+    public ExplainRules Code => ExplainRules.ActualVsEstimatedLargeDiff;
+
     /// <inheritdoc />
-    public string Category => "Statistics";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (!node.PlanRows.HasValue || !node.ActualRows.HasValue) return Task.FromResult<PlanFinding?>(null);
-
-        double ratio = Math.Max(node.ActualRows.Value, 1) / Math.Max(node.PlanRows.Value, 1);
-        if (ratio > 10 || ratio < 0.1)
+        if (!node.PlanRows.HasValue || !node.ActualRows.HasValue)
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["PlanRows"] = node.PlanRows,
-                ["ActualRows"] = node.ActualRows,
-                ["Ratio"] = ratio
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var message = $"Фактическое количество строк сильно отличается от оценочного (Actual/Plan={ratio:F1}). Проверьте статистику и селективность условий.";
-
+        var ratio = Math.Max(node.ActualRows.Value, 1) / Math.Max(node.PlanRows.Value, 1);
+        if (ratio is > 10 or < 0.1)
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.ActualVsEstimatedLargeDiff, ratio),
+                ExplainRuleRecommendations.ActualVsEstimatedLargeDiff
             ));
         }
 

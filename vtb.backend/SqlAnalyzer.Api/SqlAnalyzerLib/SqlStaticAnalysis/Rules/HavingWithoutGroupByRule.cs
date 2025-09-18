@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,28 +12,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class HavingWithoutGroupByRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.HavingWithoutGroupBy;
+    public StaticRules Code => StaticRules.HavingWithoutGroupBy;
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Rewrite;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("HAVING") && !sql.Contains("GROUP BY"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется HAVING без GROUP BY — условие избыточно и может быть вынесено в WHERE.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "HAVING" }
+                Severity,
+                StaticRuleProblemsDescriptions.HavingWithoutGroupByProblemDescription,
+                StaticRuleRecommendations.HavingWithoutGroupByRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

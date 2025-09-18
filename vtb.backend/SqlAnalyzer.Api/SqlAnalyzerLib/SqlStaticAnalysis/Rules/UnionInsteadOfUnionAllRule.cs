@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -6,25 +7,27 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 
 public sealed class UnionInsteadOfUnionAllRule : IStaticRule
 {
-    public StaticRuleCodes Code => StaticRuleCodes.UnionInsteadOfUnionAll;
-    public RecommendationCategory Category => RecommendationCategory.Performance;
-    public Severity DefaultSeverity => Severity.Medium;
+    /// <inheritdoc />
+    public StaticRules Code => StaticRules.UnionInsteadOfUnionAll;
 
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    /// <inheritdoc />
+    public Severity Severity => Severity.Warning;
+
+    /// <inheritdoc />
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("UNION") && !sql.Contains("UNION ALL"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется UNION без ALL — лишнее удаление дублей может замедлять запрос.",
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>()
+                Severity,
+                StaticRuleProblemsDescriptions.UnionInsteadOfUnionAllProblemDescription,
+                StaticRuleRecommendations.UnionInsteadOfUnionAllRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

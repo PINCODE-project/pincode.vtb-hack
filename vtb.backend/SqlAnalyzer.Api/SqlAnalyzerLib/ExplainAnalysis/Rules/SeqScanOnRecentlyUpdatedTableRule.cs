@@ -1,7 +1,8 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
-using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 
 namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 
@@ -11,46 +12,31 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class SeqScanOnRecentlyUpdatedTableRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.SeqScanOnRecentlyUpdatedTable;
+    public ExplainRules Code => ExplainRules.SeqScanOnRecentlyUpdatedTable;
+
     /// <inheritdoc />
-    public string Category => "Index";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        if (node.NodeSpecific != null && node.NodeSpecific.TryGetValue("Recent Updates", out var updatesObj) &&
-            int.TryParse(updatesObj.ToString(), out var updates) && updates > 1000)
+        if (!node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
         {
-            var relation = TryGetNodeSpecificString(node, "Relation Name");
-            var metadata = new Dictionary<string, object?>
-            {
-                ["RecentUpdates"] = updates,
-                ["NodeType"] = node.NodeType
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var affected = relation != null ? new List<string> { relation } : [];
-            var message = relation != null
-                ? $"Seq Scan на недавно обновлённой таблице '{relation}' (updates={updates}). Рассмотрите индекс или VACUUM."
-                : $"Seq Scan на недавно обновлённой таблице (updates={updates}). Рассмотрите индекс или VACUUM.";
-
+        var recentUpdates = node.TryGetNodeSpecificString("Recent Updates");
+        if (int.TryParse(recentUpdates, out var updates) && updates > 1000)
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                affected,
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.SeqScanOnRecentlyUpdatedTable, node.GetRelationName(), updates),
+                ExplainRuleRecommendations.SeqScanOnRecentlyUpdatedTable
             ));
         }
 
         return Task.FromResult<PlanFinding?>(null);
     }
-
-    private static string? TryGetNodeSpecificString(PlanNode node, string key)
-        => node.NodeSpecific != null && node.NodeSpecific.TryGetValue(key, out var v) && v != null ? v.ToString() : null;
+    
 }

@@ -77,7 +77,28 @@ public class QueryAnalysisController : ControllerBase
     {
         try
         {
-            var result = await _service.AnalyzeAsync(queryId, useLlm);
+            var result = await _service.Analyze(queryId, useLlm);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос
+    /// </summary>
+    [HttpPost("{queryId:guid}/analyze-custom")]
+    public async Task<ActionResult<QueryAnalysisResultDto>> AnalyzeCustom([FromRoute] Guid queryId, [FromQuery] bool useLlm = false)
+    {
+        try
+        {
+            var result = await _service.Analyze(queryId, useLlm);
             return Ok(result);
         }
         catch (InvalidOperationException ex)

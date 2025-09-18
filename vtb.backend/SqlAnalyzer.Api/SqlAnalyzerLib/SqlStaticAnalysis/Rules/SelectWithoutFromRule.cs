@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,27 +13,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class SelectWithoutFromRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.SelectWithoutFrom;
+    public StaticRules Code => StaticRules.SelectWithoutFrom;
+ 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Safety;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"SELECT\s+\d+\s*;?", RegexOptions.IgnoreCase) &&
             !query.Text.Contains("FROM", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Обнаружен SELECT без FROM — вероятно, это артефакт отладки.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "SELECT without FROM" }
+                Severity,
+                StaticRuleProblemsDescriptions.SelectWithoutFromProblemDescription,
+                StaticRuleRecommendations.SelectWithoutFromRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

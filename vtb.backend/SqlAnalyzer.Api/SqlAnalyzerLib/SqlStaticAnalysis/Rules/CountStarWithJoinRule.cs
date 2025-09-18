@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,28 +12,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class CountStarWithJoinRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.CountStarWithJoin;
+    public StaticRules Code => StaticRules.CountStarWithJoin;
+  
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Safety;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("COUNT(*)") && sql.Contains("JOIN"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "COUNT(*) с JOIN может возвращать завышенное количество строк из-за дубликатов. Рассмотрите COUNT(DISTINCT ...).",
-                Category,
-                DefaultSeverity,
-                new List<string> { "COUNT(*)" }
+                Severity,
+                StaticRuleProblemsDescriptions.CountStarWithJoinProblemDescription,
+                StaticRuleRecommendations.CountStarWithJoinRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

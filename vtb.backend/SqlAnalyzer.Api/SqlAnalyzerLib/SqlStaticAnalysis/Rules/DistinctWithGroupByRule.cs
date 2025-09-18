@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -10,28 +11,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class DistinctWithGroupByRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.DistinctWithGroupBy;
+    public StaticRules Code => StaticRules.DistinctWithGroupBy;
+ 
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Rewrite;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Low;
+    public Severity Severity => Severity.Info;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("DISTINCT") && sql.Contains("GROUP BY"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется DISTINCT вместе с GROUP BY — DISTINCT лишний и может быть удалён.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "DISTINCT", "GROUP BY" }
+                Severity,
+                StaticRuleProblemsDescriptions.DistinctWithGroupByProblemDescription,
+                StaticRuleRecommendations.DistinctWithGroupByRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

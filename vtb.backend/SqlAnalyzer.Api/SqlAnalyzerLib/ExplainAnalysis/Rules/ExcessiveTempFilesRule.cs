@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -12,11 +13,10 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class ExcessiveTempFilesRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.ExcessiveTempFiles;
+    public ExplainRules Code => ExplainRules.ExcessiveTempFiles;
+
     /// <inheritdoc />
-    public string Category => "Performance";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
@@ -24,26 +24,14 @@ public sealed class ExcessiveTempFilesRule : IPlanRule
         if (node?.Buffers == null) return Task.FromResult<PlanFinding?>(null);
 
         var totalTemp = node.Buffers.TempRead + node.Buffers.TempWritten;
-        if (totalTemp > 100) // порог произвольный
+        if (totalTemp > 100) 
         {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["TempRead"] = node.Buffers.TempRead,
-                ["TempWritten"] = node.Buffers.TempWritten,
-                ["PlanRows"] = node.PlanRows,
-                ["ActualRows"] = node.ActualRows
-            };
-
-            var message = $"Узел '{node.NodeType}' создает большое количество временных файлов (TempRead+TempWritten={totalTemp}). Рассмотрите увеличение work_mem или оптимизацию запроса.";
-
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                Array.Empty<string>(),
-                metadata
-            ));
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.ExcessiveTempFiles, node.NodeType, totalTemp),
+                ExplainRuleRecommendations.ExcessiveTempFiles
+            )); 
         }
 
         return Task.FromResult<PlanFinding?>(null);

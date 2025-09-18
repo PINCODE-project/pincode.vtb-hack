@@ -4,7 +4,6 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Models;
 /// Итоговый результат статического анализа.
 /// </summary>
 public record StaticAnalysisResult(
-    string QueryHash,
-    SqlQuery Query,
-    IReadOnlyList<StaticCheckFinding> Findings,
+    string Query,
+    IReadOnlyList<StaticAnalysisPoint> Findings,
     DateTime AnalyzedAt);

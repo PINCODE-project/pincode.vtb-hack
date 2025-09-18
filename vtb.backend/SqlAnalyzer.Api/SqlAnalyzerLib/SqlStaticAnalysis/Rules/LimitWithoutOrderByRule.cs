@@ -1,3 +1,4 @@
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -11,28 +12,26 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class LimitWithoutOrderByRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.LimitWithoutOrderBy;
+    public StaticRules Code => StaticRules.LimitWithoutOrderBy;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Safety;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         var sql = query.Text.ToUpperInvariant();
 
         if (sql.Contains("LIMIT") && !sql.Contains("ORDER BY"))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется LIMIT без ORDER BY — результат выборки может быть непредсказуемым.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "LIMIT" }
+                Severity,
+                StaticRuleProblemsDescriptions.LimitWithoutOrderByProblemDescription,
+                StaticRuleRecommendations.LimitWithoutOrderByRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }

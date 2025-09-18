@@ -1,3 +1,5 @@
+using SqlAnalyzer.Api.Dal.Constants;
+using SqlAnalyzerLib.ExplainAnalysis.Entensions;
 using SqlAnalyzerLib.ExplainAnalysis.Enums;
 using SqlAnalyzerLib.ExplainAnalysis.Interfaces;
 using SqlAnalyzerLib.ExplainAnalysis.Models;
@@ -11,46 +13,31 @@ namespace SqlAnalyzerLib.ExplainAnalysis.Rules;
 public sealed class SeqScanOnLargeTableRule : IPlanRule
 {
     /// <inheritdoc />
-    public ExplainIssueRule Code => ExplainIssueRule.SeqScanOnLargeTable;
+    public ExplainRules Code => ExplainRules.SeqScanOnLargeTable;
+    
     /// <inheritdoc />
-    public string Category => "Index";
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.High;
+    public Severity Severity => Severity.Critical;
 
     /// <inheritdoc />
     public Task<PlanFinding?> EvaluateAsync(PlanNode node, ExplainRootPlan rootPlan)
     {
-        if (node?.NodeType == null || !node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult<PlanFinding?>(null);
-
-        double planRows = node.PlanRows ?? 0d;
-        if (planRows > 10000) // порог большой таблицы
+        if (!node.NodeType.Contains("Seq Scan", StringComparison.OrdinalIgnoreCase))
         {
-            var relation = TryGetNodeSpecificString(node, "Relation Name");
-            var metadata = new Dictionary<string, object?>
-            {
-                ["PlanRows"] = planRows,
-                ["ActualRows"] = node.ActualRows
-            };
+            return Task.FromResult<PlanFinding?>(null);
+        }
 
-            var affected = relation != null ? new List<string> { relation } : [];
-            var message = relation != null
-                ? $"Seq Scan по большой таблице '{relation}' (PlanRows={planRows}). Рассмотрите создание индекса."
-                : $"Seq Scan по большой таблице (PlanRows={planRows}). Рассмотрите создание индекса.";
-
+        var planRows = node.PlanRows ?? 0d;
+        if (planRows > 10000) 
+        {
             return Task.FromResult<PlanFinding?>(new PlanFinding(
                 Code,
-                message,
-                Category,
-                DefaultSeverity,
-                affected,
-                metadata
+                Severity,
+                string.Format(ExplainRulePromblemDescriptions.SeqScanOnLargeTable, node.GetRelationName(), planRows),
+                ExplainRuleRecommendations.SeqScanOnLargeTable
             ));
         }
 
         return Task.FromResult<PlanFinding?>(null);
     }
-
-    private static string? TryGetNodeSpecificString(PlanNode node, string key)
-        => node.NodeSpecific != null && node.NodeSpecific.TryGetValue(key, out var v) && v != null ? v.ToString() : null;
+    
 }

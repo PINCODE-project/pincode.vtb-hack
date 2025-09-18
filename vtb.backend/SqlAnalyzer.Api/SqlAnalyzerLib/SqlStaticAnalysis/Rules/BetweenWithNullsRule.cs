@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SqlAnalyzer.Api.Dal.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
 using SqlAnalyzerLib.SqlStaticAnalysis.Interfaces;
 using SqlAnalyzerLib.SqlStaticAnalysis.Models;
@@ -12,27 +13,25 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 public sealed class BetweenWithNullsRule : IStaticRule
 {
     /// <inheritdoc />
-    public StaticRuleCodes Code => StaticRuleCodes.BetweenWithNulls;
+    public StaticRules Code => StaticRules.BetweenWithNulls;
+    
     /// <inheritdoc />
-    public RecommendationCategory Category => RecommendationCategory.Safety;
-    /// <inheritdoc />
-    public Severity DefaultSeverity => Severity.Medium;
+    public Severity Severity => Severity.Warning;
 
     /// <inheritdoc />
-    public Task<StaticCheckFinding?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
+    public Task<StaticAnalysisPoint?> EvaluateAsync(SqlQuery query, CancellationToken ct = default)
     {
         if (Regex.IsMatch(query.Text, @"\bBETWEEN\b", RegexOptions.IgnoreCase) &&
             query.Text.Contains("NULL", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult<StaticCheckFinding?>(new StaticCheckFinding(
+            return Task.FromResult<StaticAnalysisPoint?>(new StaticAnalysisPoint(
                 Code,
-                "Используется BETWEEN c возможными NULL — результат может быть непредсказуемым.",
-                Category,
-                DefaultSeverity,
-                new List<string> { "BETWEEN" }
+                Severity,
+                StaticRuleProblemsDescriptions.BetweenWithNullsProblemDescription,
+                StaticRuleRecommendations.BetweenWithNullsRecommendation
             ));
         }
 
-        return Task.FromResult<StaticCheckFinding?>(null);
+        return Task.FromResult<StaticAnalysisPoint?>(null);
     }
 }
