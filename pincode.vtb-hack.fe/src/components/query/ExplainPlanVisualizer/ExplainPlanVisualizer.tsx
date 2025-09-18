@@ -71,7 +71,7 @@ interface ExplainNode {
 	"Join Type"?: string;
 	Filter?: string;
 	Plans?: ExplainNode[];
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 interface ExplainResult {
