@@ -5,7 +5,7 @@ namespace SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 
 public interface ISqlAnalyzeRuleService
 {
-    Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find(int? skip, int? take);
+    Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find(IReadOnlyCollection<Guid>? ids, int? skip, int? take);
     
     Task<Guid> Create(SqlAnalyzeRuleCreateDto dto);
 

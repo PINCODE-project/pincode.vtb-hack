@@ -94,12 +94,12 @@ public class QueryAnalysisController : ControllerBase
     /// Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос
     /// </summary>
     [HttpPost("{queryId:guid}/analyze-custom")]
-    public async Task<ActionResult<QueryAnalysisResultDto>> AnalyzeCustom([FromRoute] Guid queryId, [FromQuery] bool useLlm = false)
+    public async Task<ActionResult<SimpleDto<IReadOnlyCollection<Guid>>>> AnalyzeCustom([FromRoute] Guid queryId, [FromQuery] IReadOnlyCollection<Guid> ruleIds)
     {
         try
         {
-            var result = await _service.Analyze(queryId, useLlm);
-            return Ok(result);
+            var result = await _service.AnalyzeCustom(queryId, ruleIds);
+            return Ok(new SimpleDto<IReadOnlyCollection<Guid>>(result));
         }
         catch (InvalidOperationException ex)
         {

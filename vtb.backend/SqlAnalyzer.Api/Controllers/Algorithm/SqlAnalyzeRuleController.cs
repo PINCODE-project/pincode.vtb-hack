@@ -6,6 +6,7 @@ using SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 
 namespace SqlAnalyzer.Api.Controllers.Algorithm;
 
+[ApiController]
 [Route("api/sql-analyzer")]
 public class SqlAnalyzeRuleController : ControllerBase
 {
@@ -17,9 +18,9 @@ public class SqlAnalyzeRuleController : ControllerBase
     }
 
     [HttpGet("find")]
-    public async Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find([FromQuery] int? skip, [FromQuery] int? take)
+    public async Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find([FromQuery] int? skip, [FromQuery] int? take, [FromQuery] IReadOnlyCollection<Guid>? ids)
     {
-        var result = await _service.Find(skip, take);
+        var result = await _service.Find(ids, skip, take);
         return result;
     }
     

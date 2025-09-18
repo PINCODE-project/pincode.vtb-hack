@@ -24,10 +24,10 @@ public class QueryService : IQueryService
     private readonly ILogger<IQueryService> _logger;
 
     /// 
-    public QueryService(DataContext db, 
-        ISqlAnalyzerFacade analyzer, 
-        ILlmClient llm, 
-        ISqlAnalyzeRuleService customRulesService, 
+    public QueryService(DataContext db,
+        ISqlAnalyzerFacade analyzer,
+        ILlmClient llm,
+        ISqlAnalyzeRuleService customRulesService,
         ILogger<IQueryService> logger)
     {
         _db = db;
@@ -140,7 +140,7 @@ public class QueryService : IQueryService
                     queryAnalysisResult.Query.Sql,
                     queryAnalysisResult.Query.ExplainResult)
                 : null;
-            
+
             return new QueryAnalysisResultDto
             {
                 Id = queryAnalysisResult.Query.Id,
@@ -152,7 +152,7 @@ public class QueryService : IQueryService
                 FindindCustomRules = queryAnalysisResult.AnalysisResult.FindindCustomRules ?? []
             };
         }
-        
+
         var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == queryId);
 
         if (query == null)
@@ -174,7 +174,7 @@ public class QueryService : IQueryService
             Recommendations = analysisResult,
             LlmRecommendations = llmAnswer
         };
-        
+
         _db.QueryAnalysisResults.Add(result);
         await _db.SaveChangesAsync();
 
@@ -191,7 +191,7 @@ public class QueryService : IQueryService
     }
 
     /// <inheritdoc />
-    public async Task<QueryAnalysisResultDto> AnalyzeCustom(Guid queryId, params IReadOnlyCollection<Guid> ruleIds)
+    public async Task<IReadOnlyCollection<Guid>> AnalyzeCustom(Guid queryId, params IReadOnlyCollection<Guid> ruleIds)
     {
         var queryAnalysisResult = await _db
             .QueryAnalysisResults.Where(x => x.QueryId == queryId)
@@ -207,33 +207,17 @@ public class QueryService : IQueryService
             var newFindings = await _customRulesService.ApplyForQuery(queryId, newRules);
             queryAnalysisResult.AnalysisResult.FindindCustomRules.AddRange(newFindings);
             await _db.SaveChangesAsync();
-            
-            return new QueryAnalysisResultDto
-            {
-                Id = queryAnalysisResult.Query.Id,
-                DbConnectionId = queryAnalysisResult.Query.DbConnectionId,
-                Query = queryAnalysisResult.Query.Sql,
-                ExplainResult = queryAnalysisResult.Query.ExplainResult ?? string.Empty,
-                AlgorithmRecommendation = queryAnalysisResult.AnalysisResult.Recommendations,
-                LlmRecommendations = queryAnalysisResult.AnalysisResult.LlmRecommendations,
-                FindindCustomRules = queryAnalysisResult.AnalysisResult.FindindCustomRules
-            };
+
+            return queryAnalysisResult.AnalysisResult.FindindCustomRules;
         }
-        
+
         var query = await _db.Queries.FirstOrDefaultAsync(x => x.Id == queryId);
         if (query == null)
         {
             throw new InvalidOperationException("Query not found");
         }
-        
+
         var customRuleFindings = await _customRulesService.ApplyForQuery(queryId, ruleIds);
-        return new QueryAnalysisResultDto
-        {
-            Id = query.Id,
-            DbConnectionId = query.DbConnectionId,
-            Query = query.Sql,
-            ExplainResult = query.ExplainResult ?? string.Empty,
-            FindindCustomRules = customRuleFindings
-        };
+        return customRuleFindings;
     }
 }

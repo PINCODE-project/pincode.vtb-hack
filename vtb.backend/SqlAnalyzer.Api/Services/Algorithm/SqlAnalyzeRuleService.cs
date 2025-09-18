@@ -18,11 +18,18 @@ public class SqlAnalyzeRuleService : ISqlAnalyzeRuleService
         _db = db;
     }
 
-    public async Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find(int? skip, int? take)
+    public async Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find(IReadOnlyCollection<Guid>? ids, int? skip, int? take)
     {
-        var rules = await _db
+        var rulesQuery = _db
             .SqlAnalyzeRules
-            .AsNoTracking()
+            .AsNoTracking();
+
+        if (ids is not null && ids.Count > 0)
+        {
+            rulesQuery = rulesQuery.Where(x => ids.Contains(x.Id));
+        }
+        
+        var rules = await rulesQuery
             .UseLimiter(skip, take)
             .Select(rule => new SqlAnalyzeRuleDto
                 {
