@@ -13,7 +13,7 @@ using SqlAnalyzer.Api.Dal;
 namespace SqlAnalyzer.Api.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250918123638_AddCustomRules")]
+    [Migration("20250918154222_AddCustomRules")]
     partial class AddCustomRules
     {
         /// <inheritdoc />
