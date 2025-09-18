@@ -21,14 +21,20 @@ public class QueryService : IQueryService
     private readonly ISqlAnalyzerFacade _analyzer;
     private readonly ILlmClient _llm;
     private readonly ISqlAnalyzeRuleService _customRulesService;
+    private readonly ILogger<IQueryService> _logger;
 
     /// 
-    public QueryService(DataContext db, ISqlAnalyzerFacade analyzer, ILlmClient llm, ISqlAnalyzeRuleService customRulesService)
+    public QueryService(DataContext db, 
+        ISqlAnalyzerFacade analyzer, 
+        ILlmClient llm, 
+        ISqlAnalyzeRuleService customRulesService, 
+        ILogger<IQueryService> logger)
     {
         _db = db;
         _analyzer = analyzer;
         _llm = llm;
         _customRulesService = customRulesService;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -60,20 +66,27 @@ public class QueryService : IQueryService
             throw new InvalidOperationException("DbConnection not found");
         }
 
-        string analyzeResult;
-        await using (var conn = new NpgsqlConnection(dbConnection.GetConnectionString()))
+        var analyzeResult = string.Empty;
+        try
         {
-            await conn.OpenAsync();
-
-            var cmd = new NpgsqlCommand($"EXPLAIN (FORMAT JSON) {dto.Sql}", conn);
-            var result = await cmd.ExecuteScalarAsync();
-
-            analyzeResult = result switch
+            await using (var conn = new NpgsqlConnection(dbConnection.GetConnectionString()))
             {
-                string str => str,
-                string[] arr => string.Join(Environment.NewLine, arr),
-                _ => throw new Exception("Unexpected EXPLAIN output")
-            };
+                await conn.OpenAsync();
+
+                var cmd = new NpgsqlCommand($"EXPLAIN (FORMAT JSON) {dto.Sql}", conn);
+                var result = await cmd.ExecuteScalarAsync();
+
+                analyzeResult = result switch
+                {
+                    string str => str,
+                    string[] arr => string.Join(Environment.NewLine, arr),
+                    _ => throw new Exception("Unexpected EXPLAIN output")
+                };
+            }
+        }
+        catch
+        {
+            _logger.LogError("Failed to execute explain");
         }
 
         var analysis = new QueryAnalysis
