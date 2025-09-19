@@ -1,26 +1,14 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	Button,
-	Textarea,
-	Alert,
-	AlertDescription,
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@pin-code/ui-kit";
+import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@pin-code/ui-kit";
 import { format } from "sql-formatter";
 import { useGetApiQueriesFind, usePostApiQueriesCreate } from "@/generated/hooks/QueryAnalysis";
-import { Loader2, Play, FileText, Clock, ArrowLeft, Database, Sparkles } from "lucide-react";
-import { QueriesHistory, DatabaseQueriesHistory } from "@/components/queries";
+import { ArrowLeft, Clock, Database, FileText, Loader2, Play, Sparkles } from "lucide-react";
+import { DatabaseQueriesHistory, QueriesHistory } from "@/components/queries";
 import { useGetApiDbConnectionsFind } from "@generated";
 import { useSubstituteValues } from "@/components/queries/hooks";
+import { CollapsibleList, type CollapsibleListItemType } from "@/components/ui/collapsible-list";
 
 export default function DatabaseQueriesPage() {
 	const params = useParams();
@@ -157,6 +145,43 @@ export default function DatabaseQueriesPage() {
 		[databaseId, substituteMutation, setSqlQuery],
 	);
 
+	// Элементы для CollapsibleList
+	const historyItems: CollapsibleListItemType[] = [
+		{
+			id: "database-history",
+			title: "История запросов из БД",
+			description: "Запросы из pg_stat_statements с метриками и рекомендациями.",
+			icon: Database,
+			isExpanded: false,
+			content: (
+				<div className="mr-1">
+					<DatabaseQueriesHistory databaseId={databaseId} onQuerySelect={handleDatabaseQuerySelect} />
+				</div>
+			),
+		},
+		{
+			id: "analyzed-history",
+			title: "История проанализированных запросов",
+			description: "Ранее созданные и проанализированные SQL запросы",
+			icon: Clock,
+			isExpanded: false,
+			content: (
+				<div className="mr-1">
+					<QueriesHistory
+						queries={allQueries}
+						databases={databases}
+						isLoading={isLoadingQueries}
+						error={queriesError}
+						showDatabaseNames={false}
+						databaseFilter={databaseId}
+						emptyStateMessage="Нет сохраненных запросов"
+						gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+					/>
+				</div>
+			),
+		},
+	];
+
 	return (
 		<div className="p-6 space-y-6">
 			<div className="mb-6">
@@ -222,54 +247,8 @@ export default function DatabaseQueriesPage() {
 				</CardContent>
 			</Card>
 
-			{/* Аккордеоны с историями */}
-			<Accordion type="multiple" className="space-y-4">
-				{/* История запросов из БД */}
-				<AccordionItem value="database-history" className="border rounded-lg">
-					<AccordionTrigger className="hover:no-underline px-6 py-4">
-						<div className="flex items-center gap-2">
-							<Database className="h-5 w-5" />
-							<div className="text-left">
-								<div className="text-lg font-semibold">История запросов из БД</div>
-								<div className="text-sm text-muted-foreground font-normal">
-									Запросы из pg_stat_statements с метриками и рекомендациями. Нажмите на запрос, чтобы
-									вставить его в редактор.
-								</div>
-							</div>
-						</div>
-					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<DatabaseQueriesHistory databaseId={databaseId} onQuerySelect={handleDatabaseQuerySelect} />
-					</AccordionContent>
-				</AccordionItem>
-
-				{/* История проанализированных запросов */}
-				<AccordionItem value="analyzed-history" className="border rounded-lg">
-					<AccordionTrigger className="hover:no-underline px-6 py-4">
-						<div className="flex items-center gap-2">
-							<Clock className="h-5 w-5" />
-							<div className="text-left">
-								<div className="text-lg font-semibold">История проанализированных запросов</div>
-								<div className="text-sm text-muted-foreground font-normal">
-									Ранее созданные и проанализированные SQL запросы
-								</div>
-							</div>
-						</div>
-					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<QueriesHistory
-							queries={allQueries}
-							databases={databases}
-							isLoading={isLoadingQueries}
-							error={queriesError}
-							showDatabaseNames={false}
-							databaseFilter={databaseId}
-							emptyStateMessage="Нет сохраненных запросов"
-							gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-						/>
-					</AccordionContent>
-				</AccordionItem>
-			</Accordion>
+			{/* Списки с историями */}
+			<CollapsibleList items={historyItems} />
 		</div>
 	);
 }

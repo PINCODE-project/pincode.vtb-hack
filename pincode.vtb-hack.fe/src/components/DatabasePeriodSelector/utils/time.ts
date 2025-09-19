@@ -182,21 +182,21 @@ export interface TimePreset {
 
 export const TIME_PRESETS: TimePreset[] = [
 	{
-		label: "Сейчас",
-		getValue: () => {
-			const now = new Date();
-			return {
-				start: new Date(now.getTime() - 5 * 60 * 1000), // 5 минут назад
-				end: now,
-			};
-		},
-	},
-	{
 		label: "1h",
 		getValue: () => {
 			const now = new Date();
 			return {
 				start: new Date(now.getTime() - 60 * 60 * 1000), // 1 час назад
+				end: now,
+			};
+		},
+	},
+	{
+		label: "6h",
+		getValue: () => {
+			const now = new Date();
+			return {
+				start: new Date(now.getTime() - 60 * 60 * 1000 * 6), // 6 час назад
 				end: now,
 			};
 		},
