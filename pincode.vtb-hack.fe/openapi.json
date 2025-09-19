@@ -1375,7 +1375,7 @@
         "tags": [
           "QueryAnalysis"
         ],
-        "summary": "Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос",
+        "summary": "Анализирует запрос\n1 - системными правилами для sql и explain\n2 - по флагу useLlm может выдать проблемы и рекомендации от LLM а также сравнение двух запросов\n3 - по ruleIds может проверять запрос по кастомным правилам, если ruleIds не передали, будет проверять по всем правилам",
         "parameters": [
           {
             "name": "queryId",
@@ -1435,6 +1435,7 @@
         "tags": [
           "SqlAnalyzeRule"
         ],
+        "summary": "Ищет все кастомные правила для аналища SQL",
         "parameters": [
           {
             "name": "skip",
@@ -1502,6 +1503,7 @@
         "tags": [
           "SqlAnalyzeRule"
         ],
+        "summary": "Создает новое кастомное правило для анализа SQL",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1532,6 +1534,7 @@
         "tags": [
           "SqlAnalyzeRule"
         ],
+        "summary": "Обновляет кастомное правило",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1564,6 +1567,7 @@
         "tags": [
           "SqlAnalyzeRule"
         ],
+        "summary": "Удаляет кастомное правило",
         "parameters": [
           {
             "name": "id",
@@ -2103,6 +2107,43 @@
         "additionalProperties": false,
         "description": "Статистика автовакуума PostgreSQL\nСодержит метрики для мониторинга и анализа процесса автоматической очистки базы данных\nАвтовакуум удаляет \"мертвые\" tuple'ы и обновляет статистику для оптимизатора запросов"
       },
+      "BufferStats": {
+        "type": "object",
+        "properties": {
+          "sharedHit": {
+            "type": "integer",
+            "description": "Shared buffer hits.",
+            "format": "int64"
+          },
+          "sharedRead": {
+            "type": "integer",
+            "description": "Shared buffer reads (from disk).",
+            "format": "int64"
+          },
+          "localHit": {
+            "type": "integer",
+            "description": "Local buffer hits.",
+            "format": "int64"
+          },
+          "localRead": {
+            "type": "integer",
+            "description": "Local buffer reads.",
+            "format": "int64"
+          },
+          "tempRead": {
+            "type": "integer",
+            "description": "Temp blocks read (from temp files).",
+            "format": "int64"
+          },
+          "tempWritten": {
+            "type": "integer",
+            "description": "Temp blocks written (to temp files).",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Метрики буферов, агрегированные для узла."
+      },
       "CacheAnalysisResponse": {
         "type": "object",
         "properties": {
@@ -2451,6 +2492,39 @@
         },
         "additionalProperties": false,
         "description": "Описание результата разбора EXPLAIN (FORMAT JSON)."
+      },
+      "ExplainRootPlan": {
+        "type": "object",
+        "properties": {
+          "commandType": {
+            "type": "string",
+            "description": "Команда: SELECT/UPDATE/INSERT/DELETE и т.д., если доступно.",
+            "nullable": true
+          },
+          "rootNode": {
+            "$ref": "#/components/schemas/PlanNode"
+          },
+          "planningTimeMs": {
+            "type": "number",
+            "description": "Время планирования в миллисекундах (если предоставлено).",
+            "format": "double",
+            "nullable": true
+          },
+          "executionTimeMs": {
+            "type": "number",
+            "description": "Время выполнения в миллисекундах (если предоставлено).",
+            "format": "double",
+            "nullable": true
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Дополнительные настройки/параметры из EXPLAIN.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Корневой план EXPLAIN, содержит метрики времени и общий узел плана."
       },
       "GuidSimpleDto": {
         "type": "object",
@@ -2928,6 +3002,35 @@
         "additionalProperties": false,
         "description": "Модель для хранения информации о заблокированных lock'ах PostgreSQL"
       },
+      "PlanComparisonDto": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "$ref": "#/components/schemas/PlanPointComparsionResult"
+          },
+          "rows": {
+            "$ref": "#/components/schemas/PlanPointComparsionResult"
+          },
+          "width": {
+            "$ref": "#/components/schemas/PlanPointComparsionResult"
+          },
+          "seqScanCount": {
+            "$ref": "#/components/schemas/PlanPointComparsionResult"
+          },
+          "nodeCount": {
+            "$ref": "#/components/schemas/PlanPointComparsionResult"
+          },
+          "oldJoinTypes": {
+            "type": "string",
+            "nullable": true
+          },
+          "newJoinTypes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PlanFinding": {
         "type": "object",
         "properties": {
@@ -3002,6 +3105,107 @@
         },
         "additionalProperties": false,
         "description": "Описание одного найденного \"находки\" (issue) по плану."
+      },
+      "PlanNode": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Node Type, как указан в JSON (например, \"Seq Scan\", \"Hash Join\").",
+            "nullable": true
+          },
+          "shortNodeType": {
+            "type": "string",
+            "description": "Маппинг NodeType на enum, если возможно.",
+            "nullable": true
+          },
+          "startupCost": {
+            "type": "number",
+            "description": "Оценочная startup cost.",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCost": {
+            "type": "number",
+            "description": "Оценочная total cost.",
+            "format": "double",
+            "nullable": true
+          },
+          "planRows": {
+            "type": "number",
+            "description": "Оценка планировщика: планируемое количество строк.",
+            "format": "double",
+            "nullable": true
+          },
+          "planWidth": {
+            "type": "number",
+            "description": "Оценочная ширина строки (в байтах).",
+            "format": "double",
+            "nullable": true
+          },
+          "actualStartupTimeMs": {
+            "type": "number",
+            "description": "Фактическое стартовое время в миллисекундах (ANALYZE).",
+            "format": "double",
+            "nullable": true
+          },
+          "actualTotalTimeMs": {
+            "type": "number",
+            "description": "Фактическое суммарное время в миллисекундах (ANALYZE).",
+            "format": "double",
+            "nullable": true
+          },
+          "actualRows": {
+            "type": "number",
+            "description": "Фактическое количество строк (single loop).",
+            "format": "double",
+            "nullable": true
+          },
+          "actualLoops": {
+            "type": "integer",
+            "description": "Количество выполнений узла (loops).",
+            "format": "int32",
+            "nullable": true
+          },
+          "buffers": {
+            "$ref": "#/components/schemas/BufferStats"
+          },
+          "nodeSpecific": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Словарь с произвольными свойствами узла (Index Name, Index Cond, Sort Method, Batches, Disk Usage и т.д.).",
+            "nullable": true
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanNode"
+            },
+            "description": "Дочерние узлы плана.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Узел плана EXPLAIN. NodeSpecific содержит все детальные поля, которые не попали в стандартные свойства."
+      },
+      "PlanPointComparsionResult": {
+        "type": "object",
+        "properties": {
+          "old": {
+            "type": "number",
+            "format": "double"
+          },
+          "new": {
+            "type": "number",
+            "format": "double"
+          },
+          "differencePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ProblematicTable": {
         "type": "object",
@@ -3085,23 +3289,16 @@
             "nullable": true
           },
           "explainResult": {
-            "type": "string",
-            "description": "Результат выполнения EXPLAIN для запроса",
-            "nullable": true
+            "$ref": "#/components/schemas/ExplainRootPlan"
           },
           "algorithmRecommendation": {
             "$ref": "#/components/schemas/SqlAlgorithmAnalysisResult"
           },
           "llmRecommendations": {
-            "$ref": "#/components/schemas/LlmAnswer"
+            "$ref": "#/components/schemas/SqlLlmAnalysisResult"
           },
-          "findindCustomRules": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "nullable": true
+          "explainComparisonDto": {
+            "$ref": "#/components/schemas/PlanComparisonDto"
           }
         },
         "additionalProperties": false,
@@ -3149,9 +3346,7 @@
             "nullable": true
           },
           "explainResult": {
-            "type": "string",
-            "description": "Резульатат выполнения EXPLAIN для запроса",
-            "nullable": true
+            "$ref": "#/components/schemas/ExplainRootPlan"
           },
           "dbConnectionId": {
             "type": "string",
@@ -3390,6 +3585,18 @@
         },
         "additionalProperties": false
       },
+      "SqlLlmAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "llmAnswer": {
+            "$ref": "#/components/schemas/LlmAnswer"
+          },
+          "explainResult": {
+            "$ref": "#/components/schemas/ExplainRootPlan"
+          }
+        },
+        "additionalProperties": false
+      },
       "StaticAnalysisPoint": {
         "type": "object",
         "properties": {
@@ -3438,7 +3645,8 @@
               40,
               41,
               42,
-              43
+              43,
+              44
             ],
             "type": "integer",
             "description": "Коды статических правил анализа SQL.",

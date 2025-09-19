@@ -1,5 +1,5 @@
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@pin-code/ui-kit";
-import { Code, Database, BookOpen } from "lucide-react";
+import { Code, Database, BookOpen, Shield } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -36,6 +36,20 @@ export const SidebarNavigation = () => {
 					<Link href={isOnDatabasePage && databaseId ? `/queries/${databaseId}` : "/queries"}>
 						<Code />
 						<span>SQL запросы</span>
+					</Link>
+				</SidebarMenuButton>
+			</SidebarMenuItem>
+
+			<SidebarMenuItem>
+				<SidebarMenuButton
+					tooltip={{ children: "Правила" }}
+					isActive={isOnQueriesPage}
+					className="px-2.5 md:px-2"
+					asChild
+				>
+					<Link href={"/rules"}>
+						<Shield />
+						<span>Правила</span>
 					</Link>
 				</SidebarMenuButton>
 			</SidebarMenuItem>

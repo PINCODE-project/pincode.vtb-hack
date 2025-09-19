@@ -14,7 +14,7 @@ import {
 	AlertCircle,
 	Info,
 } from "lucide-react";
-import { type CollapsibleListItemType, CollapsibleList } from "@/components/ui/collapsible-list";
+import { type CollapsibleListItemType, CollapsibleList } from "@components/ui/collapsible-list.tsx";
 import {
 	autovacuumMetrics,
 	cacheMetrics,
@@ -24,7 +24,7 @@ import {
 	lockMetrics,
 	sqlRules,
 	tempFilesMetrics,
-} from "@/components/documentation";
+} from "@components/documentation";
 
 /**
  * Получает иконку в зависимости от уровня серьезности
