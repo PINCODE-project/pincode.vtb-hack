@@ -1,12 +1,12 @@
 "use client";
 import React from "react";
-
-import "@pin-code/ui-kit/styles";
-import "@styles/globals.css";
 import { cn, SidebarInset, SidebarProvider } from "@pin-code/ui-kit";
 import { Providers } from "@/components";
 import { NavigationSidebar } from "@components/sidebars/NavigationSidebar";
 import { Onboarding } from "@components/Onboarding";
+
+import "@pin-code/ui-kit/styles";
+import "@styles/globals.css";
 
 export default function DocumentationLayout({ children }: { children: React.ReactNode }) {
 	return (
@@ -19,7 +19,7 @@ export default function DocumentationLayout({ children }: { children: React.Reac
 						} as React.CSSProperties
 					}
 				>
-					<NavigationSidebar></NavigationSidebar>
+					<NavigationSidebar />
 					<SidebarInset>
 						{children}
 						<Onboarding />

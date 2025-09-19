@@ -312,13 +312,7 @@ export const ExplainPlanVisualizer: React.FC<ExplainPlanVisualizerProps> = ({ ex
 			)}
 
 			{/* План выполнения */}
-			<div>
-				<h4 className="font-medium mb-2 flex items-center gap-2 text-sm">
-					<TrendingUp className="h-4 w-4" />
-					План выполнения
-				</h4>
-				{renderPlanNode(explainData.Plan, 0, maxCost)}
-			</div>
+			<div>{renderPlanNode(explainData.Plan, 0, maxCost)}</div>
 		</div>
 	);
 };

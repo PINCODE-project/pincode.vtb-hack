@@ -14,7 +14,7 @@ import {
 	AlertCircle,
 	Info,
 } from "lucide-react";
-import { type ExperiencePositionItemType, WorkExperience } from "@/components/ui/WorkExperience";
+import { type CollapsibleListItemType, CollapsibleList } from "@/components/ui/collapsible-list";
 import {
 	autovacuumMetrics,
 	cacheMetrics,
@@ -123,14 +123,14 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, metric, threshold, level
  * Страница документации с правилами и рекомендациями
  */
 export default function DocumentationPage() {
-	// Создаем позиции для первого WorkExperience - Анализ настроек БД
-	const databaseSettingsPositions: ExperiencePositionItemType[] = [
+	// Создаем элементы для первого CollapsibleList - Анализ настроек БД
+	const databaseSettingsItems: CollapsibleListItemType[] = [
 		{
 			id: "autovacuum-metrics",
 			title: "Метрики Autovacuum",
 			icon: ListFilter,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="flex flex-col gap-2">
 					{autovacuumMetrics.items.map((item, index) => (
 						<MetricCard
@@ -151,7 +151,7 @@ export default function DocumentationPage() {
 			title: "Метрики Cache",
 			icon: DatabaseZap,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="flex flex-col gap-2">
 					{cacheMetrics.items.map((item, index) => (
 						<MetricCard
@@ -172,7 +172,7 @@ export default function DocumentationPage() {
 			title: "Метрики Блокировок",
 			icon: LockIcon,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="flex flex-col gap-2">
 					{lockMetrics.items.map((item, index) => (
 						<MetricCard
@@ -193,7 +193,7 @@ export default function DocumentationPage() {
 			title: "Метрики Индексов",
 			icon: Key,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="flex flex-col gap-2">
 					{indexMetrics.items.map((item, index) => (
 						<MetricCard
@@ -214,7 +214,7 @@ export default function DocumentationPage() {
 			title: "Метрики Временных файлов",
 			icon: FileClock,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="flex flex-col gap-2">
 					{tempFilesMetrics.items.map((item, index) => (
 						<MetricCard
@@ -232,14 +232,14 @@ export default function DocumentationPage() {
 		},
 	];
 
-	// Создаем позиции для второго WorkExperience - SQL анализ
-	const sqlAnalysisPositions: ExperiencePositionItemType[] = [
+	// Создаем элементы для второго CollapsibleList - SQL анализ
+	const sqlAnalysisItems: CollapsibleListItemType[] = [
 		{
 			id: "sql-rules-analysis",
 			title: "Правила анализа SQL-запроса",
 			icon: Code,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="overflow-x-auto rounded-lg border mr-1">
 					<table className="w-full">
 						<thead className="bg-muted">
@@ -271,7 +271,7 @@ export default function DocumentationPage() {
 			title: "Правила анализа результата Explain",
 			icon: Code,
 			isExpanded: false,
-			description: (
+			content: (
 				<div className="overflow-x-auto rounded-lg border mr-1">
 					<table className="w-full">
 						<thead className="bg-muted">
@@ -320,7 +320,7 @@ export default function DocumentationPage() {
 						<p className="text-muted-foreground mb-8">
 							Метрики и рекомендации для оптимизации производительности PostgreSQL
 						</p>
-						<WorkExperience positions={databaseSettingsPositions} className="mb-8" />
+						<CollapsibleList items={databaseSettingsItems} className="mb-8" />
 					</section>
 
 					{/* Алгоритмический анализ SQL запросов */}
@@ -331,7 +331,7 @@ export default function DocumentationPage() {
 						<p className="text-muted-foreground mb-8">
 							Правила анализа SQL-запросов и планов выполнения для выявления проблем производительности
 						</p>
-						<WorkExperience positions={sqlAnalysisPositions} className="mb-8" />
+						<CollapsibleList items={sqlAnalysisItems} className="mb-8" />
 					</section>
 				</div>
 			</div>
