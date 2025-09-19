@@ -29,6 +29,8 @@ import {
 	useDeleteApiSqlAnalyzerId,
 } from "@generated/hooks/SqlAnalyzeRule";
 import type { SqlAnalyzeRuleDto } from "@generated/models/SqlAnalyzeRuleDto.ts";
+import type { SqlAnalyzeRuleCreateDtoSeverityEnum } from "@generated/models/SqlAnalyzeRuleCreateDto.ts";
+import type { SqlAnalyzeRuleUpdateDtoSeverityEnum } from "@generated/models/SqlAnalyzeRuleUpdateDto.ts";
 import { Plus, Edit2, Trash2, Shield, Activity, AlertTriangle } from "lucide-react";
 import { RuleForm, DeleteRuleDialog } from "./components";
 
@@ -95,7 +97,7 @@ export default function RulesPage() {
 		createMutation.mutate({
 			data: {
 				name: data.name,
-				severity: data.severity as any,
+				severity: data.severity as unknown as SqlAnalyzeRuleCreateDtoSeverityEnum,
 				problem: data.problem,
 				recommendation: data.recommendation,
 				regex: data.regex,
@@ -110,7 +112,7 @@ export default function RulesPage() {
 			data: {
 				id: editingRule.id,
 				name: data.name,
-				severity: data.severity as any,
+				severity: data.severity as unknown as SqlAnalyzeRuleUpdateDtoSeverityEnum,
 				problem: data.problem,
 				recommendation: data.recommendation,
 				regex: data.regex,
@@ -302,7 +304,7 @@ export default function RulesPage() {
 					</DialogHeader>
 					{editingRule && (
 						<RuleForm
-							initialData={editingRule as any}
+							initialData={editingRule}
 							onSubmit={handleUpdate}
 							isLoading={updateMutation.isPending}
 							onCancel={() => setEditingRule(null)}

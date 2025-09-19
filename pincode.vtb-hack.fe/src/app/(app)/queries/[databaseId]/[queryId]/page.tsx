@@ -22,9 +22,30 @@ type UnifiedRecommendation = {
 	source: "static" | "explain";
 };
 
+// Типы для узлов плана выполнения PostgreSQL
+interface ExplainNode {
+	"Node Type": string;
+	"Startup Cost"?: number;
+	"Total Cost"?: number;
+	"Plan Rows"?: number;
+	"Plan Width"?: number;
+	"Actual Startup Time"?: number;
+	"Actual Total Time"?: number;
+	"Actual Rows"?: number;
+	"Actual Loops"?: number;
+	"Relation Name"?: string;
+	"Index Name"?: string;
+	"Sort Key"?: string[];
+	"Hash Cond"?: string;
+	"Join Type"?: string;
+	Filter?: string;
+	Plans?: ExplainNode[];
+	[key: string]: unknown;
+}
+
 // Функция для конвертации PlanNode в формат, ожидаемый ExplainPlanVisualizer
-const convertPlanNodeToExplainNode = (node: PlanNode): any => {
-	const result: any = {
+const convertPlanNodeToExplainNode = (node: PlanNode): ExplainNode => {
+	const result: ExplainNode = {
 		"Node Type": node.nodeType || "Unknown",
 	};
 
