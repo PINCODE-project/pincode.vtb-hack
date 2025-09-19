@@ -9,6 +9,7 @@ export const SidebarNavigation = () => {
 	const isOnDatabasePage = pathname.startsWith("/databases");
 	const isOnQueriesPage = pathname.startsWith("/queries");
 	const isOnDocumentationPage = pathname.startsWith("/documentation");
+	const isOnRulesPage = pathname.startsWith("/rules");
 
 	return (
 		<SidebarMenu>
@@ -43,7 +44,7 @@ export const SidebarNavigation = () => {
 			<SidebarMenuItem>
 				<SidebarMenuButton
 					tooltip={{ children: "Правила" }}
-					isActive={isOnQueriesPage}
+					isActive={isOnRulesPage}
 					className="px-2.5 md:px-2"
 					asChild
 				>

@@ -205,11 +205,11 @@ export default function RulesPage() {
 								<TableHeader>
 									<TableRow>
 										<TableHead className="w-[180px]">Название</TableHead>
-										<TableHead className="w-[200px] min-w-[200px]">Проблема</TableHead>
-										<TableHead className="w-[200px] min-w-[200px]">Рекомендация</TableHead>
+										<TableHead className="w-[230px] min-w-[230px]">Проблема</TableHead>
+										<TableHead className="w-[230px] min-w-[230px]">Рекомендация</TableHead>
 										<TableHead className="w-[140px]">Серьезность</TableHead>
 										<TableHead className="w-[100px]">Статус</TableHead>
-										<TableHead className="w-[110px]">Создано</TableHead>
+										<TableHead className="w-[250px] min-w-[250px]">Regex выражение</TableHead>
 										<TableHead className="w-[100px] text-right">Действия</TableHead>
 									</TableRow>
 								</TableHeader>
@@ -220,21 +220,21 @@ export default function RulesPage() {
 											<TableRow key={rule.id}>
 												<TableCell className="font-medium w-[180px] align-top">
 													<div
-														className="break-words whitespace-normal"
+														className="break-words whitespace-normal w-[180px]"
 														title={rule.name || "Без названия"}
 													>
 														{rule.name || "Без названия"}
 													</div>
 												</TableCell>
-												<TableCell className="w-[200px] min-w-[200px] align-top">
-													<div className="max-w-[200px]">
+												<TableCell className="w-[230px] min-w-[230px] align-top">
+													<div className="max-w-[230px]">
 														<div className="text-sm leading-relaxed break-words whitespace-normal">
 															{rule.problem || "Не указано"}
 														</div>
 													</div>
 												</TableCell>
-												<TableCell className="w-[200px] min-w-[200px] align-top">
-													<div className="max-w-[200px]">
+												<TableCell className="w-[230px] min-w-[230px] align-top">
+													<div className="max-w-[230px]">
 														<div className="text-sm leading-relaxed break-words whitespace-normal">
 															{rule.recommendation || "Не указано"}
 														</div>
@@ -257,13 +257,11 @@ export default function RulesPage() {
 														{rule.isActive ? "Активно" : "Неактивно"}
 													</Badge>
 												</TableCell>
-												<TableCell className="w-[110px]">
-													<div className="text-sm">
-														{new Date(rule.createdAt).toLocaleDateString("ru-RU", {
-															day: "2-digit",
-															month: "2-digit",
-															year: "numeric",
-														})}
+												<TableCell className="w-[250px] min-w-[250px] align-top">
+													<div className="max-w-[250px]">
+														<code className="text-xs bg-muted px-2 py-1 rounded break-all whitespace-normal">
+															{rule.regex || "Не указано"}
+														</code>
 													</div>
 												</TableCell>
 												<TableCell className="w-[100px] text-right">

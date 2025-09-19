@@ -9,8 +9,10 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { CodeCopyButton } from "@/components/ui/code-copy-button";
 import { ExplainPlanVisualizer } from "@/components/query/ExplainPlanVisualizer";
+import { QueryPerformanceComparison } from "@/components/query/QueryPerformanceComparison";
 import { TextWithSqlSnippets } from "@/components/ui/text-with-sql-snippets";
 import { CollapsibleList, type CollapsibleListItemType } from "@/components/ui/collapsible-list";
+import type { PlanNode } from "@/generated/models/PlanNode";
 
 // Универсальный тип для всех рекомендаций
 type UnifiedRecommendation = {
@@ -18,6 +20,56 @@ type UnifiedRecommendation = {
 	problem?: string | null;
 	recommendation?: string | null;
 	source: "static" | "explain";
+};
+
+// Функция для конвертации PlanNode в формат, ожидаемый ExplainPlanVisualizer
+const convertPlanNodeToExplainNode = (node: PlanNode): any => {
+	const result: any = {
+		"Node Type": node.nodeType || "Unknown",
+	};
+
+	// Добавляем основные метрики если они есть
+	if (node.startupCost !== null && node.startupCost !== undefined) {
+		result["Startup Cost"] = node.startupCost;
+	}
+	if (node.totalCost !== null && node.totalCost !== undefined) {
+		result["Total Cost"] = node.totalCost;
+	}
+	if (node.planRows !== null && node.planRows !== undefined) {
+		result["Plan Rows"] = node.planRows;
+	}
+	if (node.planWidth !== null && node.planWidth !== undefined) {
+		result["Plan Width"] = node.planWidth;
+	}
+	if (node.actualStartupTimeMs !== null && node.actualStartupTimeMs !== undefined) {
+		result["Actual Startup Time"] = node.actualStartupTimeMs;
+	}
+	if (node.actualTotalTimeMs !== null && node.actualTotalTimeMs !== undefined) {
+		result["Actual Total Time"] = node.actualTotalTimeMs;
+	}
+	if (node.actualRows !== null && node.actualRows !== undefined) {
+		result["Actual Rows"] = node.actualRows;
+	}
+	if (node.actualLoops !== null && node.actualLoops !== undefined) {
+		result["Actual Loops"] = node.actualLoops;
+	}
+
+	// Добавляем специфичные для узла данные
+	if (node.nodeSpecific) {
+		Object.keys(node.nodeSpecific).forEach((key) => {
+			const value = node.nodeSpecific![key];
+			if (value !== null && value !== undefined) {
+				result[key] = value;
+			}
+		});
+	}
+
+	// Рекурсивно обрабатываем дочерние узлы
+	if (node.children && node.children.length > 0) {
+		result.Plans = node.children.map(convertPlanNodeToExplainNode);
+	}
+
+	return result;
 };
 
 export default function QueryDetailPage() {
@@ -185,7 +237,7 @@ export default function QueryDetailPage() {
 			),
 		},
 		// EXPLAIN результат (только если есть)
-		...(queryData?.explainResult
+		...(queryData?.explainResult?.rootNode
 			? [
 					{
 						id: "explain-result",
@@ -195,7 +247,13 @@ export default function QueryDetailPage() {
 						isExpanded: false,
 						content: (
 							<div className="mr-1">
-								<ExplainPlanVisualizer explainResult={queryData.explainResult} />
+								<ExplainPlanVisualizer
+									explainResult={JSON.stringify({
+										Plan: convertPlanNodeToExplainNode(queryData.explainResult.rootNode),
+										"Planning Time": queryData.explainResult.planningTimeMs,
+										"Execution Time": queryData.explainResult.executionTimeMs,
+									})}
+								/>
 							</div>
 						),
 					},
@@ -261,38 +319,42 @@ export default function QueryDetailPage() {
 							<div className="text-muted-foreground">Генерируем рекомендации...</div>
 						) : (
 							<div className="space-y-6">
-								{analysisData?.llmRecommendations?.problems?.length ? (
+								{analysisData?.llmRecommendations?.llmAnswer?.problems?.length ? (
 									<div>
 										<h4 className="font-medium mb-3 flex items-center gap-2">
 											<AlertTriangle className="h-4 w-4 text-red-500" />
 											Обнаруженные проблемы
 										</h4>
 										<div className="space-y-3">
-											{analysisData?.llmRecommendations?.problems.map((problem, idx) => (
-												<div key={idx} className="border-l-4 border-red-500 pl-4">
-													<div className="text-sm text-muted-foreground">
-														<TextWithSqlSnippets text={problem.message || ""} />
+											{analysisData?.llmRecommendations?.llmAnswer?.problems.map(
+												(problem, idx) => (
+													<div key={idx} className="border-l-4 border-red-500 pl-4">
+														<div className="text-sm text-muted-foreground">
+															<TextWithSqlSnippets text={problem.message || ""} />
+														</div>
 													</div>
-												</div>
-											))}
+												),
+											)}
 										</div>
 									</div>
 								) : null}
 
-								{analysisData?.llmRecommendations?.recommendations?.length ? (
+								{analysisData?.llmRecommendations?.llmAnswer?.recommendations?.length ? (
 									<div>
 										<h4 className="font-medium mb-3 flex items-center gap-2">
 											<CheckCircle className="h-4 w-4 text-green-500" />
 											Рекомендации по улучшению
 										</h4>
 										<div className="space-y-3">
-											{analysisData?.llmRecommendations?.recommendations.map((rec, idx) => (
-												<div key={idx} className="border-l-4 border-green-500 pl-4">
-													<div className="text-sm text-muted-foreground">
-														<TextWithSqlSnippets text={rec.message || ""} />
+											{analysisData?.llmRecommendations?.llmAnswer?.recommendations.map(
+												(rec, idx) => (
+													<div key={idx} className="border-l-4 border-green-500 pl-4">
+														<div className="text-sm text-muted-foreground">
+															<TextWithSqlSnippets text={rec.message || ""} />
+														</div>
 													</div>
-												</div>
-											))}
+												),
+											)}
 										</div>
 									</div>
 								) : null}
@@ -302,7 +364,7 @@ export default function QueryDetailPage() {
 				]
 			: []),
 		// Оптимизированный запрос (только если есть или загружается)
-		...(analyzeQueryMutation.isPending || analysisData?.llmRecommendations?.newQuery
+		...(analyzeQueryMutation.isPending || analysisData?.llmRecommendations?.llmAnswer?.newQuery
 			? [
 					{
 						id: "optimized-query",
@@ -314,17 +376,19 @@ export default function QueryDetailPage() {
 							<div className="text-muted-foreground">Оптимизируем запрос...</div>
 						) : (
 							<div className="space-y-4">
-								{analysisData?.llmRecommendations?.newQueryAbout && (
+								{analysisData?.llmRecommendations?.llmAnswer?.newQueryAbout && (
 									<Alert>
 										<Lightbulb className="h-4 w-4" />
 										<AlertDescription className="whitespace-pre-wrap">
-											<TextWithSqlSnippets text={analysisData.llmRecommendations.newQueryAbout} />
+											<TextWithSqlSnippets
+												text={analysisData.llmRecommendations.llmAnswer.newQueryAbout}
+											/>
 										</AlertDescription>
 									</Alert>
 								)}
 								<div className="bg-gray-900 rounded-lg overflow-hidden relative group">
 									<CodeCopyButton
-										code={analysisData?.llmRecommendations?.newQuery ?? ""}
+										code={analysisData?.llmRecommendations?.llmAnswer?.newQuery ?? ""}
 										copyId={`optimized-${queryId}`}
 										language="sql"
 									/>
@@ -337,9 +401,26 @@ export default function QueryDetailPage() {
 										}}
 										showLineNumbers={true}
 									>
-										{formatSql(analysisData?.llmRecommendations?.newQuery || "")}
+										{formatSql(analysisData?.llmRecommendations?.llmAnswer?.newQuery || "")}
 									</SyntaxHighlighter>
 								</div>
+							</div>
+						),
+					},
+				]
+			: []),
+		// Сравнение производительности (только если есть данные для сравнения)
+		...(analysisData?.explainComparisonDto
+			? [
+					{
+						id: "performance-comparison",
+						title: "Сравнение производительности",
+						description: "Сравнение метрик оригинального и оптимизированного запросов",
+						icon: CheckCircle,
+						isExpanded: true,
+						content: (
+							<div className="mr-1">
+								<QueryPerformanceComparison comparison={analysisData.explainComparisonDto} />
 							</div>
 						),
 					},
