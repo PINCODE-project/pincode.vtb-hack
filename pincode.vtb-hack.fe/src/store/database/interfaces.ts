@@ -7,7 +7,9 @@ export type CreateDatabaseModalState = {
 
 export type DeleteDatabaseModalState = {
 	isOpen: boolean;
-	open: () => void;
+	databaseId: string | null;
+	databaseName: string | null;
+	open: (databaseId: string, databaseName: string) => void;
 	close: () => void;
 	toggle: () => void;
 };

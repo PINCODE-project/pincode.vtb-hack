@@ -24,6 +24,8 @@ export const DatabaseMenu = ({ database }: Props) => {
 	const { isMobile } = useSidebar();
 	const {
 		isOpen: isDeleteDatabaseModalOpen,
+		databaseId: deleteDatabaseId,
+		databaseName: deleteDatabaseName,
 		open: openDeleteDatabaseModal,
 		close: closeDeleteDatabaseModal,
 	} = useDeleteDatabaseModalStore();
@@ -47,7 +49,7 @@ export const DatabaseMenu = ({ database }: Props) => {
 					<span>Редактировать</span>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={openDeleteDatabaseModal}>
+				<DropdownMenuItem onClick={() => openDeleteDatabaseModal(database.id, database.name || "Без названия")}>
 					<Trash2 className="text-muted-foreground" />
 					<span>Удалить</span>
 				</DropdownMenuItem>
@@ -56,8 +58,8 @@ export const DatabaseMenu = ({ database }: Props) => {
 			<DeleteDatabaseModal
 				isOpen={isDeleteDatabaseModalOpen}
 				onClose={closeDeleteDatabaseModal}
-				databaseId={database.id}
-				databaseName={database.name || "Без названия"}
+				databaseId={deleteDatabaseId || ""}
+				databaseName={deleteDatabaseName || "Без названия"}
 			/>
 			<EditDatabaseModal />
 		</DropdownMenu>
