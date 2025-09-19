@@ -25,11 +25,21 @@ public class SqlAnalyzerFacade : ISqlAnalyzerFacade
         var explainAnalysisResult = explainResult is not null
             ? await _explainAnalyzer.AnalyzeAsync(query, explainResult)
             : null;
+        
+        if (explainAnalysisResult is null)
+        {
+            return new SqlAlgorithmAnalysisResult
+            {
+                QueryAnalysisResult = staticAnalysisResult,
+                ExplainAnalysisResult = explainAnalysisResult
+            };
+        }
 
+        var planFindings = explainAnalysisResult.Findings.DistinctBy(x => x.Code);
         return new SqlAlgorithmAnalysisResult
         {
             QueryAnalysisResult = staticAnalysisResult,
-            ExplainAnalysisResult = explainAnalysisResult
+            ExplainAnalysisResult = explainAnalysisResult with { Findings = planFindings.ToList() }
         };
     }
 }
