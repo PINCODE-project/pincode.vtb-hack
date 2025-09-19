@@ -155,11 +155,7 @@ export function DatabaseQueriesHistory({ databaseId, onQuerySelect, className = 
 
 			{/* Список запросов */}
 			{processedQueries.map((query, index) => (
-				<div
-					key={index}
-					className="cursor-pointer p-4 rounded-lg border transition-colors"
-					onClick={() => handleQueryClick(query)}
-				>
+				<div key={index} className="p-4 rounded-lg border">
 					<div className="space-y-3">
 						{/* Заголовок с метриками */}
 						<div className="flex items-center justify-between">

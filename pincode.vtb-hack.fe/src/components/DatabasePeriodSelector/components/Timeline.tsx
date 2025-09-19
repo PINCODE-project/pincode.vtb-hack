@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import { formatTimelineLabel, METRIC_CONFIGS } from "../utils/time";
+import React, { JSX } from "react";
 import type { GroupedTimeMetric } from "../utils/time";
+import { formatTimelineLabel, METRIC_CONFIGS } from "../utils/time";
 import type { DateRange } from "./RangeSelector";
 
 export interface TimelineProps {
@@ -260,16 +260,48 @@ export function Timeline({
 				{/* Фон */}
 				<rect width="100%" height="100%" fill="transparent" />
 
-				{/* Визуальные насечки по центру */}
+				{/* Визуальные насечки по всему таймлайну */}
 				{(() => {
 					if (!svgRef.current) return null;
-					const tickInterval = 40; // Интервал между насечками в пикселях
 					const width = svgRef.current.clientWidth || 800;
-					const ticks = [];
-					const tickHeight = 8; // Небольшая высота насечек
-					const centerY = (height - 20) / 2; // Центр таймлайна
+					const ticks: JSX.Element[] = [];
+					const tickHeight = 8;
+					const centerY = (height - 20) / 2;
 
-					for (let x = 0; x <= width; x += tickInterval) {
+					// Создаем набор всех позиций для насечек
+					const allTickPositions = new Set<number>();
+
+					// Добавляем позиции временных меток
+					timeLabels.forEach((label) => {
+						allTickPositions.add(Math.round(label.x));
+					});
+
+					// Добавляем насечки в начале и конце
+					allTickPositions.add(0);
+					allTickPositions.add(width);
+
+					// Добавляем промежуточные насечки между всеми соседними позициями
+					const sortedLabelPositions = timeLabels.map((label) => label.x).sort((a, b) => a - b);
+					const allPositions = [0, ...sortedLabelPositions, width].sort((a, b) => a - b);
+
+					for (let i = 0; i < allPositions.length - 1; i++) {
+						const start = allPositions[i];
+						const end = allPositions[i + 1];
+						const distance = end - start;
+
+						// Добавляем промежуточные насечки между каждой парой позиций
+						const intermediateCount = Math.max(2, Math.floor(distance / 60));
+						for (let j = 1; j < intermediateCount; j++) {
+							const pos = start + (distance * j) / intermediateCount;
+							allTickPositions.add(Math.round(pos));
+						}
+					}
+
+					// Создаем насечки для всех позиций
+					Array.from(allTickPositions).forEach((x) => {
+						// Проверяем, является ли эта позиция временной меткой
+						const isLabelTick = timeLabels.some((label) => Math.abs(label.x - x) < 2);
+
 						ticks.push(
 							<line
 								key={`tick-${x}`}
@@ -277,12 +309,13 @@ export function Timeline({
 								y1={centerY - tickHeight / 2}
 								x2={x}
 								y2={centerY + tickHeight / 2}
-								stroke="#9CA3AF"
-								strokeWidth={0.8}
-								opacity={0.4}
+								stroke={isLabelTick ? "#6B7280" : "#9CA3AF"}
+								strokeWidth={isLabelTick ? 1.2 : 0.8}
+								opacity={isLabelTick ? 0.7 : 0.4}
 							/>,
 						);
-					}
+					});
+
 					return ticks;
 				})()}
 
@@ -348,9 +381,9 @@ export function Timeline({
 						<g key={index}>
 							<line
 								x1={label.x}
-								y1={height - 15}
+								y1={height - 30}
 								x2={label.x}
-								y2={height - 8}
+								y2={height - 20}
 								stroke="#9CA3AF"
 								strokeWidth={1}
 							/>
@@ -381,7 +414,7 @@ export function Timeline({
 
 					// Размещаем метрики по типам в разных "дорожках"
 					const typeIndex = Object.keys(METRIC_CONFIGS).indexOf(metric.metricType);
-					const baseY = 30 + typeIndex * 7; // Разные дорожки для разных типов
+					const baseY = 60 + typeIndex * 7; // Разные дорожки для разных типов
 
 					// Дополнительное смещение для близких меток одного типа
 					const sameTypeNearby = nearbyMetrics.filter((m) => m.metricType === metric.metricType);
@@ -402,24 +435,38 @@ export function Timeline({
 									{metric.originalTimes.length > 1 && ` (${metric.originalTimes.length} записей)`}
 								</title>
 							</circle>
-
-							{/*/!* Дополнительный индикатор для групп - маленькая точка *!/*/}
-							{/*{metric.originalTimes.length > 1 && (*/}
-							{/*	<circle*/}
-							{/*		cx={x + 3}*/}
-							{/*		cy={y - 3}*/}
-							{/*		r={2}*/}
-							{/*		fill="white"*/}
-							{/*		stroke={config.color}*/}
-							{/*		strokeWidth={1}*/}
-							{/*		className="pointer-events-none"*/}
-							{/*	>*/}
-							{/*		<title>{metric.originalTimes.length} записей</title>*/}
-							{/*	</circle>*/}
-							{/*)}*/}
 						</g>
 					);
 				})}
+
+				{/* Линия текущего времени */}
+				{(() => {
+					const currentTime = new Date();
+					const currentX = timeToX(currentTime);
+
+					// Показываем линию только если текущее время попадает в viewport
+					if (currentTime >= viewport.start && currentTime <= viewport.end) {
+						return (
+							<g>
+								{/* Основная красная линия */}
+								<line
+									x1={currentX}
+									y1={0}
+									x2={currentX}
+									y2={height}
+									stroke="#EF4444"
+									strokeWidth={2}
+									opacity={0.8}
+								/>
+								{/* Индикатор сверху */}
+								<circle cx={currentX} cy={8} r={4} fill="#EF4444" stroke="#FFFFFF" strokeWidth={1}>
+									<title>Текущее время: {formatTimelineLabel(currentTime)}</title>
+								</circle>
+							</g>
+						);
+					}
+					return null;
+				})()}
 			</svg>
 		</div>
 	);

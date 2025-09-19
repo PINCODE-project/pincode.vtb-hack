@@ -36,7 +36,7 @@ export function CollapsibleListItem({ item }: { item: CollapsibleListItemType })
 
 	return (
 		<Collapsible defaultOpen={item.isExpanded} asChild>
-			<div className="relative last:before:absolute last:before:h-full last:before:w-4 last:before:bg-card">
+			<div className="relative last:before:absolute last:before:h-full last:before:w-4 last:before:bg-background">
 				<CollapsibleTrigger
 					className={cn(
 						"group/collapsible not-prose block w-full text-left select-none",
