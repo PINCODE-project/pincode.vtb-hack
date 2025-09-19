@@ -3,27 +3,65 @@ import { Alert, AlertDescription, AlertTitle } from "@pin-code/ui-kit";
 import { Card, CardContent } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 import type { CacheAnalysisResponse } from "@/generated/models/CacheAnalysisResponse";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { getStatusIcon } from "../utils/ui-helpers";
 import { MetricsDetails } from "../MetricsDetails";
 import { CacheRecommendations } from "../Recommendations";
+import { CollectMetricsButton } from "../CollectMetricsButton";
+import { usePostApiCacheCollect } from "@/generated/hooks/CacheAnalysis/usePostApiCacheCollect";
 
 interface CacheAnalysisSectionProps {
 	query: UseQueryResult<CacheAnalysisResponse>;
+	selectedPeriod: DateRange;
 }
 
 /**
  * Секция анализа кэша
  */
-export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
+export function CacheAnalysisSection({ query, selectedPeriod }: CacheAnalysisSectionProps) {
+	const params = useParams();
+	const databaseId = params.databaseId as string;
+
+	// Хук для принудительного сбора метрик
+	const collectMutation = usePostApiCacheCollect({
+		mutation: {
+			onSuccess: () => {
+				// Перезапрашиваем данные после успешного сбора
+				query.refetch();
+			},
+			onError: (error) => {
+				console.error("Ошибка сбора метрик кэша:", error);
+			},
+		},
+	});
+
+	const handleCollectMetrics = () => {
+		collectMutation.mutate({
+			data: databaseId,
+		});
+	};
+
 	return (
 		<AccordionItem value="cache" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
-				<div className="flex items-center gap-3">
-					{getStatusIcon(query.data?.overallStatus)}
-					<div className="text-left">
-						<h3 className="text-lg font-semibold">Анализ кэша</h3>
-						<p className="text-sm text-muted-foreground">Эффективность работы кэша PostgreSQL</p>
+				<div className="flex items-center justify-between w-full">
+					<div className="flex items-center gap-3">
+						{getStatusIcon(query.data?.overallStatus)}
+						<div className="text-left">
+							<h3 className="text-lg font-semibold">Анализ кэша</h3>
+							<p className="text-sm text-muted-foreground">Эффективность работы кэша PostgreSQL</p>
+						</div>
+					</div>
+					<div onClick={(e) => e.stopPropagation()}>
+						<CollectMetricsButton
+							onCollect={handleCollectMetrics}
+							isLoading={collectMutation.isPending}
+							isSuccess={collectMutation.isSuccess}
+							error={collectMutation.error}
+							label="Собрать метрики"
+						/>
 					</div>
 				</div>
 			</AccordionTrigger>
@@ -70,6 +108,7 @@ export function CacheAnalysisSection({ query }: CacheAnalysisSectionProps) {
 								data={query.data.metricsSummary}
 								title="Детальные метрики кэша"
 								type="cache"
+								selectedPeriod={selectedPeriod}
 							/>
 						)}
 					</div>

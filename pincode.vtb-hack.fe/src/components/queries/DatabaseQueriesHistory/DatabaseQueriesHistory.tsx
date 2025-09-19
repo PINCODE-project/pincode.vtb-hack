@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useCallback, useMemo } from "react";
-import { Alert, AlertDescription, Badge, Skeleton } from "@pin-code/ui-kit";
+import { Alert, AlertDescription, Badge, Skeleton, toast } from "@pin-code/ui-kit";
 import { format } from "sql-formatter";
-import { Activity, AlertTriangle, Clock, Database, FileText, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Clock, Copy, Database, FileText, Play } from "lucide-react";
 import { useGetApiPgStateAnalysisTop } from "@/generated/hooks/PgStateAnalysis";
 import type { QueryStatAdvanced } from "@/generated/models/QueryStatAdvanced";
 
@@ -91,6 +91,14 @@ export function DatabaseQueriesHistory({ databaseId, onQuerySelect, className = 
 		}
 	}, []);
 
+	const handleCopyClick = useCallback((query: QueryStatAdvanced, event: React.MouseEvent) => {
+		event.stopPropagation();
+		if (query.query) {
+			navigator.clipboard.writeText(query.query);
+			toast.success("Успешно скопировано!");
+		}
+	}, []);
+
 	// Обработчик клика на запрос
 	const handleQueryClick = useCallback(
 		(query: QueryStatAdvanced) => {
@@ -147,11 +155,7 @@ export function DatabaseQueriesHistory({ databaseId, onQuerySelect, className = 
 
 			{/* Список запросов */}
 			{processedQueries.map((query, index) => (
-				<div
-					key={index}
-					className="cursor-pointer hover:bg-accent/50 p-4 rounded-lg border transition-colors"
-					onClick={() => handleQueryClick(query)}
-				>
+				<div key={index} className="p-4 rounded-lg border">
 					<div className="space-y-3">
 						{/* Заголовок с метриками */}
 						<div className="flex items-center justify-between">
@@ -174,6 +178,25 @@ export function DatabaseQueriesHistory({ databaseId, onQuerySelect, className = 
 								<div className="flex items-center gap-1">
 									<Clock className="h-4 w-4" />
 									{formatTime(query.meanTimeMs)} среднее время
+								</div>
+
+								<div className="flex items-center gap-1">
+									<button
+										type="button"
+										onClick={(e) => handleCopyClick(query, e)}
+										className="p-2 hover:bg-accent rounded-md transition-colors group"
+										title="Скопировать SQL код"
+									>
+										<Copy className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+									</button>
+									<button
+										type="button"
+										onClick={() => handleQueryClick(query)}
+										className="p-2 hover:bg-accent rounded-md transition-colors group"
+										title="Вставить запрос в редактор"
+									>
+										<Play className="h-4 w-4 text-muted-foreground group-hover:text-foreground stroke-green-600" />
+									</button>
 								</div>
 							</div>
 						</div>
@@ -235,13 +258,6 @@ export function DatabaseQueriesHistory({ databaseId, onQuerySelect, className = 
 								</div>
 							</div>
 						)}
-
-						{/* Подсказка */}
-						<div className="text-xs text-muted-foreground flex items-center gap-1 pt-2 border-t">
-							<Zap className="h-3 w-3" />
-							Нажмите на код, чтобы вставить запрос в редактор. Мы заменяем параметры на
-							предсгенерированные значения.
-						</div>
 					</div>
 				</div>
 			))}

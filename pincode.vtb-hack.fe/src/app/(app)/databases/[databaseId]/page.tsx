@@ -122,11 +122,11 @@ export default function DatabasePage() {
 			<div className="container mx-auto px-6">
 				<Accordion type="multiple" className="space-y-4">
 					{/* Обновленные секции анализа */}
-					<AutovacuumAnalysisSection query={autovacuumQuery} />
-					<CacheAnalysisSection query={cacheQuery} />
-					<LockAnalysisSection query={lockQuery} />
-					<IndexAnalysisSection query={indexQuery} />
-					<TempFilesAnalysisSection query={tempFilesQuery} />
+					<AutovacuumAnalysisSection query={autovacuumQuery} selectedPeriod={selectedPeriod} />
+					<CacheAnalysisSection query={cacheQuery} selectedPeriod={selectedPeriod} />
+					<LockAnalysisSection query={lockQuery} selectedPeriod={selectedPeriod} />
+					<IndexAnalysisSection query={indexQuery} selectedPeriod={selectedPeriod} />
+					<TempFilesAnalysisSection query={tempFilesQuery} selectedPeriod={selectedPeriod} />
 				</Accordion>
 			</div>
 		</div>

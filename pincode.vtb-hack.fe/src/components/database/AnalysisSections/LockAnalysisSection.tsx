@@ -8,12 +8,17 @@ import {
 } from "@pin-code/ui-kit";
 import { AlertCircle, CheckCircle, Clock, Lock } from "lucide-react";
 import { UseQueryResult } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 import type { LockAnalysisResult } from "@/generated/models/LockAnalysisResult";
+import type { DateRange } from "@/components/DatabasePeriodSelector";
 import { MetricsDetails } from "../MetricsDetails";
 import { LockRecommendations } from "../Recommendations";
+import { CollectMetricsButton } from "../CollectMetricsButton";
+import { usePostApiLockCollect } from "@/generated/hooks/PgLockAnalysis/usePostApiLockCollect";
 
 interface LockAnalysisSectionProps {
 	query: UseQueryResult<LockAnalysisResult>;
+	selectedPeriod: DateRange;
 }
 
 /**
@@ -40,15 +45,47 @@ function getLockStatusIcon(data?: LockAnalysisResult) {
 /**
  * Секция анализа блокировок
  */
-export function LockAnalysisSection({ query }: LockAnalysisSectionProps) {
+export function LockAnalysisSection({ query, selectedPeriod }: LockAnalysisSectionProps) {
+	const params = useParams();
+	const databaseId = params.databaseId as string;
+
+	// Хук для принудительного сбора метрик
+	const collectMutation = usePostApiLockCollect({
+		mutation: {
+			onSuccess: () => {
+				// Перезапрашиваем данные после успешного сбора
+				query.refetch();
+			},
+		},
+	});
+
+	const handleCollectMetrics = () => {
+		collectMutation.mutate({
+			data: databaseId,
+		});
+	};
+
 	return (
 		<AccordionItem value="locks" className="border rounded-lg">
 			<AccordionTrigger className="px-6 hover:no-underline">
-				<div className="flex items-center gap-3">
-					{getLockStatusIcon(query.data)}
-					<div className="text-left">
-						<h3 className="text-lg font-semibold">Анализ блокировок</h3>
-						<p className="text-sm text-muted-foreground">Мониторинг и диагностика блокировок PostgreSQL</p>
+				<div className="flex items-center justify-between w-full">
+					<div className="flex items-center gap-3">
+						{getLockStatusIcon(query.data)}
+						<div className="text-left">
+							<h3 className="text-lg font-semibold">Анализ блокировок</h3>
+							<p className="text-sm text-muted-foreground">
+								Мониторинг и диагностика блокировок PostgreSQL
+							</p>
+						</div>
+					</div>
+					<div onClick={(e) => e.stopPropagation()}>
+						<CollectMetricsButton
+							onCollect={handleCollectMetrics}
+							isLoading={collectMutation.isPending}
+							isSuccess={collectMutation.isSuccess}
+							error={collectMutation.error}
+							label="Собрать метрики"
+						/>
 					</div>
 				</div>
 			</AccordionTrigger>
@@ -88,7 +125,12 @@ export function LockAnalysisSection({ query }: LockAnalysisSectionProps) {
 						<LockRecommendations analysis={query.data} />
 
 						{/* Детальные метрики блокировок */}
-						<MetricsDetails data={query.data} title="Детальные метрики блокировок" type="locks" />
+						<MetricsDetails
+							data={query.data}
+							title="Детальные метрики блокировок"
+							type="locks"
+							selectedPeriod={selectedPeriod}
+						/>
 					</div>
 				)}
 			</AccordionContent>

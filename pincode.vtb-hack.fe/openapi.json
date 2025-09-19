@@ -242,6 +242,41 @@
         }
       }
     },
+    "/api/autovacuum/collect": {
+      "post": {
+        "tags": [
+          "AutovacuumAnalysis"
+        ],
+        "summary": "Принудительно собрать метрики",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/cache/analysis": {
       "get": {
         "tags": [
@@ -411,6 +446,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/cache/collect": {
+      "post": {
+        "tags": [
+          "CacheAnalysis"
+        ],
+        "summary": "Принудительно собрать метрики",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -869,6 +939,41 @@
         }
       }
     },
+    "/api/index/collect": {
+      "post": {
+        "tags": [
+          "IndexAnalyze"
+        ],
+        "summary": "Принудительно собрать метрики",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/lock/analysis": {
       "get": {
         "tags": [
@@ -1038,6 +1143,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/lock/collect": {
+      "post": {
+        "tags": [
+          "PgLockAnalysis"
+        ],
+        "summary": "Принудительно собрать метрики",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1253,6 +1393,17 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "ruleIds",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
           }
         ],
         "responses": {
@@ -1275,6 +1426,158 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/sql-analyzer/find": {
+      "get": {
+        "tags": [
+          "SqlAnalyzeRule"
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SqlAnalyzeRuleDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SqlAnalyzeRuleDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SqlAnalyzeRuleDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sql-analyzer": {
+      "post": {
+        "tags": [
+          "SqlAnalyzeRule"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "SqlAnalyzeRule"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleUpdateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleUpdateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlAnalyzeRuleUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/sql-analyzer/{id}": {
+      "delete": {
+        "tags": [
+          "SqlAnalyzeRule"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1496,6 +1799,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/temp-file/collect": {
+      "post": {
+        "tags": [
+          "TempFilesAnalyzeMonitoring"
+        ],
+        "summary": "Принудительно собрать метрики",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -2096,6 +2434,24 @@
         "additionalProperties": false,
         "description": "Дто для обновления сущности соединения с БД"
       },
+      "ExplainAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanFinding"
+            },
+            "nullable": true
+          },
+          "analyzedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Описание результата разбора EXPLAIN (FORMAT JSON)."
+      },
       "GuidSimpleDto": {
         "type": "object",
         "properties": {
@@ -2370,7 +2726,7 @@
               2
             ],
             "type": "integer",
-            "description": "Степень критичности найденной проблемы при анализе SQL-запроса или EXPLAIN",
+            "description": "Уровень серьёзности найденной проблемы или рекомендации.",
             "format": "int32"
           }
         },
@@ -2572,6 +2928,81 @@
         "additionalProperties": false,
         "description": "Модель для хранения информации о заблокированных lock'ах PostgreSQL"
       },
+      "PlanFinding": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42
+            ],
+            "type": "integer",
+            "description": "Типы проблем, выявляемых при анализе плана выполнения (EXPLAIN JSON)",
+            "format": "int32"
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Уровень серьёзности найденной проблемы или рекомендации.",
+            "format": "int32"
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Описание одного найденного \"находки\" (issue) по плану."
+      },
       "ProblematicTable": {
         "type": "object",
         "properties": {
@@ -2631,7 +3062,6 @@
       },
       "QueryAnalysisResultDto": {
         "required": [
-          "algorithmRecommendation",
           "dbConnectionId",
           "explainResult",
           "id",
@@ -2660,15 +3090,18 @@
             "nullable": true
           },
           "algorithmRecommendation": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Recommendation"
-            },
-            "description": "Алгоритмически собранные рекомендации для запроса",
-            "nullable": true
+            "$ref": "#/components/schemas/SqlAlgorithmAnalysisResult"
           },
           "llmRecommendations": {
             "$ref": "#/components/schemas/LlmAnswer"
+          },
+          "findindCustomRules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -2793,50 +3226,6 @@
         },
         "additionalProperties": false
       },
-      "Recommendation": {
-        "type": "object",
-        "properties": {
-          "category": {
-            "enum": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11
-            ],
-            "type": "integer",
-            "description": "Категории рекомендаций по оптимизации SQL-запросов",
-            "format": "int32"
-          },
-          "severity": {
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "type": "integer",
-            "description": "Уровень важности рекомендации",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "suggestion": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Модель рекомендации по оптимизации"
-      },
       "SchemaTableDto": {
         "type": "object",
         "properties": {
@@ -2853,6 +3242,251 @@
         },
         "additionalProperties": false,
         "description": "Связь схема - таблица"
+      },
+      "SqlAlgorithmAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "queryAnalysisResult": {
+            "$ref": "#/components/schemas/StaticAnalysisResult"
+          },
+          "explainAnalysisResult": {
+            "$ref": "#/components/schemas/ExplainAnalysisResult"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SqlAnalyzeRuleCreateDto": {
+        "required": [
+          "name",
+          "problem",
+          "recommendation",
+          "regex",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Уровень серьёзности найденной проблемы или рекомендации.",
+            "format": "int32"
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          },
+          "regex": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SqlAnalyzeRuleDto": {
+        "required": [
+          "createdAt",
+          "id",
+          "isActive",
+          "name",
+          "problem",
+          "recommendation",
+          "regex",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Уровень серьёзности найденной проблемы или рекомендации.",
+            "format": "int32"
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          },
+          "regex": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SqlAnalyzeRuleUpdateDto": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendation": {
+            "type": "string",
+            "nullable": true
+          },
+          "regex": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StaticAnalysisPoint": {
+        "type": "object",
+        "properties": {
+          "ruleType": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43
+            ],
+            "type": "integer",
+            "description": "Коды статических правил анализа SQL.",
+            "format": "int32"
+          },
+          "severity": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Уровень серьёзности найденной проблемы или рекомендации.",
+            "format": "int32"
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendations": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат одного статического правила."
+      },
+      "StaticAnalysisResult": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "nullable": true
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaticAnalysisPoint"
+            },
+            "nullable": true
+          },
+          "analyzedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Итоговый результат статического анализа."
       },
       "SubstituteValuesToSqlRequestDto": {
         "type": "object",

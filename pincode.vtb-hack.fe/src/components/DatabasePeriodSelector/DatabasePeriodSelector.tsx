@@ -59,6 +59,7 @@ export function DatabasePeriodSelector({
 	// Центрируем таймлайн только при первом получении данных
 	React.useEffect(() => {
 		if (groupedMetrics.length > 0 && !isInitialDataLoaded) {
+			console.log("АХТУНГ");
 			// Автоцентрирование: период занимает 1/3 от общей ширины и находится по центру
 			const selectionDuration = selectedRange.end.getTime() - selectedRange.start.getTime();
 			const targetViewportDuration = selectionDuration * 3;
@@ -149,7 +150,7 @@ export function DatabasePeriodSelector({
 							selectedRange={selectedRange}
 							onSelectionChange={handleRangeChange}
 							onViewportChange={setTimelineViewport}
-							height={50}
+							height={80}
 						/>
 					</div>
 				)}

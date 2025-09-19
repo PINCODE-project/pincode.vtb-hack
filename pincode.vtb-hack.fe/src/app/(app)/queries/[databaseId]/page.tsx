@@ -1,26 +1,15 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	Button,
-	Textarea,
-	Alert,
-	AlertDescription,
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@pin-code/ui-kit";
+import { Alert, AlertDescription, Button } from "@pin-code/ui-kit";
+import { SqlEditor } from "@/components/ui/sql-editor";
 import { format } from "sql-formatter";
 import { useGetApiQueriesFind, usePostApiQueriesCreate } from "@/generated/hooks/QueryAnalysis";
-import { Loader2, Play, FileText, Clock, ArrowLeft, Database, Sparkles } from "lucide-react";
-import { QueriesHistory, DatabaseQueriesHistory } from "@/components/queries";
+import { ArrowLeft, Clock, Copy, Database, Loader2, Play, Sparkles } from "lucide-react";
+import { DatabaseQueriesHistory, QueriesHistory } from "@/components/queries";
 import { useGetApiDbConnectionsFind } from "@generated";
 import { useSubstituteValues } from "@/components/queries/hooks";
+import { CollapsibleList, type CollapsibleListItemType } from "@/components/ui/collapsible-list";
 
 export default function DatabaseQueriesPage() {
 	const params = useParams();
@@ -70,7 +59,7 @@ export default function DatabaseQueriesPage() {
 	});
 
 	// Обработка вставки с автоформатированием
-	const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+	const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
 		e.preventDefault();
 		const pastedText = e.clipboardData.getData("text");
 
@@ -126,6 +115,18 @@ export default function DatabaseQueriesPage() {
 		});
 	}, [sqlQuery, databaseId, createQueryMutation]);
 
+	// Копирование SQL в буфер обмена
+	const handleCopyQuery = useCallback(async () => {
+		if (!sqlQuery.trim()) return;
+
+		try {
+			await navigator.clipboard.writeText(sqlQuery);
+			// Можно добавить toast уведомление о успешном копировании
+		} catch (error) {
+			console.error("Ошибка копирования в буфер обмена:", error);
+		}
+	}, [sqlQuery]);
+
 	// Обработчик выбора запроса из истории БД
 	const handleDatabaseQuerySelect = useCallback(
 		(query: string) => {
@@ -157,6 +158,43 @@ export default function DatabaseQueriesPage() {
 		[databaseId, substituteMutation, setSqlQuery],
 	);
 
+	// Элементы для CollapsibleList
+	const historyItems: CollapsibleListItemType[] = [
+		{
+			id: "database-history",
+			title: "История запросов из БД",
+			description: "Запросы из pg_stat_statements с метриками и рекомендациями.",
+			icon: Database,
+			isExpanded: false,
+			content: (
+				<div className="mr-1">
+					<DatabaseQueriesHistory databaseId={databaseId} onQuerySelect={handleDatabaseQuerySelect} />
+				</div>
+			),
+		},
+		{
+			id: "analyzed-history",
+			title: "История проанализированных запросов",
+			description: "Ранее созданные и проанализированные SQL запросы",
+			icon: Clock,
+			isExpanded: false,
+			content: (
+				<div className="mr-1">
+					<QueriesHistory
+						queries={allQueries}
+						databases={databases}
+						isLoading={isLoadingQueries}
+						error={queriesError}
+						showDatabaseNames={false}
+						databaseFilter={databaseId}
+						emptyStateMessage="Нет сохраненных запросов"
+						gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+					/>
+				</div>
+			),
+		},
+	];
+
 	return (
 		<div className="p-6 space-y-6">
 			<div className="mb-6">
@@ -173,103 +211,65 @@ export default function DatabaseQueriesPage() {
 				</div>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<FileText className="h-5 w-5" />
-						SQL Редактор
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="relative">
-						<Textarea
-							placeholder="Введите ваш SQL запрос здесь..."
-							value={sqlQuery}
-							onChange={(e) => setSqlQuery(e.target.value)}
-							onPaste={handlePaste}
-							className="min-h-[300px] font-mono text-sm"
-						/>
-					</div>
+			<div className="space-y-4">
+				<SqlEditor
+					placeholder="Введите ваш SQL запрос здесь..."
+					value={sqlQuery}
+					onChange={setSqlQuery}
+					onPaste={handlePaste}
+					minHeight="300px"
+					actions={
+						<>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleCopyQuery}
+								disabled={!sqlQuery.trim()}
+								title="Копировать SQL"
+							>
+								<Copy className="h-4 w-4" />
+							</Button>
 
-					<div className="flex gap-2">
-						<Button variant="outline" onClick={handleFormatSql} disabled={!sqlQuery.trim() || isFormatting}>
-							<Sparkles />
-							{isFormatting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-							Форматировать
-						</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleFormatSql}
+								disabled={!sqlQuery.trim() || isFormatting}
+								title="Форматировать SQL"
+							>
+								<Sparkles className="h-4 w-4 stroke-yellow-400" />
+								{isFormatting ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : null}
+							</Button>
 
-						<Button
-							onClick={handleAnalyzeQuery}
-							disabled={!sqlQuery.trim() || createQueryMutation.isPending}
-							className="ml-auto"
-						>
-							{createQueryMutation.isPending ? (
-								<Loader2 className="h-4 w-4 animate-spin mr-2" />
-							) : (
-								<Play className="h-4 w-4 mr-2" />
-							)}
-							Проанализировать
-						</Button>
-					</div>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleAnalyzeQuery}
+								disabled={!sqlQuery.trim() || createQueryMutation.isPending}
+								title="Проанализировать запрос"
+							>
+								{createQueryMutation.isPending ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<Play className="h-4 w-4 stroke-green-600" />
+								)}
+								Анализ
+							</Button>
+						</>
+					}
+				/>
 
-					{createQueryMutation.error && (
-						<Alert variant="destructive">
-							<AlertDescription>
-								Ошибка создания запроса: {createQueryMutation.error.message}
-							</AlertDescription>
-						</Alert>
-					)}
-				</CardContent>
-			</Card>
+				{createQueryMutation.error && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							Ошибка создания запроса: {createQueryMutation.error.message}
+						</AlertDescription>
+					</Alert>
+				)}
+			</div>
 
-			{/* Аккордеоны с историями */}
-			<Accordion type="multiple" className="space-y-4">
-				{/* История запросов из БД */}
-				<AccordionItem value="database-history" className="border rounded-lg">
-					<AccordionTrigger className="hover:no-underline px-6 py-4">
-						<div className="flex items-center gap-2">
-							<Database className="h-5 w-5" />
-							<div className="text-left">
-								<div className="text-lg font-semibold">История запросов из БД</div>
-								<div className="text-sm text-muted-foreground font-normal">
-									Запросы из pg_stat_statements с метриками и рекомендациями. Нажмите на запрос, чтобы
-									вставить его в редактор.
-								</div>
-							</div>
-						</div>
-					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<DatabaseQueriesHistory databaseId={databaseId} onQuerySelect={handleDatabaseQuerySelect} />
-					</AccordionContent>
-				</AccordionItem>
-
-				{/* История проанализированных запросов */}
-				<AccordionItem value="analyzed-history" className="border rounded-lg">
-					<AccordionTrigger className="hover:no-underline px-6 py-4">
-						<div className="flex items-center gap-2">
-							<Clock className="h-5 w-5" />
-							<div className="text-left">
-								<div className="text-lg font-semibold">История проанализированных запросов</div>
-								<div className="text-sm text-muted-foreground font-normal">
-									Ранее созданные и проанализированные SQL запросы
-								</div>
-							</div>
-						</div>
-					</AccordionTrigger>
-					<AccordionContent className="px-6 pb-6">
-						<QueriesHistory
-							queries={allQueries}
-							databases={databases}
-							isLoading={isLoadingQueries}
-							error={queriesError}
-							showDatabaseNames={false}
-							databaseFilter={databaseId}
-							emptyStateMessage="Нет сохраненных запросов"
-							gridCols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-						/>
-					</AccordionContent>
-				</AccordionItem>
-			</Accordion>
+			{/* Списки с историями */}
+			<CollapsibleList items={historyItems} />
 		</div>
 	);
 }
