@@ -1,3 +1,5 @@
+using SqlAnalyzerLib.ExplainAnalysis.Models;
+
 namespace SqlAnalyzer.Api.Dto.QueryAnalysis;
 
 /// <summary>
@@ -18,7 +20,7 @@ public class QueryDto
     /// <summary>
     /// Резульатат выполнения EXPLAIN для запроса
     /// </summary>
-    public required string ExplainResult { get; init; }
+    public required ExplainRootPlan? ExplainResult { get; init; }
     
     /// <summary>
     /// Id подключения к БД в которой выполнялся запрос

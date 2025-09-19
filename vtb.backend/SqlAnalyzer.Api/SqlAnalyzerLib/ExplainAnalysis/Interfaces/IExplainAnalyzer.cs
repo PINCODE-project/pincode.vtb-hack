@@ -13,5 +13,5 @@ public interface IExplainAnalyzer
     /// <param name="queryText">Исходный SQL (используется для hash и контекста).</param>
     /// <param name="explainJson">JSON от EXPLAIN (FORMAT JSON).</param>
     /// <param name="ct">Токен отмены.</param>
-    Task<ExplainAnalysisResult> AnalyzeAsync(string queryText, string explainJson, CancellationToken ct = default);
+    Task<ExplainAnalysisResult> AnalyzeAsync(string queryText, ExplainRootPlan explainJson, CancellationToken ct = default);
 }

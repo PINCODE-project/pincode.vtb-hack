@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using SqlAnalyzer.Api.Dal.ValueObjects;
 using SqlAnalyzer.Api.Services.LlmClient.Data;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
+using SqlAnalyzerLib.ExplainAnalysis.Models;
 
 namespace SqlAnalyzer.Api.Services.LlmClient;
 
@@ -88,7 +89,7 @@ public sealed class LlmClient : ILlmClient
 
     public Task<LlmAnswer> GetRecommendation(
         string originalSql,
-        string? explainJson = null,
+        ExplainRootPlan? explainJson = null,
         string model = "openai/gpt-oss-120b",
         double temperature = 0.2,
         CancellationToken ct = default)
@@ -101,7 +102,7 @@ public sealed class LlmClient : ILlmClient
         userBuilder.AppendLine();
         userBuilder.AppendLine("Результат вывода EXPLAIN (FORMAT JSON)::");
         userBuilder.AppendLine("```json");
-        userBuilder.AppendLine(explainJson);
+        userBuilder.AppendLine(JsonSerializer.Serialize(explainJson));
         userBuilder.AppendLine("```");
         userBuilder.AppendLine();
 

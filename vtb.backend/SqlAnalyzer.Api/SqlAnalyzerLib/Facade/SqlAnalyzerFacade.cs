@@ -19,14 +19,12 @@ public class SqlAnalyzerFacade : ISqlAnalyzerFacade
     }
 
     /// <inheritdoc />
-    public async Task<SqlAlgorithmAnalysisResult> GetRecommendations(string query, string explainResult)
+    public async Task<SqlAlgorithmAnalysisResult> GetAlgorithmResult(string query, ExplainRootPlan? explainResult)
     {
         var staticAnalysisResult = await _staticSqlAnalyzer.AnalyzeAsync(new SqlQuery(query));
-        ExplainAnalysisResult? explainAnalysisResult = null;
-        if (!string.IsNullOrEmpty(explainResult))
-        {
-            explainAnalysisResult = await _explainAnalyzer.AnalyzeAsync(query, explainResult);
-        }
+        var explainAnalysisResult = explainResult is not null
+            ? await _explainAnalyzer.AnalyzeAsync(query, explainResult)
+            : null;
 
         return new SqlAlgorithmAnalysisResult
         {

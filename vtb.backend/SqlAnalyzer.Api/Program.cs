@@ -70,6 +70,7 @@ builder.Services.AddScoped<IAutovacuumMonitoringService, AutovacuumMonitoringSer
 builder.Services.AddScoped<IAutovacuumAnalysisService, AutovacuumAnalysisService>();
 builder.Services.AddScoped<IDbConnectionService, DbConnectionService>();
 builder.Services.AddScoped<IQueryService, QueryService>();
+builder.Services.AddScoped<IQueryExplainer, QueryExplainer>();
 builder.Services.AddScoped<ISqlAnalyzeRuleService, SqlAnalyzeRuleService>();
 builder.Services.AddSqlAnalyzer();
 

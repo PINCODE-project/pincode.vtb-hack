@@ -6,6 +6,7 @@ using SqlAnalyzer.Api.Dal.Entities.Base;
 using SqlAnalyzer.Api.Dal.Entities.Monitoring;
 using SqlAnalyzer.Api.Dal.Entities.QueryAnalysis;
 using SqlAnalyzer.Api.Dal.ValueObjects;
+using SqlAnalyzerLib.ExplainAnalysis.Models;
 
 namespace SqlAnalyzer.Api.Dal;
 
@@ -35,9 +36,12 @@ public class DataContext: DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<QueryAnalysisResult>()
-            .Property(x => x.Recommendations)
-            .HasColumnType("jsonb");
+        modelBuilder.Entity<QueryAnalysis>(entity =>
+            entity.Property(x => x.ExplainResult)
+                .HasConversion(
+                    w => JsonSerializer.Serialize(w, JsonSerializerOptions.Default),
+                    w => JsonSerializer.Deserialize<ExplainRootPlan>(w, JsonSerializerOptions.Default)!)
+                .HasColumnType("text"));
         
         modelBuilder.Entity<QueryAnalysisResult>(entity =>
             entity.Property(x => x.Recommendations)
@@ -47,10 +51,10 @@ public class DataContext: DbContext
                 .HasColumnType("jsonb"));
         
         modelBuilder.Entity<QueryAnalysisResult>(entity =>
-            entity.Property(x => x.LlmRecommendations)
+            entity.Property(x => x.LlmResult)
                 .HasConversion(
                     w => JsonSerializer.Serialize(w, JsonSerializerOptions.Default),
-                    w => JsonSerializer.Deserialize<LlmAnswer>(w, JsonSerializerOptions.Default)!)
+                    w => JsonSerializer.Deserialize<SqlLlmAnalysisResult>(w, JsonSerializerOptions.Default)!)
                 .HasColumnType("jsonb"));
         
         base.OnModelCreating(modelBuilder);

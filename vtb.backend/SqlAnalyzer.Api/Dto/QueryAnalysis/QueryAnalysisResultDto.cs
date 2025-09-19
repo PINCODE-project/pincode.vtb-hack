@@ -1,4 +1,5 @@
 using SqlAnalyzer.Api.Dal.ValueObjects;
+using SqlAnalyzerLib.ExplainAnalysis.Models;
 
 namespace SqlAnalyzer.Api.Dto.QueryAnalysis;
 
@@ -25,7 +26,7 @@ public class QueryAnalysisResultDto
     /// <summary>
     /// Результат выполнения EXPLAIN для запроса
     /// </summary>
-    public required string ExplainResult { get; init; }
+    public required ExplainRootPlan? ExplainResult { get; init; }
     
     /// <summary>
     /// Алгоритмически собранные рекомендации для запроса
@@ -35,8 +36,15 @@ public class QueryAnalysisResultDto
     /// <summary>
     /// Рекомендации выданные LLM моделью (если использовалась)
     /// </summary>
-    public LlmAnswer? LlmRecommendations { get; init; }
-
-
+    public SqlLlmAnalysisResult? LlmRecommendations { get; init; }
+    
+    /// <summary>
+    /// Айдишники найденных кастомных правил
+    /// </summary>
     public IReadOnlyCollection<Guid> FindindCustomRules { get; init; } = [];
+    
+    /// <summary>
+    /// Результат сравнения EXPLAIN для входного запроса и запроса с LLM
+    /// </summary>
+    public PlanComparisonDto? ExplainComparisonDto { get; init; }
 }
