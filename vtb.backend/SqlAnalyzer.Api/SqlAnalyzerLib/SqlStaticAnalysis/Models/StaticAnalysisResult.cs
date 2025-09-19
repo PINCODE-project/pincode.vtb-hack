@@ -5,5 +5,5 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Models;
 /// </summary>
 public record StaticAnalysisResult(
     string Query,
-    IReadOnlyList<StaticAnalysisPoint> Findings,
+    ICollection<StaticAnalysisPoint> Findings,
     DateTime AnalyzedAt);

@@ -8,6 +8,8 @@ using SqlAnalyzer.Api.Services.Algorithm.Interfaces;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
 using SqlAnalyzerLib.Facade.Interfaces;
+using SqlAnalyzerLib.SqlStaticAnalysis.Constants;
+using SqlAnalyzerLib.SqlStaticAnalysis.Models;
 
 namespace SqlAnalyzer.Api.Services.QueryAnalysis;
 
@@ -126,7 +128,6 @@ public class QueryService : IQueryService
                 ExplainResult = query.ExplainResult,
                 AlgorithmRecommendation = analysis.Recommendations,
                 LlmRecommendations = analysis.LlmResult,
-                FindindCustomRules = analysis.FindindCustomRules ?? [],
                 ExplainComparisonDto = _explainer.Compare(query.ExplainResult, analysis.LlmResult?.ExplainResult)
             };
         }
@@ -152,6 +153,7 @@ public class QueryService : IQueryService
         _db.QueryAnalysisResults.Add(result);
         await _db.SaveChangesAsync();
 
+        await AddCustomToAnalysisResult(customFindings, analysisResult);
 
         return new QueryAnalysisResultDto
         {
@@ -161,9 +163,26 @@ public class QueryService : IQueryService
             ExplainResult = query.ExplainResult,
             AlgorithmRecommendation = analysisResult,
             LlmRecommendations = llmAnswer,
-            FindindCustomRules = customFindings,
             ExplainComparisonDto = _explainer.Compare(query.ExplainResult, llmAnswer?.ExplainResult)
         };
+    }
+
+    private async Task AddCustomToAnalysisResult(IReadOnlyCollection<Guid> customFindings,
+        SqlAlgorithmAnalysisResult analysisResult)
+    {
+        // todo! переделать чтобы у всех правил был айдишник
+        var customRules = await _db.SqlAnalyzeRules.Where(x => customFindings.Contains(x.Id)).ToListAsync();
+        foreach (var customRule in customRules)
+        {
+            analysisResult.QueryAnalysisResult.Findings.Add(
+                new StaticAnalysisPoint(
+                    StaticRules.Custom,
+                    customRule.Severity,
+                    customRule.Problem,
+                    customRule.Recommendation
+                )
+            );
+        }
     }
 
     private async Task<SqlLlmAnalysisResult> GetLlmResult(QueryAnalysis query)
@@ -196,16 +215,17 @@ public class QueryService : IQueryService
         }
 
         var newRules = ruleIds?.Except(analysisResult.FindindCustomRules ?? []).ToList();
+        IReadOnlyCollection<Guid> customFindings = [];
         if (newRules?.Count > 0)
         {
-            var newFindings = await _customRulesService.ApplyForQuery(analysisResult.Query, newRules);
+            customFindings = await _customRulesService.ApplyForQuery(analysisResult.Query, newRules);
             if (analysisResult.FindindCustomRules is null)
             {
-                analysisResult.FindindCustomRules = newFindings.ToList();
+                analysisResult.FindindCustomRules = customFindings.ToList();
             }
             else
             {
-                analysisResult.FindindCustomRules.AddRange(newFindings);
+                analysisResult.FindindCustomRules.AddRange(customFindings);
             }
 
             isUpdated = true;
@@ -215,5 +235,7 @@ public class QueryService : IQueryService
         {
             await _db.SaveChangesAsync();
         }
+        
+        await AddCustomToAnalysisResult(customFindings, analysisResult.Recommendations);
     }
 }

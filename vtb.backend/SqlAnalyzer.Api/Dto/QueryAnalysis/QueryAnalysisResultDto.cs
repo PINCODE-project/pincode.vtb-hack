@@ -39,11 +39,6 @@ public class QueryAnalysisResultDto
     public SqlLlmAnalysisResult? LlmRecommendations { get; init; }
     
     /// <summary>
-    /// Айдишники найденных кастомных правил
-    /// </summary>
-    public IReadOnlyCollection<Guid> FindindCustomRules { get; init; } = [];
-    
-    /// <summary>
     /// Результат сравнения EXPLAIN для входного запроса и запроса с LLM
     /// </summary>
     public PlanComparisonDto? ExplainComparisonDto { get; init; }

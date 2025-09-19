@@ -48,5 +48,6 @@ public enum StaticRules
     ImplicitCastInJoinOrWhere,
     CaseInWhere,
     AggregateOnUnindexed,
-    SelectWithoutFrom
+    SelectWithoutFrom,
+    Custom
 }
