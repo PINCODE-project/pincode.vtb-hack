@@ -40,7 +40,7 @@ public class DataContext: DbContext
             entity.Property(x => x.ExplainResult)
                 .HasConversion(
                     w => JsonSerializer.Serialize(w, JsonSerializerOptions.Default),
-                    w => JsonSerializer.Deserialize<ExplainRootPlan>(w, JsonSerializerOptions.Default)!)
+                    w => string.IsNullOrEmpty(w) ? null : JsonSerializer.Deserialize<ExplainRootPlan?>(w, JsonSerializerOptions.Default))
                 .HasColumnType("text"));
         
         modelBuilder.Entity<QueryAnalysisResult>(entity =>
