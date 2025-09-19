@@ -1,5 +1,5 @@
 import { create } from "zustand/index";
-import { CreateDatabaseModalState, DeleteDatabaseModalState } from "./interfaces";
+import { DeleteDatabaseModalState } from "./interfaces";
 
 export const useDeleteDatabaseModalStore = create<DeleteDatabaseModalState>((set) => ({
 	isOpen: false,
