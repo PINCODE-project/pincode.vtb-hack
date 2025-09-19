@@ -69,7 +69,10 @@ public class QueryAnalysisController : ControllerBase
     }
 
     /// <summary>
-    /// Анализирует запрос алгоритмически + по флагу useLlm может выдать рекомендации от LLM и оптимизированный запрос
+    /// Анализирует запрос
+    /// 1 - системными правилами для sql и explain
+    /// 2 - по флагу useLlm может выдать проблемы и рекомендации от LLM а также сравнение двух запросов
+    /// 3 - по ruleIds может проверять запрос по кастомным правилам, если ruleIds не передали, будет проверять по всем правилам
     /// </summary>
     [HttpPost("{queryId:guid}/analyze")]
     public async Task<ActionResult<QueryAnalysisResultDto>> Analyze(

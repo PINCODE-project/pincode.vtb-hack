@@ -10,7 +10,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// Проверка наличия функций на индексируемых колонках (например, LOWER(col)).
 /// Ищет частые функции, которые делают выражение не sargable.
 /// </summary>
-public sealed class FunctionOnColumnRule : IStaticRule
+public sealed class FunctionOnColumnRule // : IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.FunctionOnColumn;

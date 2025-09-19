@@ -17,6 +17,9 @@ public class SqlAnalyzeRuleController : ControllerBase
         _service = service;
     }
 
+    /// <summary>
+    /// Ищет все кастомные правила для аналища SQL
+    /// </summary>
     [HttpGet("find")]
     public async Task<IReadOnlyCollection<SqlAnalyzeRuleDto>> Find([FromQuery] int? skip, [FromQuery] int? take, [FromQuery] IReadOnlyCollection<Guid>? ids)
     {
@@ -24,6 +27,9 @@ public class SqlAnalyzeRuleController : ControllerBase
         return result;
     }
     
+    /// <summary>
+    /// Создает новое кастомное правило для анализа SQL
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] [Required] SqlAnalyzeRuleCreateDto dto)
     {
@@ -31,6 +37,9 @@ public class SqlAnalyzeRuleController : ControllerBase
         return Ok(new SimpleDto<Guid>(id));
     }
 
+    /// <summary>
+    /// Обновляет кастомное правило
+    /// </summary>
     [HttpPatch]
     public async Task<ActionResult> Update([FromBody] [Required] SqlAnalyzeRuleUpdateDto dto)
     {
@@ -38,6 +47,9 @@ public class SqlAnalyzeRuleController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Удаляет кастомное правило
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete([FromRoute] Guid id)
     {

@@ -9,7 +9,7 @@ public static class StaticRuleProblemsDescriptions
     
     public const string TypeMismatchUuidComparisonProblemDescription = "Найдено сравнение с UUID-форматной строкой без явного ::uuid.";
     public const string TypeMismatchDateComparisonProblemDescription = "Найдено сравнение с датой/временем в виде строки без явного типа.";
-    public const string TypeMismatchNumericComparisonProblemDescription = "Найдено сравнение колонки с численной строкой (например, col = '123').";
+    public const string TypeMismatchNumericComparisonProblemDescription = "Найдено сравнение колонки с численной строкой.";
     
     public const string LeadingWildcardLikeProblemDescription = "LIKE/ILIKE начинается с '%', обычный btree-индекс не поможет.";
     public const string SelectStarProblemDescription = "Использование SELECT * приводит к передаче лишних данных и неопределённости.";

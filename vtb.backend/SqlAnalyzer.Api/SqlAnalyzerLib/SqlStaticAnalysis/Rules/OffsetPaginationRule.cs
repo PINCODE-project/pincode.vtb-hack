@@ -9,7 +9,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// <summary>
 /// Проверка OFFSET (пагинация). Предупреждает об эффективности при больших смещениях.
 /// </summary>
-public sealed class OffsetPaginationRule : IStaticRule
+public sealed class OffsetPaginationRule //: IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.OffsetPagination;

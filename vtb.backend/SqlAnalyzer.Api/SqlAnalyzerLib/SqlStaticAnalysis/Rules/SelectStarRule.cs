@@ -9,7 +9,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// <summary>
 /// Проверка использования SELECT * — рекомендует выбирать явные колонки.
 /// </summary>
-public sealed class SelectStarRule : IStaticRule
+public sealed class SelectStarRule //: IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.SelectStar;

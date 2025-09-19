@@ -10,7 +10,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// Проверка использования подзапросов IN/EXISTS в местах, где может быть предпочтителен JOIN.
 /// Правило является эвристическим: предупреждает при наличии IN (SELECT ...) или EXISTS (SELECT ...).
 /// </summary>
-public sealed class SubqueryInsteadOfJoinRule : IStaticRule
+public sealed class SubqueryInsteadOfJoinRule // : IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.SubqueryInsteadOfJoin;

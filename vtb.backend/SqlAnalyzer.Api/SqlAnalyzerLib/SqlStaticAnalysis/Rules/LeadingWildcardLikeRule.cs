@@ -10,7 +10,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// Проверка LIKE/ILIKE с ведущим подстановочным знаком.
 /// Предлагает trigram/Gin индекс для подстрочных поисков.
 /// </summary>
-public sealed class LeadingWildcardLikeRule : IStaticRule
+public sealed class LeadingWildcardLikeRule // : IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.LeadingWildcardLike;

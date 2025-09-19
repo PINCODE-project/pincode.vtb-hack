@@ -10,7 +10,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
     /// Проверка сравнения литералов без явного приведения типов (возможные implicit casts).
     /// Детектирует шаблоны: сравнение с UUID-литералом, датой 'YYYY-MM-DD' или timestamp-подобной строкой без ::type.
     /// </summary>
-    public sealed class TypeMismatchComparisonRule : IStaticRule
+    public sealed class TypeMismatchComparisonRule //: IStaticRule
     {
         /// <inheritdoc />
         public StaticRules Code => StaticRules.TypeMismatchComparison;

@@ -9,7 +9,7 @@ namespace SqlAnalyzerLib.SqlStaticAnalysis.Rules;
 /// <summary>
 /// Проверка NOT IN — рекомендует NOT EXISTS для корректной работы с NULL и предотвращения неожиданных результатов.
 /// </summary>
-public sealed class NotInNullsRule : IStaticRule
+public sealed class NotInNullsRule //: IStaticRule
 {
     /// <inheritdoc />
     public StaticRules Code => StaticRules.NotInNulls;

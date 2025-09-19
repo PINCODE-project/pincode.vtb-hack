@@ -13,6 +13,7 @@ using SqlAnalyzer.Api.Services.LlmClient;
 using SqlAnalyzer.Api.Services.LlmClient.Interfaces;
 using SqlAnalyzer.Api.Services.QueryAnalysis;
 using SqlAnalyzer.Api.Services.QueryAnalysis.Interfaces;
+using SqlAnalyzer.Api.Services.RuleSeeder;
 using SqlAnalyzer.Api.Services.SubstituteValuesToSql.Interfaces;
 using SqlAnalyzerLib.LibExtensions;
 
@@ -102,6 +103,7 @@ using (var scope = app.Services.CreateScope())
 
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
     await db.Database.MigrateAsync();
+    await CustomRuleSeeder.AddCustomRules(db);
 }
 
 app.UseCors(x => x

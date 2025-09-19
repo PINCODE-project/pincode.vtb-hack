@@ -1,0 +1,82 @@
+[
+  {
+    "name": "SELECT *",
+    "severity": 0,
+    "problem": "Использование SELECT * приводит к передаче лишних данных и неопределённости.",
+    "recommendation": "Указывайте конкретные колонки в SELECT.",
+    "regex": "\\bSELECT\\s+\\*",
+    "isActive" : true
+  },
+  {
+    "name": "NOT IN NULL",
+    "severity": 2,
+    "problem": "Используется NOT IN, который некорректно работает при наличии NULL в подзапросе.",
+    "recommendation": "Замените NOT IN на NOT EXISTS или используйте фильтр с IS NULL.",
+    "regex": "\\bNOT\\s+IN\\s*\\(",
+    "isActive" : true
+  },
+  {
+    "name": "Функция на индексируемом столбце",
+    "severity": 1,
+    "problem": "Функция применяется к колонке в выражении (WHERE/ON/Join), что делает индекс менее эффективным.",
+    "recommendation": "Перепишите условие так, чтобы функция применялась к константе или используйте функциональный индекс.",
+    "regex": "\\b(?:LOWER|UPPER|DATE_TRUNC|CAST|EXTRACT|TO_CHAR|TO_TIMESTAMP|COALESCE)\\s*\\(\"",
+    "isActive" : true
+  },
+  {
+    "name": "Сравнение с uuid без явного приведения",
+    "severity": 1,
+    "problem": "Найдено сравнение с UUID-форматной строкой без явного ::uuid.",
+    "recommendation": "Явно приводите строку к UUID через ::uuid.",
+    "regex": "=\\s*'?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'?",
+    "isActive" : true
+  },
+  {
+    "name": "Сравнение с timestamp без явного приведения",
+    "severity": 1,
+    "problem": "Найдено сравнение с датой/временем в виде строки без явного типа.",
+    "recommendation": "Используйте литералы даты/времени или явное приведение типов.",
+    "regex": "=\\s*'?\\d{4}-\\d{2}-\\d{2}(?:\\s+\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?)?'?",
+    "isActive" : true
+  },
+  {
+    "name": "Сравнение с числом без явного приведения",
+    "severity": 1,
+    "problem": "Найдено сравнение колонки с численной строкой.",
+    "recommendation": "Сравнивайте с числовым литералом, а не строкой.",
+    "regex": "\\b\\w+\\s*=\\s*'\\d+'\\b",
+    "isActive" : true
+  },
+  {
+    "name": "LIKE/ILIKE с ведущим подстановочным знаком",
+    "severity": 2,
+    "problem": "LIKE/ILIKE начинается с '%', обычный btree-индекс не поможет.",
+    "recommendation": "Для поиска по подстроке используйте trigram-индекс (pg_trgm) или полнотекстовый поиск.",
+    "regex": "\\b(?:LIKE|ILIKE)\\s+'%[^']*'",
+    "isActive" : true
+  },
+  {
+    "name": "OFFSET",
+    "severity": 1,
+    "problem": "OFFSET в пагинации приводит к пропуску строк и росту затрат при больших смещениях.",
+    "recommendation": "Используйте keyset-пагинацию (WHERE col > last_value).",
+    "regex": "bOFFSET\\s+\\d+",
+    "isActive" : true
+  },
+  {
+    "name": "Подзапрос в IN",
+    "severity": 0,
+    "problem": "Найдено IN (SELECT ...). В некоторых случаях использование JOIN/LEFT JOIN экономичнее по производительности и понятнее по плану выполнения.",
+    "recommendation": "Рассмотрите замену IN (SELECT) на JOIN/LEFT JOIN.",
+    "regex": "\\bIN\\s*\\(\\s*SELECT\\b",
+    "isActive" : true
+  },
+  {
+    "name": "Подзапрос в EXISTS",
+    "severity": 0,
+    "problem": "Найдено EXISTS (SELECT ...). Это может быть оправдано, но если подзапрос не коррелирован, JOIN может быть эффективнее.",
+    "recommendation": "Замените EXISTS на JOIN, если подзапрос не коррелирован.",
+    "regex": "\\bEXISTS\\s*\\(\\s*SELECT\\b",
+    "isActive" : true
+  }
+]
