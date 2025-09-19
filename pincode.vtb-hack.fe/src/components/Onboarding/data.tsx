@@ -19,7 +19,7 @@ export const STEPS = [
 	{
 		title: "Рекомендации по кластеру от ИИ",
 		short_description: "Получайте персонализированные советы",
-		full_description: "памяти, индексов и других параметров.",
+		full_description: "Детальный анализ метрик и настроек БД, а также алгоритмические рекомендации.",
 		media: {
 			type: "image" as const,
 			src: "/images/onboarding2.png",
@@ -33,7 +33,7 @@ export const STEPS = [
 	{
 		title: "Проанализируй запрос",
 		short_description: "Анализ производительности SQL",
-		full_description: "Загрузите ваши SQL-запросы для детального анализа.",
+		full_description: "Загрузите ваши SQL-запросы для детального анализа с помощью алгоритмов и ИИ.",
 		media: {
 			type: "image" as const,
 			src: "/images/onboarding3.png",
@@ -47,7 +47,8 @@ export const STEPS = [
 	{
 		title: "Замени оптимизированным от ИИ",
 		short_description: "Автоматическая оптимизация запросов",
-		full_description: "Получите оптимизированные версии ваших SQL-запросов от нашего ИИ.",
+		full_description:
+			"Получите оптимизированные версии ваших SQL-запросов от нашего ИИ и сравните их с изначальными.",
 		media: {
 			type: "image" as const,
 			src: "/images/onboarding4.png",
